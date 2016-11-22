@@ -15,7 +15,9 @@
       <pubDate>Tue, 22 Nov 2016 13:59:30 +0800</pubDate>
       
       <guid>http://niusmallnan.com/2016/11/22/rpi-noip-with-docker</guid>
-      <description>&lt;p&gt;&lt;/p&gt;
+      <description>&lt;p&gt;家庭使用树莓派场景中，如何给树莓派绑定一个域名，让我们一扫运营商动态IP的困扰，
+可以轻轻松松在外网使用域名访问。
+&lt;/p&gt;
 
 &lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
 
@@ -91,8 +93,13 @@
       <pubDate>Sat, 08 Oct 2016 16:09:24 +0800</pubDate>
       
       <guid>http://niusmallnan.com/2016/10/08/rancher-k8s-hacking</guid>
-      <description>&lt;p&gt;
-在Rancher中，由于K8s是基于Cattle引擎来部署，所以在K8s在部署完成之后，
+      <description>&lt;p&gt;Rancher可以轻松实现Kubernetes的部署，尽管默认的部署已经完全可用，
+但是如果我们想修改部署的K8s版本，这时应当如何应对？
+&lt;/p&gt;
+
+&lt;h3 id=&#34;原理分析与执行&#34;&gt;原理分析与执行&lt;/h3&gt;
+
+&lt;p&gt;在Rancher中，由于K8s是基于Cattle引擎来部署，所以在K8s在部署完成之后，
 我们可以通过Link Graph来很清晰的看到整体的部署情况。&lt;br /&gt;
 &lt;img src=&#34;http://ww1.sinaimg.cn/large/006tNc79jw1fa0ybyprq4j30mi07tdh0.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
 

@@ -21,7 +21,9 @@
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,400,600' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
     <meta property="og:title" content="如何hack一下rancher k8s" />
-<meta property="og:description" content="" />
+<meta property="og:description" content="Rancher可以轻松实现Kubernetes的部署，尽管默认的部署已经完全可用，
+但是如果我们想修改部署的K8s版本，这时应当如何应对？
+" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking" />
 
@@ -40,11 +42,13 @@
     
     
 <meta itemprop="name" content="如何hack一下rancher k8s">
-<meta itemprop="description" content="">
+<meta itemprop="description" content="Rancher可以轻松实现Kubernetes的部署，尽管默认的部署已经完全可用，
+但是如果我们想修改部署的K8s版本，这时应当如何应对？
+">
 
 
 <meta itemprop="dateModified" content="2016-10-08T16:09:24&#43;08:00" />
-<meta itemprop="wordCount" content="1300">
+<meta itemprop="wordCount" content="1375">
 
 
 
@@ -57,7 +61,9 @@
 
 
 <meta name="twitter:title" content="如何hack一下rancher k8s"/>
-<meta name="twitter:description" content=""/>
+<meta name="twitter:description" content="Rancher可以轻松实现Kubernetes的部署，尽管默认的部署已经完全可用，
+但是如果我们想修改部署的K8s版本，这时应当如何应对？
+"/>
 
 
 
@@ -301,7 +307,7 @@
             <i class="fa fa-calendar"></i>
             <time datetime="2016-10-08 16:09:24 &#43;0800 CST" itemprop="datePublished">2016-10-08</time>
             &middot;
-            1300
+            1375
             字数
             &middot;
             3
@@ -344,8 +350,13 @@
 </header>
 
             <div class="article-entry" itemprop="articleBody">
-                <p>
-在Rancher中，由于K8s是基于Cattle引擎来部署，所以在K8s在部署完成之后，
+                <p>Rancher可以轻松实现Kubernetes的部署，尽管默认的部署已经完全可用，
+但是如果我们想修改部署的K8s版本，这时应当如何应对？
+</p>
+
+<h3 id="原理分析与执行">原理分析与执行</h3>
+
+<p>在Rancher中，由于K8s是基于Cattle引擎来部署，所以在K8s在部署完成之后，
 我们可以通过Link Graph来很清晰的看到整体的部署情况。<br />
 <img src="http://ww1.sinaimg.cn/large/006tNc79jw1fa0ybyprq4j30mi07tdh0.jpg" alt="" /></p>
 

@@ -15,7 +15,9 @@
       <pubDate>Tue, 22 Nov 2016 13:59:30 +0800</pubDate>
       
       <guid>http://niusmallnan.com/2016/11/22/rpi-noip-with-docker</guid>
-      <description>&lt;p&gt;&lt;/p&gt;
+      <description>&lt;p&gt;家庭使用树莓派场景中，如何给树莓派绑定一个域名，让我们一扫运营商动态IP的困扰，
+可以轻轻松松在外网使用域名访问。
+&lt;/p&gt;
 
 &lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
 
