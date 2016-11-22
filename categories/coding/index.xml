@@ -44,51 +44,100 @@
 
 &lt;h3 id=&#34;执行过程&#34;&gt;执行过程&lt;/h3&gt;
 
-&lt;p&gt;首先，需要到&lt;a href=&#34;https://www.noip.com/&#34;&gt;noip&lt;/a&gt;上注册账户，并填写自己的域名，注册过程请自行体验，比如：
+&lt;p&gt;首先，需要到&lt;a href=&#34;https://www.noip.com/&#34;&gt;noip&lt;/a&gt;上注册账户，并填写自己的域名，注册过程请自行体验，比如：&lt;br /&gt;
 &lt;img src=&#34;http://ww2.sinaimg.cn/large/006tNc79jw1fa0utbt10oj30ja04maap.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
 
-&lt;p&gt;然后，我们就需要在下载客户端，并在树莓派上进行编译，生成适合ARM运行的版本，编译只要执行make即可：
+&lt;p&gt;然后，我们就需要在下载客户端，并在树莓派上进行编译，生成适合ARM运行的版本，编译只要执行make即可：&lt;br /&gt;
 &lt;img src=&#34;http://ww2.sinaimg.cn/large/006tNc79jw1fa0uxw14ulj30fk0a4wgz.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;初次执行需要先在client端注册账号信息，其实就是生成一下相关配置文件，再次执行就可以运行起来了。&lt;/p&gt;
 
 &lt;p&gt;这么看来，对于很多用户来说还是太复杂，所以我们决定使用容器来简化这个过程。
 可以把上面繁琐操作，全部放在容器中，为了精简程序的编译环境，
-我们使用alpine-linux来进行编译，容器的Dockerfile如下：
+我们使用alpine-linux来进行编译，容器的Dockerfile如下：&lt;br /&gt;
 &lt;img src=&#34;http://ww4.sinaimg.cn/large/006tNc79jw1fa0uz7rv7oj30i304pmyk.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
 
-&lt;p&gt;接着，我们需要对树莓派的系统进行容器化，以便我们可以运行noip容器程序，此时可以有三种选择：&lt;/p&gt;
-
-&lt;ol&gt;
-&lt;li&gt;RancherOS&lt;/li&gt;
-&lt;li&gt;HypriotOS&lt;/li&gt;
-&lt;li&gt;Rasbian 基础上安装Docker&lt;/li&gt;
-&lt;/ol&gt;
+&lt;p&gt;接着，我们需要对树莓派的系统进行容器化，以便我们可以运行noip容器程序，此时可以有三种选择：
+1. RancherOS
+2. HypriotOS
+3. Rasbian 基础上安装Docker&lt;/p&gt;
 
 &lt;p&gt;前两个都是内置Docker Engine的，用起来比较方便，Rasbian需要自行安装Docker。我选择的OS是RancherOS。&lt;/p&gt;
 
 &lt;h3 id=&#34;最简方式部署noip-只需三步&#34;&gt;最简方式部署noip，只需三步&lt;/h3&gt;
 
-&lt;p&gt;在RancherOS上修改registry mirror后，可以加速镜像下载，然后拉取前面Dockerfile编译的镜像：&lt;/p&gt;
+&lt;p&gt;在RancherOS上修改registry mirror后，可以加速镜像下载，然后拉取前面Dockerfile编译的镜像：&lt;br /&gt;
+&lt;code&gt;$ docker pull hypriot/rpi-noip&lt;/code&gt;&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;$ docker pull hypriot/rpi-noip&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;注册noip client，按照提示添加用户名密码等信息：&lt;br /&gt;
+&lt;code&gt;$ docker run -ti -v noip:/usr/local/etc/ hypriot/rpi-noip noip2 -C&lt;/code&gt;&lt;/p&gt;
 
-&lt;p&gt;注册noip client，按照提示添加用户名密码等信息：&lt;/p&gt;
+&lt;p&gt;运行noip clent：&lt;br /&gt;
+&lt;code&gt;$ docker run -v noip:/usr/local/etc/ --restart=always hypriot/rpi-noip&lt;/code&gt;&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;$ docker run -ti -v noip:/usr/local/etc/ hypriot/rpi-noip noip2 -C&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;运行noip clent：&lt;/p&gt;
-
-&lt;p&gt;&lt;code&gt;$ docker run -v noip:/usr/local/etc/ --restart=always hypriot/rpi-noip&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;登录No-IP的&lt;a href=&#34;https://my.noip.com/#!/dynamic-dns&#34;&gt;控制台&lt;/a&gt;可以看到 dns绑定情况：
+&lt;p&gt;登录No-IP的&lt;a href=&#34;https://my.noip.com/#!/dynamic-dns&#34;&gt;控制台&lt;/a&gt;可以看到 dns绑定情况：&lt;br /&gt;
 &lt;img src=&#34;http://ww2.sinaimg.cn/large/006tNc79jw1fa0v2h5umhj30km05rjs0.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
 
-&lt;p&gt;在本地使用dig确认一下解析情况：
+&lt;p&gt;在本地使用dig确认一下解析情况：&lt;br /&gt;
 &lt;img src=&#34;http://ww2.sinaimg.cn/large/006tNc79jw1fa0v2po6wfj30gy08yjt4.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;以上所有源码可以参考：&lt;a href=&#34;https://github.com/hypriot/rpi-noip&#34;&gt;https://github.com/hypriot/rpi-noip&lt;/a&gt;。
 这样，我们就在树莓派上非常简单的实现了动态域名绑定。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>如何hack一下rancher k8s</title>
+      <link>http://niusmallnan.com/2016/10/08/rancher-k8s-hacking</link>
+      <pubDate>Sat, 08 Oct 2016 16:09:24 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2016/10/08/rancher-k8s-hacking</guid>
+      <description>&lt;p&gt;
+在Rancher中，由于K8s是基于Cattle引擎来部署，所以在K8s在部署完成之后，
+我们可以通过Link Graph来很清晰的看到整体的部署情况。&lt;br /&gt;
+&lt;img src=&#34;http://ww1.sinaimg.cn/large/006tNc79jw1fa0ybyprq4j30mi07tdh0.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;既然基于Cattle引擎部署，也就是说需要两个compose文件，
+k8s引擎的compose文件放在&lt;a href=&#34;https://github.com/rancher/rancher-catalog/tree/master/templates&#34;&gt;https://github.com/rancher/rancher-catalog/tree/master/templates&lt;/a&gt;下面，
+这里面有两个相关目录kubernetes与k8s，k8s是Rancher1.2开始使用的，
+而kubernetes则是Rancher1.2之后开始使用的。&lt;br /&gt;
+&lt;img src=&#34;http://ww1.sinaimg.cn/large/006tNc79jw1fa0ydzd1dgj30gt07qmyg.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;为了我们可以自己hack一下rancher k8s的部署，我们可以在github上fork一下rancher-catalog，
+同时还需要修改一下Rancher中默认的catalog的repo地址，
+这个可以在&lt;a href=&#34;http://rancher-server/v1/settings&#34;&gt;http://rancher-server/v1/settings&lt;/a&gt;页面下，
+寻找名为 catalog.url 的配置项，然后进入编辑修改。比如我这里将library库的地址换成了自己的：
+&lt;a href=&#34;https://github.com/niusmallnan/rancher-catalog.git&#34;&gt;https://github.com/niusmallnan/rancher-catalog.git&lt;/a&gt;&lt;br /&gt;
+&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tNc79jw1fa0yff7sbzj30h206imyy.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;此时，我们就可以修改了，找一个比较实用的场景。我们都知道k8s的pod都会依赖一个基础镜像，
+这个镜像默认的地址是被GFW挡在墙外了，一般我们会把kubelet的启动参数调整一下，
+以便重新指定这个镜像地址，比如指定到国内的镜像源上。&lt;br /&gt;
+&lt;strong&gt;&amp;ndash;pod-infra-container-image=index.tenxcloud.com/google_containers/pause:2.0&lt;/strong&gt;。&lt;/p&gt;
+
+&lt;p&gt;如果我们要让rancher k8s部署时自动加上该参数，
+可以直接修改私有rancher-catalog中的k8s compose文件。&lt;br /&gt;
+&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tNc79jw1fa0ygscal6j30gv0asjtp.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;修改之后稍等片刻（主要是为了让rancher-server更新到新的catalog compose文件），
+添加一个k8s env并在其中添加host，k8s引擎就开始自动部署，
+部署完毕后，我们可以看到Kubernetes Stack的compose文件，
+已经有了&amp;ndash;pod-infra-container-image这个启动参数。&lt;br /&gt;
+&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tNc79jw1fa0yhg3alsj30gn09rtav.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
+如此我们在添加pod时再也不用手动导入pod基础镜像了。&lt;/p&gt;
+
+&lt;p&gt;在compose file中，部署k8s的基础镜像是rancher/k8s，这个镜像的Dockerfile在rancher维护的k8s分支中，
+如在rancher-k8s 1.2.4分支中可以看到：&lt;br /&gt;
+&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tNc79jw1fa0yi5rmplj30e007ogmr.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;这样如果想对rancher-k8s发行版进行深度定制，就可以重新build相关镜像，通过rancher-compose来部署自己的发行版。&lt;/p&gt;
+
+&lt;h3 id=&#34;总结&#34;&gt;总结&lt;/h3&gt;
+
+&lt;p&gt;本文写于Rancher1.2行将发布之际，1.2版本是非常重大的更新，Rancher会支持部署原生的K8s版本，
+同时CNI网络和Cloud Provider等都会以插件方式，用户可以自己定义，并且在UI上都会有很好的体现。
+只要了解Rancher部署K8s的原理和过程，我们就可以定制非常适合自身使用的k8s，
+通过Rancher来部署自定义的k8s，我们就可以很容易的扩展了k8s不擅长的UI、Catalog、
+用户管理、审计日志维护等功能，这也是本文的目的。&lt;/p&gt;</description>
     </item>
     
   </channel>

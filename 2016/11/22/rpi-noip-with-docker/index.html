@@ -44,11 +44,11 @@
 
 
 <meta itemprop="dateModified" content="2016-11-22T13:59:30&#43;08:00" />
-<meta itemprop="wordCount" content="1021">
+<meta itemprop="wordCount" content="1024">
 
 
 
-<meta itemprop="keywords" content="coding,docker,raspberry-pi," />
+<meta itemprop="keywords" content="coding,docker,kubernetes,rancher,raspberry-pi," />
 
     
 
@@ -203,12 +203,12 @@
     </div>
     <div class="article-info profile-block">
       <div class="article-info-block">
-        1
+        2
         <span>文章</span>
       </div>
       <div class="article-info-block">
         
-          2
+          4
         
         <span>
             标签
@@ -301,7 +301,7 @@
             <i class="fa fa-calendar"></i>
             <time datetime="2016-11-22 13:59:30 &#43;0800 CST" itemprop="datePublished">2016-11-22</time>
             &middot;
-            1021
+            1024
             字数
             &middot;
             3
@@ -373,47 +373,41 @@
 
 <h3 id="执行过程">执行过程</h3>
 
-<p>首先，需要到<a href="https://www.noip.com/">noip</a>上注册账户，并填写自己的域名，注册过程请自行体验，比如：
+<p>首先，需要到<a href="https://www.noip.com/">noip</a>上注册账户，并填写自己的域名，注册过程请自行体验，比如：<br />
 <img src="http://ww2.sinaimg.cn/large/006tNc79jw1fa0utbt10oj30ja04maap.jpg" alt="" /></p>
 
-<p>然后，我们就需要在下载客户端，并在树莓派上进行编译，生成适合ARM运行的版本，编译只要执行make即可：
+<p>然后，我们就需要在下载客户端，并在树莓派上进行编译，生成适合ARM运行的版本，编译只要执行make即可：<br />
 <img src="http://ww2.sinaimg.cn/large/006tNc79jw1fa0uxw14ulj30fk0a4wgz.jpg" alt="" /></p>
 
 <p>初次执行需要先在client端注册账号信息，其实就是生成一下相关配置文件，再次执行就可以运行起来了。</p>
 
 <p>这么看来，对于很多用户来说还是太复杂，所以我们决定使用容器来简化这个过程。
 可以把上面繁琐操作，全部放在容器中，为了精简程序的编译环境，
-我们使用alpine-linux来进行编译，容器的Dockerfile如下：
+我们使用alpine-linux来进行编译，容器的Dockerfile如下：<br />
 <img src="http://ww4.sinaimg.cn/large/006tNc79jw1fa0uz7rv7oj30i304pmyk.jpg" alt="" /></p>
 
-<p>接着，我们需要对树莓派的系统进行容器化，以便我们可以运行noip容器程序，此时可以有三种选择：</p>
-
-<ol>
-<li>RancherOS</li>
-<li>HypriotOS</li>
-<li>Rasbian 基础上安装Docker</li>
-</ol>
+<p>接着，我们需要对树莓派的系统进行容器化，以便我们可以运行noip容器程序，此时可以有三种选择：
+1. RancherOS
+2. HypriotOS
+3. Rasbian 基础上安装Docker</p>
 
 <p>前两个都是内置Docker Engine的，用起来比较方便，Rasbian需要自行安装Docker。我选择的OS是RancherOS。</p>
 
 <h3 id="最简方式部署noip-只需三步">最简方式部署noip，只需三步</h3>
 
-<p>在RancherOS上修改registry mirror后，可以加速镜像下载，然后拉取前面Dockerfile编译的镜像：</p>
+<p>在RancherOS上修改registry mirror后，可以加速镜像下载，然后拉取前面Dockerfile编译的镜像：<br />
+<code>$ docker pull hypriot/rpi-noip</code></p>
 
-<p><code>$ docker pull hypriot/rpi-noip</code></p>
+<p>注册noip client，按照提示添加用户名密码等信息：<br />
+<code>$ docker run -ti -v noip:/usr/local/etc/ hypriot/rpi-noip noip2 -C</code></p>
 
-<p>注册noip client，按照提示添加用户名密码等信息：</p>
+<p>运行noip clent：<br />
+<code>$ docker run -v noip:/usr/local/etc/ --restart=always hypriot/rpi-noip</code></p>
 
-<p><code>$ docker run -ti -v noip:/usr/local/etc/ hypriot/rpi-noip noip2 -C</code></p>
-
-<p>运行noip clent：</p>
-
-<p><code>$ docker run -v noip:/usr/local/etc/ --restart=always hypriot/rpi-noip</code></p>
-
-<p>登录No-IP的<a href="https://my.noip.com/#!/dynamic-dns">控制台</a>可以看到 dns绑定情况：
+<p>登录No-IP的<a href="https://my.noip.com/#!/dynamic-dns">控制台</a>可以看到 dns绑定情况：<br />
 <img src="http://ww2.sinaimg.cn/large/006tNc79jw1fa0v2h5umhj30km05rjs0.jpg" alt="" /></p>
 
-<p>在本地使用dig确认一下解析情况：
+<p>在本地使用dig确认一下解析情况：<br />
 <img src="http://ww2.sinaimg.cn/large/006tNc79jw1fa0v2po6wfj30gy08yjt4.jpg" alt="" /></p>
 
 <p>以上所有源码可以参考：<a href="https://github.com/hypriot/rpi-noip">https://github.com/hypriot/rpi-noip</a>。
@@ -499,6 +493,19 @@
         </div>
 
         
+<nav id="article-nav">
+    
+    <a href="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">
+          老的
+      </strong>
+      <div class="article-nav-title">如何hack一下rancher k8s</div>
+    </a>
+    
+
+    
+</nav>
+
 
     </article>
 
@@ -562,6 +569,32 @@
                 </div>
             </li>
             
+            <li>
+                <div class="item-thumbnail">
+                    <a href="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking" class="thumbnail">
+                    
+                        <span class="thumbnail-image thumbnail-none"></span>
+                    
+                    </a>
+                </div>
+                <div class="item-inner">
+                    
+                    
+                    <p class="item-category">
+                        
+                        <a class="article-category-link" href="http://niusmallnan.com/categories/coding">
+                        coding
+                        </a>
+                    </p>
+                    
+                    
+                    <p class="item-title"><a href="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking" class="title">如何hack一下rancher k8s</a></p>
+                    <p class="item-date">
+                        <time datetime="2016-10-08 16:09:24 &#43;0800 CST" itemprop="datePublished">2016-10-08</time>
+                    </p>
+                </div>
+            </li>
+            
         </ul>
     </div>
 </div>
@@ -580,7 +613,7 @@
                 <a class="category-list-link" href="http://niusmallnan.com/categories/coding">
                     coding
                 </a>
-                <span class="category-list-count">1</span>
+                <span class="category-list-count">2</span>
             </li>
             
         </ul>
@@ -604,6 +637,22 @@
                 
                 <a class="category-list-link" href="http://niusmallnan.com/tags/docker">
                     docker
+                </a>
+                <span class="category-list-count">1</span>
+            </li>
+            
+            <li class="category-list-item">
+                
+                <a class="category-list-link" href="http://niusmallnan.com/tags/kubernetes">
+                    kubernetes
+                </a>
+                <span class="category-list-count">1</span>
+            </li>
+            
+            <li class="category-list-item">
+                
+                <a class="category-list-link" href="http://niusmallnan.com/tags/rancher">
+                    rancher
                 </a>
                 <span class="category-list-count">1</span>
             </li>
@@ -634,6 +683,12 @@
         
         
         <a href="http://niusmallnan.com/tags/docker" style="font-size: 12px;">docker</a>
+        
+        
+        <a href="http://niusmallnan.com/tags/kubernetes" style="font-size: 12px;">kubernetes</a>
+        
+        
+        <a href="http://niusmallnan.com/tags/rancher" style="font-size: 12px;">rancher</a>
         
         
         <a href="http://niusmallnan.com/tags/raspberry-pi" style="font-size: 12px;">raspberry-pi</a>
