@@ -1,0 +1,180 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>巧用flavor metadata决定虚机的宿主机 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../index.html" />
+    <link rel="next" title="openstack中的协程" href="openstack/coroutine_usage.html" />
+    <link rel="prev" title="宿主机资源隔离(未完)" href="datacenter/isolate_resource.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="openstack/coroutine_usage.html" title="openstack中的协程"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="datacenter/isolate_resource.html" title="宿主机资源隔离(未完)"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="flavor-metadata">
+<h1>巧用flavor metadata决定虚机的宿主机<a class="headerlink" href="#flavor-metadata" title="Permalink to this headline">¶</a></h1>
+<p>关于创建虚拟机，收到一个需求，是希望通过单纯地指定flavor来确定该虚机被创建的区域，于是做了些小研究，阅读了些源码，记录一下。</p>
+<div class="section" id="id1">
+<h2>实现原理<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>如果不知道nova如何确定在哪台Host上创建虚机的过程，请查看这篇文档 <a class="reference internal" href="host_aggregates.html"><em>资源池物理主机分组方案</em></a> ，
+读完后，您的脑海中应该会有一个filter_properties的概念，这个对物理Host的选择，
+起到至关重要的作用。那么它的属性都是哪些因素决定的呢？</p>
+<p>阅读源码得知，filter_properties的组成大致如下:</p>
+<div class="highlight-python"><div class="highlight"><pre>instance_type : 调用get_flavor_by_flavor_id 和传入的flavor相关
+
+availability_zone : nova boot 时传入的 --availability-zone
+
+scheduler_hint: nova boot 时传入的 --hint
+</pre></div>
+</div>
+<p>get_flavor_by_flavor_id 返回的就是flavor的extra_specs属性，如此我们便可通过flavor来改变filter_properties，进而控制物理Host的选择策略。</p>
+<p>filter_properties可以改变了，但是我们还差左后一步，我们需要一个Filter来处理传入的参数。
+好在，强大的openstack社区已经给我们准备好了，只不过这个Filter并不是默认生效的，您需要在配置中开启，了解他的原理请看scheduler/filters/aggregate_instance_extra_specs.py的代码。</p>
+</div>
+<div class="section" id="id2">
+<h2>实践方法<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<p>创建一个新的flavor命名为test，给extra_specs添加一个availability_zone属性，
+一系列操作后这个flavor的detail大致是这样的:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ nova flavor-show 88
++----------------------------+----------------------------------+
+| Property                   | Value                            |
++----------------------------+----------------------------------+
+| name                       | test                             |
+| ram                        | 1024                             |
+| OS-FLV-DISABLED:disabled   | False                            |
+| vcpus                      | 2                                |
+| extra_specs                | {u&#39;availability_zone&#39;: u&#39;horde&#39;} |
+| swap                       | 128                              |
+| os-flavor-access:is_public | True                             |
+| rxtx_factor                | 1.0                              |
+| OS-FLV-EXT-DATA:ephemeral  | 0                                |
+| disk                       | 5                                |
+| id                         | 88                               |
++----------------------------+----------------------------------+
+</pre></div>
+</div>
+<p>建立一个availability_zone名为horde，并关联主机compute2，最终的效果是:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ nova-manage service list
+Binary           Host              Zone
+nova-compute     compute1          nova
+nova-compute     compute2          horde
+</pre></div>
+</div>
+<p>修改nova.conf的scheduler_default_filters配置，<tt class="docutils literal"><span class="pre">增加AggregateInstanceExtraSpecsFilter，但同时要注意去掉ComputeCapabilitiesFilter</span></tt>，
+否则哥俩会有冲突导致不能过滤出可用的Host，可以参考下面的配置:</p>
+<div class="highlight-python"><div class="highlight"><pre>修改前是默认配置
+scheduler_default_filters=RetryFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter
+
+修改后
+scheduler_default_filters=RetryFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter,ImagePropertiesFilter,AggregateInstanceExtraSpecsFilter
+</pre></div>
+</div>
+<p>修改完后需要重启nova-scheduler服务，然后就可以选用这个flavor创建虚机，
+最终你会看到这个flavor创建的虚机都会建到指定的zone上。</p>
+<p>Nova组件有很多不错的功能，官方文档并没有写得很详细，需要好好研读代码，
+才能挖掘出来。</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">巧用flavor metadata决定虚机的宿主机</a><ul>
+<li><a class="reference internal" href="#id1">实现原理</a></li>
+<li><a class="reference internal" href="#id2">实践方法</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="datacenter/isolate_resource.html"
+                        title="previous chapter">宿主机资源隔离(未完)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="openstack/coroutine_usage.html"
+                        title="next chapter">openstack中的协程</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/_templates/flavor_metadata.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="openstack/coroutine_usage.html" title="openstack中的协程"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="datacenter/isolate_resource.html" title="宿主机资源隔离(未完)"
+             >previous</a> |</li>
+        <li><a href="../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

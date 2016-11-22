@@ -1,0 +1,168 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Nova实现虚拟机块迁移 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="openstack中的metadata server" href="metadata_server.html" />
+    <link rel="prev" title="Nova中VIF的实现" href="nova_vif.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="metadata_server.html" title="openstack中的metadata server"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="nova_vif.html" title="Nova中VIF的实现"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="nova">
+<h1>Nova实现虚拟机块迁移<a class="headerlink" href="#nova" title="Permalink to this headline">¶</a></h1>
+<p>块迁移，是动态迁移（live migration）的一种，在不需要共享存储的情况下，将虚拟机迁移到其它宿主机上，迁移过程中不需要关闭虚拟机。拷贝instance文件到目标宿主机上，并重新加载网络策略。</p>
+<p>如果虚机的根磁盘是raw格式的，那么整个迁移过程十分漫长，尤其是你的虚机如果构建在ceph的rbd上，那么使用这种方式迁移虚机是非常不明智的。而如果根磁盘是qcow的，那么想对会快速一些。</p>
+<p>更多详情请参考 <a class="reference external" href="http://docs.openstack.org/admin-guide-cloud/content/section_configuring-compute-migrations.html">官方文档</a></p>
+<div class="section" id="id2">
+<h2>Nova的支持<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<p>Nova迁移虚拟机是调用通过调用libvirt实现的，毕竟libvirt已经封装了针对各个虚拟化技术的统一接口，这点通过Nova代码可知:</p>
+<div class="highlight-python"><div class="highlight"><pre># Do live migration.
+try:
+    if block_migration:
+        flaglist = CONF.block_migration_flag.split(&#39;,&#39;)
+    else:
+        flaglist = CONF.live_migration_flag.split(&#39;,&#39;)
+    flagvals = [getattr(libvirt, x.strip()) for x in flaglist]
+    logical_sum = reduce(lambda x, y: x | y, flagvals)
+
+    dom = self._lookup_by_name(instance[&quot;name&quot;])
+    dom.migrateToURI(CONF.live_migration_uri % dest,
+                    logical_sum,
+                    None,
+                    CONF.live_migration_bandwidth)
+</pre></div>
+</div>
+<p>这里的libvirt是对底层libvirt接口封装的Python库，live_migration_uri是nova.conf的配置:</p>
+<div class="highlight-python"><div class="highlight"><pre># Migration target URI (any included &quot;%s&quot; is replaced with the
+# migration target hostname) (string value)
+live_migration_uri=qemu+tcp://%s/system
+</pre></div>
+</div>
+<p>基本上Nova是不需要怎么配置的，真正的配置都在libvirt上。</p>
+</div>
+<div class="section" id="libvirt">
+<h2>libvirt配置<a class="headerlink" href="#libvirt" title="Permalink to this headline">¶</a></h2>
+<p>主要是libvirtd.conf的配置，它通常在/etc/libvirt 下面，一般我们启用普通的TCP端口就行了，另外值得注意的是监听的ip地址一定要和该compute-node所在网络的ip一致:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">listen_tls</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">listen_tcp</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">tcp_port</span> <span class="o">=</span> <span class="s">&quot;16509&quot;</span>
+<span class="n">listen_addr</span> <span class="o">=</span> <span class="s">&quot;11.11.11.103&quot;</span>
+<span class="n">auth_tcp</span> <span class="o">=</span> <span class="s">&quot;none&quot;</span> <span class="c">#如果你不想搞那些繁琐的鉴权配置</span>
+</pre></div>
+</div>
+<p>ubuntu下 /etc/default/libvirt-bin 也要修改:</p>
+<div class="highlight-python"><div class="highlight"><pre>libvirtd_opts=&quot;-d -l&quot;
+
+#重启libvirtd
+service libvirt-bin restart
+</pre></div>
+</div>
+<p>然后你就可以迁移你的虚机了，注意使用命令行迁移的时候一定要加&#8211;block-migrate，否则Nova会判断是否在共享存储上。</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Nova实现虚拟机块迁移</a><ul>
+<li><a class="reference internal" href="#id2">Nova的支持</a></li>
+<li><a class="reference internal" href="#libvirt">libvirt配置</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="nova_vif.html"
+                        title="previous chapter">Nova中VIF的实现</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="metadata_server.html"
+                        title="next chapter">openstack中的metadata server</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/block_migration.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="metadata_server.html" title="openstack中的metadata server"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="nova_vif.html" title="Nova中VIF的实现"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

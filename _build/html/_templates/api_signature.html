@@ -1,0 +1,190 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>API签名技术方案 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../index.html" />
+    <link rel="next" title="租户用户体系设计方案" href="user_system.html" />
+    <link rel="prev" title="资源池物理主机分组方案" href="host_aggregates.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="user_system.html" title="租户用户体系设计方案"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="host_aggregates.html" title="资源池物理主机分组方案"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="api">
+<h1>API签名技术方案<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h1>
+<p>RESTful API面向公共开放时候，除了性能之外安全也是很重要的，
+本方案主要目的是解决它所面临的安全挑战</p>
+<div class="section" id="id1">
+<h2>实现原理<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>通过对访问API的每个请求进行签名，使得每次请求都是可信的，而且是不可伪造的，他的大致流程是这样的:</p>
+<img alt="../_images/signature_flow.png" src="../_images/signature_flow.png" />
+<ul class="simple">
+<li>API Signature，每次Client端请求时都进行签名，并将签名信息放入Request Headers一同发送到Server</li>
+<li>Check Signature，Server段收到请求后，使用同样的签名策略生成签名信息，并与Client发来的进行比对</li>
+<li>比对签名成功，Server正常处理该请求，否则response相关错误信息到Client</li>
+<li>Client得到reponse content，并展现相关信息</li>
+</ul>
+<p>如此看来Signature的过程是重中之重了，它的生成总共分为三步:</p>
+<img alt="../_images/api_signature.png" src="../_images/api_signature.png" />
+<p>假定我们有一个http request的消息体是这样的:</p>
+<div class="highlight-python"><div class="highlight"><pre>curl -i -X POST http://127.0.0.1:9898/v1/zabbix -H &quot;X-Auth-Token: 1cb9337742733ccd8482167609266ae6&quot; \
+    -H &quot;X-Neunn-UUID: 7eebe000a41a485eb6535e9b5aba9310&quot; \
+    -H &quot;X-Neunn-Sign: 313ccf919e4f42faa30d69cc3727b907&quot; \
+    --data &quot;{&#39;output&#39;: &#39;extend&#39;, &#39;host&#39;: &#39;20.20.20.34&#39;, &#39;application&#39;: &#39;Memory&#39;}&quot;
+
+---Header---
+POST /v1/zabbix HTTP/1.0
+Accept: application/json
+Accept-Encoding: gzip, deflate, compress
+Content-Length: 68
+Content-Type: application/json
+Host: 127.0.0.1:9898
+X-Auth-Token: 1cb9337742733ccd8482167609266ae6
+Date: Fri, 28 Feb 2014 06:25:24 GMT
+X-Neunn-UUID: 7eebe000a41a485eb6535e9b5aba9310
+X-Neunn-Sign: 313ccf919e4f42faa30d69cc3727b907
+
+---Body---
+{&quot;output&quot;: &quot;extend&quot;, &quot;host&quot;: &quot;20.20.20.34&quot;, &quot;application&quot;: &quot;Memory&quot;}
+</pre></div>
+</div>
+<p>相关说明：</p>
+<blockquote>
+<div><ul class="simple">
+<li>HTTP verb，该请求是POST方法</li>
+<li>URL，不解释</li>
+<li>Query String，Get方法就是请求的参数，Post就是请求的Body部分，对于Get请求注意要排序后再拼接</li>
+<li>TimeStamp，采用ISO8601标准，Client与Server都是用Header中Date的值进行转换使用</li>
+<li>SigningKey，这个key相当于签名的钥匙，可以考虑使用md5(password)，更安全的作法是使用Hash算法独立生成</li>
+<li>HMAC-SHA256，一种签名算法，使用它主要是参考aws</li>
+<li>X-Neunn-UUID，Server端用来反查SigningKey</li>
+<li>X-Neunn-Sign，Client生成的签名信息，传入Server用于比对签名</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="fqa">
+<h2>FQA<a class="headerlink" href="#fqa" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p class="first">Client是如何拥有UUID和SigningKey的:</p>
+<div class="highlight-python"><div class="highlight"><pre>通常使用SDK开发时，UUID和SigningKey是可以直接发放给用户使用的，
+也可用使用username和password通过Https请求获取。
+</pre></div>
+</div>
+</li>
+<li><p class="first">如果我们没有使用HTTPS，而且消息体被截获，那么怎么保证API不被恶意调用，所谓的中间人攻击:</p>
+<div class="highlight-python"><div class="highlight"><pre>Server端可以对TimeStamp进行校验，比如可以超过Date值5min的请求，被终止调用，这样可以在被攻击的时候减少损失。
+</pre></div>
+</div>
+</li>
+<li><p class="first">如此多的加密签名计算过程，是否对整体访问性能有影响:</p>
+<div class="highlight-python"><div class="highlight"><pre>有影响是必须的，安全和快速是矛盾的！
+</pre></div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">API签名技术方案</a><ul>
+<li><a class="reference internal" href="#id1">实现原理</a></li>
+<li><a class="reference internal" href="#fqa">FQA</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="host_aggregates.html"
+                        title="previous chapter">资源池物理主机分组方案</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="user_system.html"
+                        title="next chapter">租户用户体系设计方案</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/_templates/api_signature.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="user_system.html" title="租户用户体系设计方案"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="host_aggregates.html" title="资源池物理主机分组方案"
+             >previous</a> |</li>
+        <li><a href="../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

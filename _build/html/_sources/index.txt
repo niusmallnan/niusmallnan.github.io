@@ -1,0 +1,178 @@
+.. niusmallnan documentation master file, created by
+   sphinx-quickstart on Tue Feb 18 13:49:43 2014.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+=======================================
+欢迎来访
+=======================================
+博客内原创技术文档属于个人知识产权所有，非作者本人允许，不得用于商业用途，
+更不允许对作品内容进行实质性修改。技术爱好者欢迎转载学习，
+但必须著名原作者(niusmallnan)及转载原出处。
+
+个人简介：
+初出茅庐在阿里口碑网，后与朋友创业创办美食点评网站meishixing.com，
+后离开加入东网（Neunn）从事OpenStack和Docker相关开发工作，
+在云计算领域有一定经验，目前在公司担任Rancher平台的技术负责人。
+
+这里暂时放一些日常些的技术文档、项目方案之类的
+如对文章内容有疑问，请联系牛小腩.
+
+qq: 584107985
+
+zhangzhibo521@gmail.com
+
+有好的合作机会工作机会多多联系，gmail上去挺费劲，直接加q聊。
+
+如果您对我普及OpenStack和Rancher相关知识表示感谢，可以扫描下面的二维码为我捐助(支付宝)
+
+.. image:: /images/qr-pay.png
+
+数据中心建设技术方案
+=======================
+
+.. toctree::
+    :maxdepth: 1
+
+    _templates/tenant_solution
+    _templates/host_aggregates
+    _templates/api_signature
+    _templates/user_system
+    _templates/sdn_test
+    _templates/datacenter/cells_or_regions
+    _templates/datacenter/isolate_resource
+
+openstack学习 
+=======================
+
+.. toctree::
+    :maxdepth: 1
+
+    _templates/flavor_metadata
+    _templates/openstack/coroutine_usage
+    _templates/openstack/learn_guide
+    _templates/openstack/how_to_sdn
+    _templates/openstack/nova_vif
+    _templates/openstack/block_migration
+    _templates/openstack/metadata_server
+    _templates/openstack/vm_data_flow
+    _templates/openstack/ceilometer_collect
+    _templates/openstack/ceilometer_api
+    _templates/openstack/vm_snapshot
+    _templates/openstack/inject_passwd
+    _templates/openstack/optimize_vm_io
+    _templates/openstack/vm_first_boot_fast
+    _templates/openstack/fuel_ostf
+    _templates/openstack/designate_dnsaas
+    _templates/openstack/osprofiler
+
+openstack增强特性
+=======================
+.. toctree::
+    :maxdepth: 1
+
+    _templates/openstack/create_vm_fast_base_rbd
+    _templates/openstack/large_rbd_delete
+    _templates/openstack/libvirt_memory_usage
+    _templates/openstack/neutron_lbaas_ha
+    _templates/openstack/rbd_snap_insteadof_qemu_snap
+    _templates/openstack/rbd_live_migration
+    _templates/openstack/l3_qos
+
+openstack开发(构思中)
+=======================
+.. toctree::
+    :maxdepth: 1
+
+    _templates/openstack/integrate_keystone
+    _templates/openstack/read_setting
+    _templates/openstack/api_develop
+    _templates/openstack/db_version
+
+openstack部署
+=======================
+.. toctree::
+    :maxdepth: 1
+
+    _templates/openstack/arista_setup
+    _templates/openstack/mlnx_setup
+    _templates/openstack/lbaas_setup
+    _templates/openstack/fwaas_setup
+    _templates/openstack/vpnaas_setup
+    _templates/openstack/diors_cinder_swift
+    _templates/openstack/maas_juju
+    _templates/openstack/keystone_cache_setting
+    _templates/openstack/nova_iscsi
+    _templates/openstack/muilt_dhcp
+    _templates/openstack/improve_dhcp_agent
+    _templates/openstack/build_vm_images
+
+openvswitch
+=======================
+.. toctree::
+    :maxdepth: 1
+
+    _templates/openvswitch/operation_guide
+
+docker
+=======================
+.. toctree::
+    :maxdepth: 1
+
+    _templates/docker/introduction
+    _templates/docker/depoly_openstack_api
+    _templates/docker/integrated_nova
+    _templates/docker/docker_tips
+
+Golang
+=======================
+.. toctree::
+    :maxdepth: 1
+
+    _templates/golang/vim_env
+
+Rancher
+=======================
+.. toctree::
+    :maxdepth: 1
+
+    _templates/rancher/technology_stack
+    _templates/rancher/convoy_experience
+    _templates/rancher/confd_metadata
+
+奇技淫巧
+=======================
+.. toctree::
+    :maxdepth: 1
+
+    _templates/knowladge/func_cache
+    _templates/knowladge/pythonic_singleton
+    _templates/knowladge/kde_clock
+    _templates/knowladge/python_https_server
+    _templates/knowladge/python_websocket_server
+    _templates/knowladge/resize_raw_file
+    _templates/knowladge/modify_maas_image
+
+杂七杂八 
+=======================
+
+.. toctree::
+    :maxdepth: 1
+
+    _templates/python_exam
+    _templates/ubuntu_tips
+    _templates/openstack/faq_tips
+    _templates/salt_tips
+    _templates/others/listen_http
+
+深藏功与名
+=======================
+.. toctree::
+    :maxdepth: 1
+
+    _templates/others/fengyujiancheng
+
+
+
+
+

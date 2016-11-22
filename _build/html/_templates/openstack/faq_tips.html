@@ -1,0 +1,223 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>OpenStack问题解决大全 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="Salt问题及技巧整理" href="../salt_tips.html" />
+    <link rel="prev" title="Ubuntu问题及技巧整理" href="../ubuntu_tips.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../salt_tips.html" title="Salt问题及技巧整理"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../ubuntu_tips.html" title="Ubuntu问题及技巧整理"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="openstack">
+<h1>OpenStack问题解决大全<a class="headerlink" href="#openstack" title="Permalink to this headline">¶</a></h1>
+<p>整理一些工作中遇到的问题以及解决办法</p>
+<div class="section" id="horizon-cookie">
+<h2>Horizon cookie配置<a class="headerlink" href="#horizon-cookie" title="Permalink to this headline">¶</a></h2>
+<p>修改 /usr/share/openstack-dashboard/openstack_dashboard/settings.py 文件:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">SESSION_ENGINE</span> <span class="o">=</span> <span class="s">&#39;django.contrib.sessions.backends.signed_cookies&#39;</span>
+<span class="n">SESSION_COOKIE_HTTPONLY</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="n">SESSION_EXPIRE_AT_BROWSER_CLOSE</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="n">SESSION_COOKIE_SECURE</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="c">#SESSION_TIMEOUT = 1800</span>
+<span class="n">SESSION_COOKIE_AGE</span> <span class="o">=</span> <span class="mi">3600</span>
+</pre></div>
+</div>
+<p>这样cookie就能保存一段时间，而不必每次浏览器重开，都要重新输入用户密码</p>
+</div>
+<div class="section" id="id1">
+<h2>易失性存储文件系统<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>修改 /etc/nova/nova.conf</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="n">DEFAULT</span><span class="p">]</span>
+<span class="n">default_ephemeral_format</span> <span class="o">=</span> <span class="n">ext3</span> <span class="c"># ext4  xfs</span>
+</pre></div>
+</div>
+<p>这样就可以指定ephemeral disk的默认文件系统了</p>
+</div>
+<div class="section" id="nova-networkip">
+<h2>nova-network浮动ip<a class="headerlink" href="#nova-networkip" title="Permalink to this headline">¶</a></h2>
+<p>参照下面:</p>
+<div class="highlight-python"><div class="highlight"><pre>分配地址池
+用法： nova-manage floating create &lt;ip_range&gt; [--pool &lt;pool&gt;] [--interface &lt;interface&gt;]
+实例： nova-manage floating create 192.168.6.96/28 –pool demo
+参数为IP范围，前面是网络号，后面是掩码，给一个在线计算子网的地址  后面是名字，任意。
+删除地址池
+nova-manage floating delete &lt;ip_range&gt;
+列出现有的地址
+nova-manage floating list
+为实例分配一个IP地址
+nova floating-ip-create &lt;pool&gt;
+会列出1个可用的IP，例如192.168.0.100，后面的地址池名称可选。
+然后关联到实例
+nova add-floating-ip instance 192.168.0.100
+从实例移除IP
+移除操作则相反，首先解除关联。
+nova remove-floating-ip instance 192.168.0.100
+然后移除
+nova floating-ip-delete 192.168.0.100
+</pre></div>
+</div>
+</div>
+<div class="section" id="novahostname">
+<h2>nova中hostname不一致问题<a class="headerlink" href="#novahostname" title="Permalink to this headline">¶</a></h2>
+<p>nova服务中每个service都有一个host属性，这个host可以通过nova.conf 中配置得来，也会自动获取。</p>
+<p>另一个host是compute_nodes的hypervisor_hostname，这个是通过Hypervisor的api获取的，比如libvirt，则可以通过virsh hostname 看到。</p>
+<p>这两个host属性必须要保持一致，如果因为某种原因导致不一致，则会对一些服务产生影响，尤其是vm migration。</p>
+<p>另外neutron agent中的host 一定要与 nova service中的host 保持一致。</p>
+</div>
+<div class="section" id="id2">
+<h2>各组件软件包升级<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<p>如果使用ubuntu OS，当官方出了新的release版本，各个组件都有新的deb可以安装，如果一个个安装是费时，这里利用ubuntu的包依赖关系，我便可轻松搞定升级，
+以升级计算节点的nova和neutron为例:</p>
+<div class="highlight-python"><div class="highlight"><pre>apt-get -y -o Dpkg::Options::=&quot;--force-confold&quot; install nova-common neutron-common
+restart nova-compute
+restart neutron-plugin-openvswitch-agent
+</pre></div>
+</div>
+<p>其他组件只需要安装对应的common包，即可做到升级，force-confold很重要，这能保证原先的配置不会被覆盖掉。</p>
+</div>
+<div class="section" id="haproxynova-novnc">
+<h2>Haproxy代理nova-novnc<a class="headerlink" href="#haproxynova-novnc" title="Permalink to this headline">¶</a></h2>
+<p>需要在haproxy上添加:</p>
+<div class="highlight-python"><div class="highlight"><pre>listen spice_cluster
+bind &lt;Virtual IP&gt;:6080
+balance  source
+option  tcpka
+option  tcplog
+server controller1 10.0.0.1:6080 check inter 2000 rise 2 fall 5
+server controller2 10.0.0.2:6080 check inter 2000 rise 2 fall 5
+</pre></div>
+</div>
+<p>所有nova组件添加配置并安装依赖包:</p>
+<div class="highlight-python"><div class="highlight"><pre>#file nova.conf
+[DEFAULT]
+memcached_servers=&lt;memcached_host&gt;:11211
+
+apt-get install python-memcache
+
+#重启nova所有服务
+</pre></div>
+</div>
+</div>
+<div class="section" id="tcpdump">
+<h2>tcpdump使用方法<a class="headerlink" href="#tcpdump" title="Permalink to this headline">¶</a></h2>
+<p>整理如下:</p>
+<div class="highlight-python"><div class="highlight"><pre>#查看来自某虚机到vlan的数据包
+#eth5为data-network网卡
+#适用于 vlan网络类型 排错
+tcpdump -i eth5  -n -e ether host &lt;vm mac address&gt;  -vv
+</pre></div>
+</div>
+<p>更多使用方式请看 <a class="reference external" href="http://www.workrobot.com/sysadmin/security/tcpdump_expressions.html">http://www.workrobot.com/sysadmin/security/tcpdump_expressions.html</a></p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">OpenStack问题解决大全</a><ul>
+<li><a class="reference internal" href="#horizon-cookie">Horizon cookie配置</a></li>
+<li><a class="reference internal" href="#id1">易失性存储文件系统</a></li>
+<li><a class="reference internal" href="#nova-networkip">nova-network浮动ip</a></li>
+<li><a class="reference internal" href="#novahostname">nova中hostname不一致问题</a></li>
+<li><a class="reference internal" href="#id2">各组件软件包升级</a></li>
+<li><a class="reference internal" href="#haproxynova-novnc">Haproxy代理nova-novnc</a></li>
+<li><a class="reference internal" href="#tcpdump">tcpdump使用方法</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../ubuntu_tips.html"
+                        title="previous chapter">Ubuntu问题及技巧整理</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../salt_tips.html"
+                        title="next chapter">Salt问题及技巧整理</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/faq_tips.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../salt_tips.html" title="Salt问题及技巧整理"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../ubuntu_tips.html" title="Ubuntu问题及技巧整理"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

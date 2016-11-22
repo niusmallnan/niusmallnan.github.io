@@ -1,0 +1,135 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>docker与nova集成 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="docker问题及技巧整理" href="docker_tips.html" />
+    <link rel="prev" title="docker部署OpenStack API" href="depoly_openstack_api.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="docker_tips.html" title="docker问题及技巧整理"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="depoly_openstack_api.html" title="docker部署OpenStack API"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="dockernova">
+<h1>docker与nova集成<a class="headerlink" href="#dockernova" title="Permalink to this headline">¶</a></h1>
+<p>我们知道OpenStack的nova组件可以集成很多虚拟化技术，诸如kvm、hyper-v、vmware等，docker可以说是一种另类的“虚拟化”，OpenStack和docker作为时下最热门的两大开源项目，他们必须默默的牵手走在一起。</p>
+<div class="section" id="id1">
+<h2>集成过程<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>比较简单，没什么坑，安装官方的wiki做基本没有问题。</p>
+<p>需要指出的是，nova-network 和 neutron 这两种网络模式，nova-docker都是支持的。</p>
+<p>参考资料:</p>
+<p><a class="reference external" href="https://wiki.openstack.org/wiki/Docker">https://wiki.openstack.org/wiki/Docker</a></p>
+</div>
+<div class="section" id="id2">
+<h2>问题整理<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<p>在集成过程中，发现了一些坑，这里整理一下希望对大家有用:</p>
+<ul class="simple">
+<li>如果使用vxlan网络发现container不能通过floating ip访问(ssh)，你需要把container的网卡mtu设置小一点，一般为1400，由于docker使用的必须是lxc的网络模式，所以网卡就是在宿主机上对应的namespace下面。</li>
+<li>如果发现无法创建container且原因是无法将glance的镜像装载到计算节点本地，这是因为一个nova-docker driver的一个bug，镜像下载到本地后，需要load到本地的docker-images，load的时候nova-docker请求了错误的API(参数有误)，建议你直接手动把镜像load到本地即可。</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">docker与nova集成</a><ul>
+<li><a class="reference internal" href="#id1">集成过程</a></li>
+<li><a class="reference internal" href="#id2">问题整理</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="depoly_openstack_api.html"
+                        title="previous chapter">docker部署OpenStack API</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="docker_tips.html"
+                        title="next chapter">docker问题及技巧整理</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/docker/integrated_nova.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="docker_tips.html" title="docker问题及技巧整理"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="depoly_openstack_api.html" title="docker部署OpenStack API"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

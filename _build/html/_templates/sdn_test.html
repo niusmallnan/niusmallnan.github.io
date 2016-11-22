@@ -1,0 +1,155 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>SDN测试方案 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../index.html" />
+    <link rel="next" title="nova cells 还是 multi regions" href="datacenter/cells_or_regions.html" />
+    <link rel="prev" title="租户用户体系设计方案" href="user_system.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="datacenter/cells_or_regions.html" title="nova cells 还是 multi regions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="user_system.html" title="租户用户体系设计方案"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="sdn">
+<h1>SDN测试方案<a class="headerlink" href="#sdn" title="Permalink to this headline">¶</a></h1>
+<p>东网云平台采用SDN(软件定义网络)技术，以实现云平台的网络方案。本方案主要目
+的是构建一个测试方案，以便我们有足够的依据参考来完善SDN的各方面性能。</p>
+<div class="section" id="id1">
+<h2>拓扑结构<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>我们的SDN方案，主要采用openstack的neutron组件来完成，然后做个LB看起来完善一点，整体的网络拓扑结构应该是这样的：</p>
+<img alt="../_images/sdn_test_tuopu.jpg" src="../_images/sdn_test_tuopu.jpg" />
+<p>假设我们会建立这样几个租户，他们分配的网段和隔离关系是这样的：</p>
+<img alt="../_images/sdn_test_tenant.png" src="../_images/sdn_test_tenant.png" />
+<p>我们使用vlan模式，对于openstack而言，几个重要的节点间的关系，是这样的：</p>
+<img alt="../_images/sdn_test_nodes.png" src="../_images/sdn_test_nodes.png" />
+</div>
+<div class="section" id="id2">
+<h2>功能测试<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>租户隔离</li>
+<li>租户和管理节点的隔离</li>
+</ul>
+</div>
+<div class="section" id="id3">
+<h2>重要性能指标<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<p>主要测试的网络指标是下面两个:</p>
+<ul class="simple">
+<li>带宽，单位时间内从网络中的某一点到另一点所能通过的&#8221;最高数据率&#8221;,单位为b/s</li>
+<li>时延，是数据(一个报文或分组)从网络的一段传送到另一端所需要的时间</li>
+</ul>
+</div>
+<div class="section" id="id4">
+<h2>测试方法<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<p>我们考虑使用的测试工具是Iperf，它是一个网络性能测试工具。可以测试TCP和UDP
+带宽质量，可以测量最大TCP带宽，具有多种参数和UDP特性，可以报告带宽，延迟抖
+动和数据包丢失。</p>
+<p>网友总结的使用方法如下:</p>
+<p><a class="reference external" href="http://ponyjia.blog.51cto.com/917324/830800">http://ponyjia.blog.51cto.com/917324/830800</a></p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">SDN测试方案</a><ul>
+<li><a class="reference internal" href="#id1">拓扑结构</a></li>
+<li><a class="reference internal" href="#id2">功能测试</a></li>
+<li><a class="reference internal" href="#id3">重要性能指标</a></li>
+<li><a class="reference internal" href="#id4">测试方法</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="user_system.html"
+                        title="previous chapter">租户用户体系设计方案</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="datacenter/cells_or_regions.html"
+                        title="next chapter">nova cells 还是 multi regions</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/_templates/sdn_test.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="datacenter/cells_or_regions.html" title="nova cells 还是 multi regions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="user_system.html" title="租户用户体系设计方案"
+             >previous</a> |</li>
+        <li><a href="../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

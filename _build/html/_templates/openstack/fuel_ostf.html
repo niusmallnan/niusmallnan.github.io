@@ -1,0 +1,174 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>健康检查与自动化测试 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="基于ceph快速创建虚机" href="create_vm_fast_base_rbd.html" />
+    <link rel="prev" title="提升虚机创建后的启动速度" href="vm_first_boot_fast.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="create_vm_fast_base_rbd.html" title="基于ceph快速创建虚机"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="vm_first_boot_fast.html" title="提升虚机创建后的启动速度"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="id1">
+<h1>健康检查与自动化测试<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+<p>当你搭建完一整套openstack环境，你希望对他进行一个健康检查，这个检查不仅仅局限于进程服务级别，你希望深入到组件内部调用机制上，比如真正去创建vm并测试他网络的连通性。</p>
+<p>当你在开发时，对openstack打了一些自己开发的补丁，需要测试一下整体功能是否有影响，你需要跑一些自动化测试的用例，而且他能基本覆盖openstack的功能。</p>
+<p>正常人面对这种需求有两种选择，自己开发或者使用开源项目，自己开发的难道并不高，无非是编写测试用例，问题在于你要理顺openstack每个功能，结合业务场景编写测试用例还是破费心思的。</p>
+<p>再看开源项目，经过一些调研，发现Mirantis开源的ostf框架颇为不错，而且在他们的部署工具Fuel中应用，非常实用的一个功能。</p>
+<div class="section" id="ostf">
+<h2>运行ostf<a class="headerlink" href="#ostf" title="Permalink to this headline">¶</a></h2>
+<p>ostf是openstack孵化项目，在stackforge中可以找到 <a class="reference external" href="https://github.com/stackforge/fuel-ostf">代码库</a> ，值得注意的是ostf的版本是跟Fuel一起走的。</p>
+<p>先克隆一份代码到本地，切换到需要的稳定分支上，构建python虚拟环境，安装依赖包，这些都不会先去自学基础知识，过程就不赘述了。</p>
+<p>工程主要包括两大目录，fuel_health 和 fuel_plugin，前者是健康检查功能真正实现者，后者主要是通过API方式把ostf集成到Fuel中。我们抛开fuel_plugin，如果生产环境不用Fuel部署，这个东西对我们来说意义不大。</p>
+<p>运行fuel_health很简单，只需切到fuel_health目录执行:</p>
+<div class="highlight-python"><div class="highlight"><pre>export CUSTOM_FUEL_CONFIG=&#39;#这里替换你的test.conf的路径#&#39;
+python -m unittest2 -v
+</pre></div>
+</div>
+<p>fuel_health的本质上就是python unitest，所以运行起来并不麻烦，最大的坑在于test.conf的配置非常不完整，你需要通过不断的调试，来把test.conf的配置补充完整:</p>
+<div class="highlight-python"><div class="highlight"><pre>#比如
+[compute]
+compute_nodes = 192.168.250.49, 192.168.250.28, 192.168.250.21
+libvirt_type = kvm
+</pre></div>
+</div>
+<p>除此之外，fuel_health默认会对heat、sahara、murano等不常用组件做健康检查，如果你的环境不需要这些组件，那么你需要在fuel_health代码中去掉这些功能，当然因为这是unitest，所以你也可以有选择的执行测试用例，比如:</p>
+<div class="highlight-python"><div class="highlight"><pre>#执行ceilometer测试用例
+export CUSTOM_FUEL_CONFIG=&#39;#这里替换你的test.conf的路径#&#39;
+python -m unittest2 tests.platform_tests.test_ceilometer
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h2>ostf会做什么<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<p>ostf会真正做业务逻辑来测试功能，以test_volume_create为例，他会做如下检测:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">test_volume_create</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+   <span class="sd">&quot;&quot;&quot;Create volume and attach it to instance</span>
+<span class="sd">   Target component: Compute</span>
+
+<span class="sd">   Scenario:</span>
+<span class="sd">       1. Create a new small-size volume.</span>
+<span class="sd">       2. Wait for volume status to become &quot;available&quot;.</span>
+<span class="sd">       3. Check volume has correct name.</span>
+<span class="sd">       4. Create new instance.</span>
+<span class="sd">       5. Wait for &quot;Active&quot; status</span>
+<span class="sd">       6. Attach volume to an instance.</span>
+<span class="sd">       7. Check volume status is &quot;in use&quot;.</span>
+<span class="sd">       8. Get information on the created volume by its id.</span>
+<span class="sd">       9. Detach volume from the instance.</span>
+<span class="sd">       10. Check volume has &quot;available&quot; status.</span>
+<span class="sd">       11. Delete volume.</span>
+<span class="sd">       12. Verify that volume deleted</span>
+<span class="sd">       13. Delete server.</span>
+<span class="sd">   Duration: 350 s.</span>
+<span class="sd">   &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+<p>这样的深入检测才是有意义的。</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">健康检查与自动化测试</a><ul>
+<li><a class="reference internal" href="#ostf">运行ostf</a></li>
+<li><a class="reference internal" href="#id3">ostf会做什么</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="vm_first_boot_fast.html"
+                        title="previous chapter">提升虚机创建后的启动速度</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="create_vm_fast_base_rbd.html"
+                        title="next chapter">基于ceph快速创建虚机</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/fuel_ostf.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="create_vm_fast_base_rbd.html" title="基于ceph快速创建虚机"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="vm_first_boot_fast.html" title="提升虚机创建后的启动速度"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>提升虚机创建后的启动速度 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="健康检查与自动化测试" href="fuel_ostf.html" />
+    <link rel="prev" title="KVM虚拟机IO性能调优" href="optimize_vm_io.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="fuel_ostf.html" title="健康检查与自动化测试"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="optimize_vm_io.html" title="KVM虚拟机IO性能调优"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="id1">
+<h1>提升虚机创建后的启动速度<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+<p>虚机创建后并首次启动时，会进行元数据注入操作，可以有两种方式cloud-init与guestfs，guestfs方式非常不灵活受限很大，
+我们之前在这里（ <a class="reference internal" href="inject_passwd.html"><em>实现虚拟机ROOT密码注入</em></a> ）探讨过一些，而cloud-init可以有多种方式进行元数据注入，
+之前有讨论过EC2的方式（ <a class="reference internal" href="metadata_server.html"><em>openstack中的metadata server</em></a> ），本文主要侧重cloud-init另外一种常用方式config-drive。</p>
+<p>对于元数据注入的操作，如果使用cloud-init的EC2方式是非常耗时的，因为它要走网络请求，而且一个请求是被多次转发才能到nova-api处理，
+而使用config-drive方式则是相对省时，大大提升创建后的启动速度。</p>
+<div class="section" id="id2">
+<h2>原理以及实现<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<p>使用config drive有两种方式实现，可以通过 boot vm 时加入参数:</p>
+<div class="highlight-python"><div class="highlight"><pre># set config-drive true
+$ nova boot --config-drive true --image my-image-name --key-name mykey --flavor 1 \
+    --user-data ./my-user-data.txt myinstance --file /etc/network/interfaces=/home/myuser/instance-interfaces \
+    --file known_hosts=/home/myuser/.ssh/known_hosts --meta role=webservers --meta essential=false
+</pre></div>
+</div>
+<p>也可以在计算节点上做配置，强制使用config-drive，修改/etc/nova/nova.conf</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">force_config_drive</span><span class="o">=</span><span class="n">true</span>
+</pre></div>
+</div>
+<p>更加详细的说明，可以参考 <a class="reference external" href="http://docs.openstack.org/user-guide/content/enable_config_drive.html">官方文档</a></p>
+<p>设置完毕，创建虚机，libvirt.xml 文件会多出一段描述:</p>
+<div class="highlight-python"><div class="highlight"><pre>&lt;disk type=&quot;file&quot; device=&quot;cdrom&quot;&gt;
+    &lt;driver name=&quot;qemu&quot; type=&quot;raw&quot; cache=&quot;none&quot;/&gt;
+    &lt;source file=&quot;/var/lib/nova/instances/37bf37e7-fd38-4b31-aa1b-5dffa0c35abe/disk.config&quot;/&gt;
+    &lt;target bus=&quot;ide&quot; dev=&quot;hdd&quot;/&gt;
+&lt;/disk&gt;
+</pre></div>
+</div>
+<p>libvirt会在instance对应的目录下创建disk.config，里面的内容就是虚机对应的元数据，这个会作为一个cdrom设备挂载到虚机中，
+然后cloud-init会加载它并读取对应的内容，将元数据注入到虚机中，当然cloud-init也需要简单配置下:</p>
+<div class="highlight-python"><div class="highlight"><pre>#添加如下配置，优先使用config-drive
+datasource_list: [&#39;ConfigDrive&#39;, &#39;Ec2&#39;, &#39;NoCloud&#39;]
+datasource:
+   Ec2:
+        timeout: 2
+        max_wait: 5
+</pre></div>
+</div>
+<p>一切设定完毕后，创建新的镜像然后启动虚机，我们以ubuntu-server-1204为例，启动时间大概是10s左右。</p>
+</div>
+<div class="section" id="id4">
+<h2>其它优化项<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<p>对于ubuntu-server-1404，有一个启动非常耗时的组件pollinate，pollinate是1404新出的安全组件，pollinate是在云环境中用于提供随机数生成器的种子，
+但是他在启动时会到 entropy.ubuntu.com 这个域名去申请seed，而且还是走https请求，速度相当慢，去掉该组件后启动速度会有质的飞跃。</p>
+<p>看看这里老外兄弟是如何吐槽pollinate <a class="reference external" href="http://pastebin.com/t1wFnJZY">pollinate is stupid</a></p>
+<p>但是去掉后会不会影响，可以看看nova的源码关于config-drive的实现，nova中会自动生成一个random_seed用于实现pollinate同样的功能:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># metadata/base.py</span>
+<span class="k">def</span> <span class="nf">_metadata_as_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;uuid&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">uuid</span><span class="p">}</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">launch_metadata</span><span class="p">:</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="s">&#39;meta&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">launch_metadata</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">:</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="s">&#39;files&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra_md</span><span class="p">:</span>
+        <span class="n">metadata</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">extra_md</span><span class="p">)</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">network_config</span><span class="p">:</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="s">&#39;network_config&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">network_config</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="p">[</span><span class="s">&#39;key_name&#39;</span><span class="p">]:</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="s">&#39;public_keys&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="p">[</span><span class="s">&#39;key_name&#39;</span><span class="p">]:</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="p">[</span><span class="s">&#39;key_data&#39;</span><span class="p">]</span>
+        <span class="p">}</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="s">&#39;hostname&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hostname</span><span class="p">()</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="p">[</span><span class="s">&#39;display_name&#39;</span><span class="p">]</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="s">&#39;launch_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="p">[</span><span class="s">&#39;launch_index&#39;</span><span class="p">]</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="s">&#39;availability_zone&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">availability_zone</span>
+
+        <span class="c">#看这里 看这里</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_os_version</span><span class="p">(</span><span class="n">GRIZZLY</span><span class="p">,</span> <span class="n">version</span><span class="p">):</span>
+            <span class="n">metadata</span><span class="p">[</span><span class="s">&#39;random_seed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">urandom</span><span class="p">(</span><span class="mi">512</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">提升虚机创建后的启动速度</a><ul>
+<li><a class="reference internal" href="#id2">原理以及实现</a></li>
+<li><a class="reference internal" href="#id4">其它优化项</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="optimize_vm_io.html"
+                        title="previous chapter">KVM虚拟机IO性能调优</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="fuel_ostf.html"
+                        title="next chapter">健康检查与自动化测试</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/vm_first_boot_fast.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="fuel_ostf.html" title="健康检查与自动化测试"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="optimize_vm_io.html" title="KVM虚拟机IO性能调优"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

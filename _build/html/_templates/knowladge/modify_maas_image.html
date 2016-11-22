@@ -1,0 +1,176 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>修改maas的boot-image &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="python面试题总结" href="../python_exam.html" />
+    <link rel="prev" title="使用qemu-img改变镜像文件大小" href="resize_raw_file.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../python_exam.html" title="python面试题总结"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="resize_raw_file.html" title="使用qemu-img改变镜像文件大小"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="maasboot-image">
+<h1>修改maas的boot-image<a class="headerlink" href="#maasboot-image" title="Permalink to this headline">¶</a></h1>
+<p>maas是canonical出品的裸机部署工具，这里就不做太多介绍，裸机部署肯定需要提供镜像，但是如果对maas自带镜像有改动需求，此文对你有用(本文适用maas1.5)</p>
+<p>首先我们手动添加一个镜像:</p>
+<div class="highlight-python"><div class="highlight"><pre># 这是maas的镜像存放目录
+cd /var/lib/maas/boot-resources/current/amd64/generic
+
+# 一般自带一个trusty镜像
+# 我们要新增一个基于trusty修改的镜像
+cp -r ./trusty neunn
+cd neunn/release
+
+# root-tgz 是我们需要修改的
+
+# root-tgz 是从系统根目录打包的文件
+file root-tgz
+# root-tgz: gzip compressed data, from Unix
+</pre></div>
+</div>
+<p>修改root-tgz，比如我们修改镜像，让其root账户有个默认密码:</p>
+<div class="highlight-python"><div class="highlight"><pre># 拷贝root-tgz到操作目录
+cp root-tgz /opt/images/
+
+# 解压
+tar xzf root-tgz
+
+# 修改root密码 编辑 ./etc/shadow 文件
+
+# 重新压缩
+tar czvf root-tgz-new *
+
+# 替换原来的镜像文件
+</pre></div>
+</div>
+<p>让镜像在maas-UI上能够显示出来:</p>
+<div class="highlight-python"><div class="highlight"><pre>vim /usr/lib/python2.7/dist-packages/maasserver/enum.py
+# 修改如下
+
+class DISTRO_SERIES:
+&quot;&quot;&quot;List of supported ubuntu releases.&quot;&quot;&quot;
+default = &#39;&#39;
+trusty = &#39;trusty&#39;
+# add by niusmallnan
+neunn = &#39;neunn&#39;
+
+DISTRO_SERIES_CHOICES = (
+    (DISTRO_SERIES.default, &#39;Default Ubuntu Release&#39;),
+    #(DISTRO_SERIES.precise, &#39;Ubuntu 12.04 LTS &quot;Precise Pangolin&quot;&#39;),
+    #(DISTRO_SERIES.quantal, &#39;Ubuntu 12.10 &quot;Quantal Quetzal&quot;&#39;),
+    #(DISTRO_SERIES.raring, &#39;Ubuntu 13.04 &quot;Raring Ringtail&quot;&#39;),
+    #(DISTRO_SERIES.saucy, &#39;Ubuntu 13.10 &quot;Saucy Salamander&quot;&#39;),
+    (DISTRO_SERIES.trusty, &#39;Ubuntu 14.04 LTS &quot;Trusty Tahr&quot;&#39;),
+    (DISTRO_SERIES.neunn, &#39;Ubuntu Neunn Ncloud-Trusty&#39;),
+)
+</pre></div>
+</div>
+<p>重启maas服务:</p>
+<div class="highlight-python"><div class="highlight"><pre>service tgt                 restart
+service apache              reload
+service maas-cluster-celery restart
+service maas-dhcp-server    restart
+service maas-pserv          restart
+service maas-region-celery  restart
+service maas-txlongpoll     restart
+</pre></div>
+</div>
+<p>最后一步不要忘记，要在UI上点击一下 &#8220;Import boot Images&#8221;，等待稍许片刻，
+新增的镜像就会导入到maas中。</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="resize_raw_file.html"
+                        title="previous chapter">使用qemu-img改变镜像文件大小</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../python_exam.html"
+                        title="next chapter">python面试题总结</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/knowladge/modify_maas_image.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../python_exam.html" title="python面试题总结"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="resize_raw_file.html" title="使用qemu-img改变镜像文件大小"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

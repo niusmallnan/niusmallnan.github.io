@@ -1,0 +1,160 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>docker问题及技巧整理 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="搭建Golang的Vim开发环境" href="../golang/vim_env.html" />
+    <link rel="prev" title="docker与nova集成" href="integrated_nova.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../golang/vim_env.html" title="搭建Golang的Vim开发环境"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="integrated_nova.html" title="docker与nova集成"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="docker">
+<h1>docker问题及技巧整理<a class="headerlink" href="#docker" title="Permalink to this headline">¶</a></h1>
+<p>整理一些工作中遇到的问题以及好的技巧</p>
+<div class="section" id="containercrontab">
+<h2>如何在container中运行crontab<a class="headerlink" href="#containercrontab" title="Permalink to this headline">¶</a></h2>
+<p>看这里
+<a class="reference external" href="http://stackoverflow.com/questions/20545554/how-do-i-start-cron-on-docker-ubuntu-base">http://stackoverflow.com/questions/20545554/how-do-i-start-cron-on-docker-ubuntu-base</a></p>
+</div>
+<div class="section" id="container">
+<h2>进入container<a class="headerlink" href="#container" title="Permalink to this headline">¶</a></h2>
+<p>在docker1.3以前我们可以使用nscenter或者ssh，而之后的版本我们可以直接:</p>
+<div class="highlight-python"><div class="highlight"><pre>docker exec -it CONTAINER_NAME /bin/bash
+</pre></div>
+</div>
+</div>
+<div class="section" id="id1">
+<h2>container中实现多网卡<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>第一种方式就是我们使用host网络模式(默认是bridge模式)，这种可以映射全部物理主机网卡到容器中，那么在创建容器的时候需要这样:</p>
+<div class="highlight-python"><div class="highlight"><pre>docker run --net=host --name=test -idt ubuntu:trusty /bin/bash
+</pre></div>
+</div>
+<p>第二种就是使用pipework，一个集成了网络配置命令的的脚本，操作容器的net namespace:</p>
+<div class="highlight-python"><div class="highlight"><pre># https://github.com/jpetazzo/pipework
+E.g. 将主机上的物理网卡添加到容器内，这样容器将监听物理网卡
+pipework eth1 container_name 9.81.1.183/16
+pipework eth1 container_name DHCP
+pipework eth1 container_name 0/0
+
+E.g. 给容器添加一个新的网卡，这个网卡连接到自定义的网桥上
+pipework br0 container_name 9.81.1.166/16
+pipework ovsbr0 container_name 9.81.1.166/16
+</pre></div>
+</div>
+</div>
+<div class="section" id="id2">
+<h2>docker 国内快速安装<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<p>使用daocloud提供的源:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ curl -sSL https://get.daocloud.io/docker | sh
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">docker问题及技巧整理</a><ul>
+<li><a class="reference internal" href="#containercrontab">如何在container中运行crontab</a></li>
+<li><a class="reference internal" href="#container">进入container</a></li>
+<li><a class="reference internal" href="#id1">container中实现多网卡</a></li>
+<li><a class="reference internal" href="#id2">docker 国内快速安装</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="integrated_nova.html"
+                        title="previous chapter">docker与nova集成</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../golang/vim_env.html"
+                        title="next chapter">搭建Golang的Vim开发环境</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/docker/docker_tips.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../golang/vim_env.html" title="搭建Golang的Vim开发环境"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="integrated_nova.html" title="docker与nova集成"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

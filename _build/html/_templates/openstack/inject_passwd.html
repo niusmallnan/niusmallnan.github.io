@@ -1,0 +1,266 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>虚拟机系统密码的修改方案 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="KVM虚拟机IO性能调优" href="optimize_vm_io.html" />
+    <link rel="prev" title="虚拟机的快照" href="vm_snapshot.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="optimize_vm_io.html" title="KVM虚拟机IO性能调优"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="vm_snapshot.html" title="虚拟机的快照"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="id1">
+<h1>虚拟机系统密码的修改方案<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+<p>在创建虚拟机时候，通常我们需要让用户填写虚机系统的初始化密码，因为很多人并不习惯使用秘钥方式ssh登录，
+设置其用户密码有很多种方式，诸如早期的inject-password，或是借助cloud-init，
+甚至L版的 <a class="reference external" href="http://specs.openstack.org/openstack/nova-specs/specs/liberty/implemented/libvirt-set-admin-password.html">libvirt-set-admin-password</a> 等方式，
+本文就来介绍一下这几种方案，以及他们对应的使用场景。</p>
+<div class="section" id="inject">
+<h2>inject方式<a class="headerlink" href="#inject" title="Permalink to this headline">¶</a></h2>
+<p>inject-passwd默认是被禁用的，因为他的使用场景受限，目前来看只能支持Qcow2镜像格式。</p>
+<p>在对应的compute节点上修改nova-compute-conf:</p>
+<div class="highlight-python"><div class="highlight"><pre>#/etc/nova/nova-compute.conf
+
+[libvirt]
+virt_type=kvm
+inject_password = true #add
+inject_partition = -1  #add
+
+restart nova-compute
+</pre></div>
+</div>
+<p>修改horizon的配置文件，添加设置密码的界面:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">OPENSTACK_HYPERVISOR_FEATURES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;can_set_mount_point&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+    <span class="s">&#39;can_set_password&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>   <span class="c">#here</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>通常根据上面的步骤，一般是可以实现ROOT密码注入的，如果失败，可以按照下面的方法调试一下，确保你的机器是安装libguestfs-tools。</p>
+<p>建一台虚拟机，然后关闭该虚拟机:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ cd /var/lib/nova/instance/xxxxxxxx/
+$ export LIBGUESTFS_DEBUG=1
+$ export LIBGUESTFS_TRACE=1
+$ guestfish -a disk
+</pre></div>
+</div>
+<p>guestfish可以打开一个虚机镜像，如果打开失败，一般是权限问题，那么nova进行inject-passwd时候也不会成功，可以使用如下方法解决:</p>
+<div class="highlight-python"><div class="highlight"><pre># root
+$ update-guestfs-appliance
+$ usermod -G kvm -a nova
+$ usermod -G root -a nova
+$ chmod 0644 /boot/vmlinuz*
+
+$ restart nova-compute
+</pre></div>
+</div>
+<p>大部分OpenStack部署通常会使用Ceph做统一存储支持，这意味着虚机镜像格式是Raw格式，这种情况下inject-password方式就失去作用了。</p>
+</div>
+<div class="section" id="cloud-init">
+<h2>cloud-init方式<a class="headerlink" href="#cloud-init" title="Permalink to this headline">¶</a></h2>
+<p>这种方式需要给你的guest os 中的cloud-init组件打个patch，这个patch是这样的:</p>
+<div class="highlight-python"><div class="highlight"><pre>diff --git a/cloudinit/config/cc_set_passwords.py b/cloudinit/config/cc_set_passwords.py
+index 4ca85e2..5b5cae4 100644
+--- a/cloudinit/config/cc_set_passwords.py
++++ b/cloudinit/config/cc_set_passwords.py
+@@ -44,6 +44,12 @@ def handle(_name, cfg, cloud, log, args):
+     else:
+        password = util.get_cfg_option_str(cfg, &quot;password&quot;, None)
+
++    # use the admin_pass available in the ConfigDrive
++    if not password:
++        metadata = cloud.datasource.metadata
++        if metadata and &#39;admin_pass&#39; in metadata:
++            password = metadata[&#39;admin_pass&#39;]
++
+     expire = True
+     pw_auth = &quot;no&quot;
+     change_pwauth = False
+@@ -59,6 +65,8 @@ def handle(_name, cfg, cloud, log, args):
+         (user, _user_config) = ds.extract_default(users)
+         if user:
+             plist = &quot;%s:%s&quot; % (user, password)
++            #add change root password
++            plist = plist + &quot;\nroot:%s&quot; % password
+         else:
+             log.warn(&quot;No default or defined user to change password for.&quot;)
+</pre></div>
+</div>
+<p>由于目前cloud-init还不能读取openstack传进来的admin_pass数据，所以得扩展一下。同时cloud.cfg中也要添加:</p>
+<div class="highlight-python"><div class="highlight"><pre>chpasswd: { expire: False }
+</pre></div>
+</div>
+<p>这个能保证修改的密码不时过期的，否则vm启动后输入密码，系统让你重新修改才能进入。</p>
+<p>boot vm时候，会给你生成一个随机adminPass，使用命令行时候可以看到:</p>
+<div class="highlight-python"><div class="highlight"><pre>nova boot –flavor 1 –image cirros –nic net-id=8b052b4a-840c-4b45-b96e-7980f7fa4a74 –meta key1=test –meta key2=hello vm-meta-inject
++————————————–+—————————————+
+| Property | Value |
++————————————–+—————————————+
+| OS-EXT-STS:task_state | scheduling |
+| image | cirros |
+| OS-EXT-STS:vm_state | building |
+| OS-EXT-SRV-ATTR:instance_name | instance-0000001d |
+| OS-SRV-USG:launched_at | None |
+| flavor | m1.tiny |
+| id | e82bf7a2-176e-4f9f-83d5-c3542a7ed48e |
+| ................................
+| adminPass | aPduEQ56Yu3t |
+| ................................
+| tenant_id | 1e888eccf99845f8bcf9a9730c83a669 |
+| created | 2014-03-14T07:00:48Z |
+| os-extended-volumes:volumes_attached | [] |
++————————————–+—————————————+
+</pre></div>
+</div>
+<p>虚机在通过cloud-init获取元数据时可以使用api-metadata、ConfigDrive等方式，而借助cloud-init方式来初始化虚机密码则必须选择ConfigDrive方式，
+因为ConfigDrive方式才会把adminPass字段传递给虚机。</p>
+</div>
+<div class="section" id="id2">
+<h2>libvirt-set-admin-password<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<p>这是L版的新特性，这种方式的本质是在虚拟机内部安装qemu-guest-agent来接受相关修改密码的指令，当然这种特性对我们各个中间件的版本是有要求的:</p>
+<div class="highlight-python"><div class="highlight"><pre>libvirt              1.2.16+       宿主机
+python-libvirt       1.2.16+       宿主机
+qemu-guest-agent     2.3+          虚机内部
+</pre></div>
+</div>
+<p>使用ubuntu安装L版nova-compute，nova-compute对应的第一个版本是2:12.0.0-0ubuntu2~cloud0，这个版本的依赖包略有瑕疵，不能满足该特性，
+主要是python-libvirt的版本太低，升级python-libvirt步骤如下:</p>
+<div class="highlight-python"><div class="highlight"><pre>apt-get install python-dev pkg-config libvirt-dev
+mkdir /opt/source/ &amp;&amp; cd /opt/source
+git clone https://github.com/libvirt/libvirt-python.git &amp;&amp; cd libvirt-python
+git checkout v1.2.16 -b v1.2.16
+python setup.py build
+python setup.py install
+</pre></div>
+</div>
+<p>检查此时该包的版本:</p>
+<div class="highlight-python"><div class="highlight"><pre>python -c&quot;import libvirt;print libvirt.getVersion()&quot;
+output:1002016
+</pre></div>
+</div>
+<p>虚机内部的qemu-guest-agent版本对应的安装包这里可以找到 <a class="reference external" href="https://launchpad.net/ubuntu/+source/qemu">https://launchpad.net/ubuntu/+source/qemu</a></p>
+<p>虚机镜像除了要安装qemu-guest-agent外，镜像本身还要设置hw_qemu_guest_agent属性</p>
+<img alt="../../_images/update_image_metadata.png" src="../../_images/update_image_metadata.png" />
+<p>环境准备完毕后，启动虚拟机，使用方式如下:</p>
+<div class="highlight-python"><div class="highlight"><pre>root@l-controller-1:~# nova list
++--------------------------------------+------------+--------+------------+-------------+---------------------------------------+
+| ID                                   | Name       | Status | Task State | Power State | Networks                              |
++--------------------------------------+------------+--------+------------+-------------+---------------------------------------+
+| b8b59244-72bc-4c7a-9d7c-79a14b4bf91e | t72        | ACTIVE | -          | Running     | niu-net-1=10.10.0.10, 192.168.252.142 |
+| 840fd90a-ee5b-422c-aa8f-c1c1c61bbaed | virtio-blk | ACTIVE | -          | Running     | niu-net-1=10.10.0.11, 192.168.252.145 |
++--------------------------------------+------------+--------+------------+-------------+---------------------------------------+
+root@l-controller-1:~# nova root-password t72
+New password:
+Again:
+</pre></div>
+</div>
+<p>libvirt-set-admin-password 最大的优势在于他可以在任何时候去修改虚机系统密码，而不像前两种方式，
+只能在初始化阶段做，但是对相关依赖组件的版本要求也是硬伤。</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">虚拟机系统密码的修改方案</a><ul>
+<li><a class="reference internal" href="#inject">inject方式</a></li>
+<li><a class="reference internal" href="#cloud-init">cloud-init方式</a></li>
+<li><a class="reference internal" href="#id2">libvirt-set-admin-password</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="vm_snapshot.html"
+                        title="previous chapter">虚拟机的快照</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="optimize_vm_io.html"
+                        title="next chapter">KVM虚拟机IO性能调优</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/inject_passwd.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="optimize_vm_io.html" title="KVM虚拟机IO性能调优"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="vm_snapshot.html" title="虚拟机的快照"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Nova Compute集成iSCSI &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="多DHCP Agent方案" href="muilt_dhcp.html" />
+    <link rel="prev" title="keystone 配置token的cache" href="keystone_cache_setting.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="muilt_dhcp.html" title="多DHCP Agent方案"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="keystone_cache_setting.html" title="keystone 配置token的cache"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="nova-computeiscsi">
+<h1>Nova Compute集成iSCSI<a class="headerlink" href="#nova-computeiscsi" title="Permalink to this headline">¶</a></h1>
+<p>注意下面操作全部在root下执行</p>
+<p>首先挂载在物理机上挂载LUN:</p>
+<div class="highlight-python"><div class="highlight"><pre>#发现
+iscsiadm --mode discovery --type sendtargets --portal 172.26.0.1
+172.26.0.1:3260,257 iqn.2006-08.com.huawei:oceanstor:210004f938ebfdb4::20100:172.26.0.1
+
+#登录
+iscsiadm -m node -T iqn.2006-08.com.huawei:oceanstor:210004f938ebfdb4::20100:172.26.0.1 -l
+
+#通过 fdisk -l 检查是否挂载成功
+Disk /dev/sdb: 128.8 GB, 128849018880 bytes
+255 heads, 63 sectors/track, 15665 cylinders, total 251658240 sectors
+
+#设置该iSCSI session开机自动挂载
+iscsiadm -m node -T iqn.2006-08.com.huawei:oceanstor:210004f938ebfdb4::20100:172.26.0.1  --op update -n node.startup -v automatic
+</pre></div>
+</div>
+<p>挂载nova目录，以便虚拟机能够被创建在LUN中:</p>
+<div class="highlight-python"><div class="highlight"><pre># 格式化块设备
+mkfs.ext4 /dev/sdb
+
+# mount 目录
+mount /dev/sdb /var/lib/nova/instances/
+
+
+#权限
+chown -R nova:nova /var/lib/nova/instances/
+</pre></div>
+</div>
+<p>设置开机自动mount:</p>
+<div class="highlight-python"><div class="highlight"><pre>#取得设备的uuid
+ls -l /dev/disk/by-uuid
+
+#修改 /etc/fstab  添加如下（UUID对应的值替换掉）
+UUID=722360e9-98d0-4a6d-b0d7-b2336e51847  /var/lib/nova/instances ext4 defaults,nobootwait 0 0
+
+#修改rc.local 在exit 0前添加
+mount -a
+</pre></div>
+</div>
+<p>重启nova服务:</p>
+<div class="highlight-python"><div class="highlight"><pre>restart nova-compute
+</pre></div>
+</div>
+<p>如需深度校验，可以重启机器验证下，是否能够自动挂载:</p>
+<div class="highlight-python"><div class="highlight"><pre>root@ncloud-compute-19:~# df -hl
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1       1.1T  2.0G  1.1T   1% /
+none            4.0K     0  4.0K   0% /sys/fs/cgroup
+udev             63G  4.0K   63G   1% /dev
+tmpfs            13G 1000K   13G   1% /run
+none            5.0M     0  5.0M   0% /run/lock
+none             63G     0   63G   0% /run/shm
+none            100M     0  100M   0% /run/user
+/dev/sdb        118G  1.1G  111G   1% /var/lib/nova/instances
+</pre></div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="keystone_cache_setting.html"
+                        title="previous chapter">keystone 配置token的cache</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="muilt_dhcp.html"
+                        title="next chapter">多DHCP Agent方案</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/nova_iscsi.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="muilt_dhcp.html" title="多DHCP Agent方案"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="keystone_cache_setting.html" title="keystone 配置token的cache"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

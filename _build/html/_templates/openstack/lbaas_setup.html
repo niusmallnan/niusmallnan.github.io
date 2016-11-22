@@ -1,0 +1,298 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>LBaas部署及实现原理 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="FWaas部署及实现原理" href="fwaas_setup.html" />
+    <link rel="prev" title="Mellanox网卡优化Neutron网络性能" href="mlnx_setup.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="fwaas_setup.html" title="FWaas部署及实现原理"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="mlnx_setup.html" title="Mellanox网卡优化Neutron网络性能"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="lbaas">
+<h1>LBaas部署及实现原理<a class="headerlink" href="#lbaas" title="Permalink to this headline">¶</a></h1>
+<p>LBaas(负载均衡即服务)是基于neutron组件实现的L4-L7层的服务，目前的实现是社区提供的参考实现，离商用还是有很大一段距离的，不过我们可以大致学习参考下。</p>
+<div class="section" id="id1">
+<h2>安装部署<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>下面是network-node上的操作</p>
+<ul>
+<li><p class="first">安装lbaas-agent:</p>
+<div class="highlight-python"><div class="highlight"><pre>apt-get install neutron-lbaas-agent
+</pre></div>
+</div>
+</li>
+<li><p class="first">修改lbaas_agent.ini</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="n">DEFAULT</span><span class="p">]</span>
+<span class="n">interface_driver</span> <span class="o">=</span> <span class="n">neutron</span><span class="o">.</span><span class="n">agent</span><span class="o">.</span><span class="n">linux</span><span class="o">.</span><span class="n">interface</span><span class="o">.</span><span class="n">OVSInterfaceDriver</span>
+<span class="n">ovs_use_veth</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="n">device_driver</span> <span class="o">=</span> <span class="n">neutron</span><span class="o">.</span><span class="n">services</span><span class="o">.</span><span class="n">loadbalancer</span><span class="o">.</span><span class="n">drivers</span><span class="o">.</span><span class="n">haproxy</span><span class="o">.</span><span class="n">namespace_driver</span><span class="o">.</span><span class="n">HaproxyNSDriver</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">启动LBaas-agent</p>
+<div class="highlight-python"><div class="highlight"><pre>/usr/bin/python /usr/bin/neutron-lbaas-agent \
+    --config-file=/etc/neutron/lbaas_agent.ini \
+    --config-file=/etc/neutron/neutron.conf \
+    --log-file=/var/log/neutron/lbaas-agent.log
+</pre></div>
+</div>
+</li>
+</ul>
+<p>下面是controller-node上的操作</p>
+<ul>
+<li><p class="first">修改neutron.conf，添加一个service_plugins:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#除了router外 还需添加lbaas</span>
+<span class="n">service_plugins</span> <span class="o">=</span> <span class="n">router</span><span class="p">,</span><span class="n">lbaas</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">重启neutron-server</p>
+</li>
+<li><p class="first">修改horizon的local_setting, enable_lb为True:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">OPENSTACK_NEUTRON_NETWORK</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;enable_lb&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+    <span class="s">&#39;enable_firewall&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+    <span class="s">&#39;enable_quotas&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+    <span class="s">&#39;enable_vpn&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+    <span class="s">&#39;profile_support&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="s">&#39;profile_support&#39;</span><span class="p">:</span> <span class="s">&#39;cisco&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">重启horizon</p>
+</li>
+</ul>
+</div>
+<div class="section" id="id2">
+<h2>实现原理<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id3">
+<h3>基本流程<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>租户创建一个pool，初始时的member个数为0；</li>
+<li>租户在该pool内创建一个或多个member</li>
+<li>租户创建一个或多个health monitor</li>
+<li>租户将health monitors与pool关联</li>
+<li>租户使用pool创建vip (若要使用floating ip，还需手动关联vip)</li>
+</ul>
+</div>
+<div class="section" id="id4">
+<h3>基本概念<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p class="first">VIP</p>
+<p>可以把一个VIP看做是具有一个虚拟IP地址和指定端口的负载均衡器，当然还有其他的属性，比如均衡算法，协议等。</p>
+</li>
+<li><p class="first">Pool</p>
+<p>一个pool代表一组逻辑设备（通常是同质设备），比如web服务器。负载均衡算法会选择pool中的某一member接收进入系统的流量或连接。目前一个VIP对应一个Pool。</p>
+</li>
+<li><p class="first">Pool member</p>
+<p>代表了后端的一个应用服务器。</p>
+</li>
+<li><p class="first">Health monitor</p>
+<p>一个health monitor用来检测pool内member的状态。一个pool可对应多个health monitor。有四种类型：
+PING、TCP、HTTP、HTTPS。每种类型就是使用相应的协议对member进行检测。</p>
+</li>
+<li><p class="first">Session Persistence</p>
+<p>规定session相同的连接或请求转发的行为。目前支持三种类型：</p>
+<p>SOURCE_IP：指从同一个IP发来的连接请求被某个member接收处理；</p>
+<p>HTTP_COOKIE：该模式下，loadbalancer为客户端的第一次连接生成cookie，后续携带该cookie的请求会被某个member处理</p>
+<p>APP_COOKIE：该模式下，依靠后端应用服务器生成的cookie决定被某个member处理</p>
+</li>
+<li><p class="first">Connection Limits</p>
+<p>这个特性主要用来抵御DoS攻击</p>
+</li>
+</ul>
+<p>对象关系模型如下:</p>
+<img alt="../../_images/lbaas_er.png" src="../../_images/lbaas_er.png" />
+</div>
+<div class="section" id="id5">
+<h3>后端实现<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
+<p>目前Lbaas的Extension只有一种就是Haproxy，这个配置你可以在neutron.conf中看到:</p>
+<div class="highlight-python"><div class="highlight"><pre>service_provider=LOADBALANCER:Haproxy:neutron.services.loadbalancer.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default
+</pre></div>
+</div>
+<p>我们有两台虚机如下:</p>
+<p>20.20.20.2  lb-1</p>
+<p>20.20.20.4  lb-2</p>
+<p>设置VIP的地址为 20.20.20.6</p>
+<p>经过在horizon上一番配置，他会创建一个namespace，并启动一个Haproxy服务:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ ip netns list
+qlbaas-2b66cbf3-a125-4da1-a3c2-3d50a23ef243
+qdhcp-d6f4cf71-7937-4d90-8043-748de1e58507
+qdhcp-c9137fcf-cb06-4e7f-b856-59d1ccea9a40
+
+
+$ ip netns  exec qlbaas-2b66cbf3-a125-4da1-a3c2-3d50a23ef243 ip -4 a
+1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN
+   inet 127.0.0.1/8 scope host lo
+2: ns-13c0163f-2a: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc pfifo_fast state UP qlen 1000
+   inet 20.20.20.6/24 brd 20.20.20.255 scope global ns-13c0163f-2a
+
+
+
+#进程
+haproxy -f /var/lib/neutron/lbaas/2b66cbf3-a125-4da1-a3c2-3d50a23ef243/conf \
+    -p /var/lib/neutron/lbaas/2b66cbf3-a125-4da1-a3c2-3d50a23ef243/pid -sf 17149
+
+#对应配置
+global
+    daemon
+    user nobody
+    group nogroup
+    log /dev/log local0
+    log /dev/log local1 notice
+    stats socket /var/lib/neutron/lbaas/2b66cbf3-a125-4da1-a3c2-3d50a23ef243/sock mode 0666 level user
+defaults
+    log global
+    retries 3
+    option redispatch
+    timeout connect 5000
+    timeout client 50000
+    timeout server 50000
+frontend 49d84c18-eea9-47e1-952d-6c8e1cd892ee
+    option tcplog
+    bind 20.20.20.6:80
+    mode http
+    default_backend 2b66cbf3-a125-4da1-a3c2-3d50a23ef243
+    option forwardfor
+backend 2b66cbf3-a125-4da1-a3c2-3d50a23ef243
+    mode http
+    balance roundrobin
+    option forwardfor
+    server 344e4f67-6b0a-4ceb-9c63-75ba5b67d476 20.20.20.2:80 weight 1
+    server e974b81a-05bf-4a08-b9d2-22d4d7d16429 20.20.20.4:80 weight 1
+</pre></div>
+</div>
+<p>如果你对Haproxy还算了解，那么基本能看出个大概意思，用一句话说明Lbaas-agent做的事，就是把对Lbaas-agent的操作翻译为Haproxy的服务和配置。</p>
+</div>
+<div class="section" id="id6">
+<h3>优缺点分析<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
+<p>关于Haproxy:</p>
+<ul class="simple">
+<li>HAProxy是支持虚拟主机的，可以工作在4、7层(支持多网段)；</li>
+<li>能够补充Nginx的一些缺点比如Session的保持，Cookie的引导等工作；</li>
+<li>支持url检测后端的服务器；</li>
+<li>它跟LVS一样，本身仅仅就只是一款负载均衡软件；单纯从效率上来讲HAProxy更会比Nginx有更出色的负载均衡速度，在并发处理上也是优于Nginx的；</li>
+<li>HAProxy可以对Mysql读进行负载均衡，对后端的MySQL节点进行检测和负载均衡，不过在后端的MySQL slaves数量超过10台时性能不如LVS；</li>
+<li>HAProxy的算法较多，达到8种；</li>
+</ul>
+<p>关于LBaas-agent:</p>
+<ul class="simple">
+<li>Haproxy可以说是软件负载均衡里面做的很顶级的了，性能和功能上还都可以，不过只用haproxy会有单点故障，所以通常会Haproxy+keepAlived一起使用，保证高可用性，这点openstack还不支持。</li>
+<li>lbaas-agent是官方的一个参考实现，所以真正离商用还有距离</li>
+<li>network-node能够承载多少lbass-agent也是个未知</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">LBaas部署及实现原理</a><ul>
+<li><a class="reference internal" href="#id1">安装部署</a></li>
+<li><a class="reference internal" href="#id2">实现原理</a><ul>
+<li><a class="reference internal" href="#id3">基本流程</a></li>
+<li><a class="reference internal" href="#id4">基本概念</a></li>
+<li><a class="reference internal" href="#id5">后端实现</a></li>
+<li><a class="reference internal" href="#id6">优缺点分析</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="mlnx_setup.html"
+                        title="previous chapter">Mellanox网卡优化Neutron网络性能</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="fwaas_setup.html"
+                        title="next chapter">FWaas部署及实现原理</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/lbaas_setup.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="fwaas_setup.html" title="FWaas部署及实现原理"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="mlnx_setup.html" title="Mellanox网卡优化Neutron网络性能"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,224 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Arista SDN部署 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="Mellanox网卡优化Neutron网络性能" href="mlnx_setup.html" />
+    <link rel="prev" title="Openstack组件开发之数据库版本管理" href="db_version.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="mlnx_setup.html" title="Mellanox网卡优化Neutron网络性能"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="db_version.html" title="Openstack组件开发之数据库版本管理"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="arista-sdn">
+<h1>Arista SDN部署<a class="headerlink" href="#arista-sdn" title="Permalink to this headline">¶</a></h1>
+<p>Arista的SDN方案是基于Ml2插件，Arista的mechanism_driver也已经集成到neutron的源码中，本文只涉及openstack的配置如何调整，对于arista交换机如何设置请咨询arista的相关人员。</p>
+<div class="section" id="id1">
+<h2>部署环境<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>我们有一个简单的部署环境，但不是All-In-One这种，测试All-In-One对实际生产环境，意义不大，所以我们必须有一个简单的节点分离的部署环境。</p>
+<p>在部署arista方案之前，你必须把H版neutron之类的都配好了，比如你已经实现了ovs plugin的方案，如果还没有，那么您还是从基础一点一点来吧。</p>
+<p>我们这里有:</p>
+<div class="highlight-python"><div class="highlight"><pre>ncloud-controller   11.11.11.101
+ncloud-compute-a1   11.11.11.103
+ncloud-compute-a2   11.11.11.104
+ncloud-network      11.11.11.105
+</pre></div>
+</div>
+<p>11.11.11.0/24是我们的management-network，其它还应该有个data-network，不过这个部分和本文内容无太大关系，因为组件之间的通信都是走management-network的。</p>
+</div>
+<div class="section" id="id2">
+<h2>安装步骤<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<p>我们这里测试的是vlan模式，你如果想要测试VXLAN或者GRE之类的，建议你提前向厂商声明，因为支持vlan和VXLAN的交换机是不一样的。</p>
+<div class="section" id="id3">
+<h3>清空并初始化<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<p>如果你之前neutron中存在network、port、router之类的，那么你必须全部删除掉，对应的虚拟机也一并删除。</p>
+<p>每个节点ovs和namespace的信息也要全部清空，在所有的节点都执行如下命令:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">neutron</span><span class="o">-</span><span class="n">ovs</span><span class="o">-</span><span class="n">cleanup</span>
+<span class="n">neutron</span><span class="o">-</span><span class="n">netns</span><span class="o">-</span><span class="n">cleanup</span>
+</pre></div>
+</div>
+<p>停止controller节点上neutron-server的服务，并drop掉neutron对应的database。</p>
+<p>然后我们要重建ovs的bridge(如果之前有请删除)，我的eth2网卡是data-network，eth0可以走通外网，那么ovs的操作如下:</p>
+<p>compute节点:</p>
+<div class="highlight-python"><div class="highlight"><pre>ovs-vsctl add-br br-int
+ovs-vsctl add-br br-eth2
+ovs-vsctl add-port br-eth2 eth2
+</pre></div>
+</div>
+<p>network节点:</p>
+<div class="highlight-python"><div class="highlight"><pre>ovs-vsctl add-br br-int
+ovs-vsctl add-br br-eth2
+ovs-vsctl add-port br-eth2 eth2
+
+#external network bridge
+ovs-vsctl add-br br-ex
+ovs-vsctl add-port br-ex eth0
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h3>各节点配置<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<p>首先在所有节点上安装ml2 plugin，因为ml2插件的源码已经集成的neutron中，所以你只需把配置文件拷到对应的目录，就可以激活ml2插件了。</p>
+<p>ml2的配置各个节点都需要一份，ml2插件的配置内容如下:</p>
+<div class="highlight-python"><div class="highlight"><pre>ml2/ml2_conf.ini
+tenant_network_types = vlan
+mechanism_drivers = openvswitch,arista
+network_vlan_ranges = default:1000:2999
+
+openvswitch/ovs_neutron_plugin.ini
+bridge_mappings = default:br-eth2
+
+neutron.conf
+core_plugin = neutron.plugins.ml2.plugin.Ml2Plugin
+service_plugins = neutron.services.l3_router.l3_router_plugin.L3RouterPlugin
+</pre></div>
+</div>
+</div>
+<div class="section" id="id5">
+<h3>创建数据库<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
+<p>创建neutron对应的database，然后在controller节点执行如下操作:</p>
+<div class="highlight-python"><div class="highlight"><pre>neutron-db-manage --config-file /etc/neutron/neutron.conf \
+    --config-file /etc/neutron/plugins/ml2/ml2_conf_arista.ini \
+    --config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head
+</pre></div>
+</div>
+</div>
+<div class="section" id="id6">
+<h3>启动服务<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
+<p>neutron-server和ovs-agent服务启动有些变化，请参考下面。</p>
+<p>contro1ler:</p>
+<div class="highlight-python"><div class="highlight"><pre>/usr/bin/python /usr/bin/neutron-server \
+    --config-file /etc/neutron/neutron.conf \
+    --config-file /etc/neutron/plugins/ml2/ml2_conf_arista.ini \
+    --config-file /etc/neutron/plugins/ml2/ml2_conf.ini \
+    --log-file /var/log/neutron/server.log
+</pre></div>
+</div>
+<p>compute &amp;&amp; network:</p>
+<div class="highlight-python"><div class="highlight"><pre>/usr/bin/python /usr/bin/neutron-openvswitch-agent \
+    --config-file=/etc/neutron/neutron.conf \
+    --config-file=/etc/neutron/plugins/ml2/ml2_conf.ini \
+    --config-file=/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini \
+    --log-file=/var/log/neutron/openvswitch-agent.log
+</pre></div>
+</div>
+<p>其余neutron服务正常启动即可，</p>
+</div>
+</div>
+<div class="section" id="id7">
+<h2>其它参考<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="http://www.revolutionlabs.net/2013/11/part-2-how-to-install-openstack-havana_15.html">http://www.revolutionlabs.net/2013/11/part-2-how-to-install-openstack-havana_15.html</a></p>
+<p>或者邮件我zhangzhibo521&#64;gmail.com</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Arista SDN部署</a><ul>
+<li><a class="reference internal" href="#id1">部署环境</a></li>
+<li><a class="reference internal" href="#id2">安装步骤</a><ul>
+<li><a class="reference internal" href="#id3">清空并初始化</a></li>
+<li><a class="reference internal" href="#id4">各节点配置</a></li>
+<li><a class="reference internal" href="#id5">创建数据库</a></li>
+<li><a class="reference internal" href="#id6">启动服务</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id7">其它参考</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="db_version.html"
+                        title="previous chapter">Openstack组件开发之数据库版本管理</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="mlnx_setup.html"
+                        title="next chapter">Mellanox网卡优化Neutron网络性能</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/arista_setup.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="mlnx_setup.html" title="Mellanox网卡优化Neutron网络性能"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="db_version.html" title="Openstack组件开发之数据库版本管理"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

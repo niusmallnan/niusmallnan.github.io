@@ -1,0 +1,166 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Convoy试用小记 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="Python实现函数级cache" href="../knowladge/func_cache.html" />
+    <link rel="prev" title="Rancher架构分析" href="technology_stack.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../knowladge/func_cache.html" title="Python实现函数级cache"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="technology_stack.html" title="Rancher架构分析"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="convoy">
+<h1>Convoy试用小记<a class="headerlink" href="#convoy" title="Permalink to this headline">¶</a></h1>
+<p>关于Convoy的实现方式已经在之前的文章中介绍过( <a class="reference internal" href="technology_stack.html"><em>Rancher架构分析</em></a>)，这里我们主要进行一次实践，来体验一下Convoy如何使用。</p>
+<div class="section" id="id1">
+<h2>环境准备<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>如之前所介绍，Convoy需要连接后端存储，这里我们使用一下比较简单的GlusterFS，对于它我们可以用host部署或者直接用docker镜像创建服务。</p>
+<p>对于container部署方式，通过docker hub应该很容易找到gluster-centos &amp; gluster-fedora，选择自己擅长的在rancher中部署即可，这里需要注意的是目前的镜像是有问题的，dockerfile中标记VOLUME的地方引号有问题，如果你在使用时改问题依然没修复，建议你修改dockerfile重新build镜像。如果还想再懒一点，那就直接用rancher-catalog里面的Gluster FS，懒人专供。</p>
+<p>对于host部署方式，只需安装几个package即可，由于我们只是体验所以部署一个节点接口，如ubuntu可以参考如下方式:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ add-apt-repository ppa:gluster/glusterfs-3.7
+$ apt-get update &amp;&amp; apt-get install glusterfs-server
+</pre></div>
+</div>
+<p>GlusterFS部署完毕后，我们需要创建volume，并启用之:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ gluster volume create my_vol &lt;local_ip&gt;:/opt/brick1 force
+$ gluster volume start my_vol
+# 查看volume状态
+$ gluster volume info my_vol
+</pre></div>
+</div>
+<p>接下来我们要在rancher cluster上部署Convoy服务，我们可以使用rancher-catalog里面的convoy-glusterfs来直接部署，当然如果你有定制化的东西，可以把compose文件下载下来修改后通过rancher-compose来部署。</p>
+<p>需要注意的是GlusterFS Service这个配置，如果你用rancher service来部署GlusterFS那这里直接选择该服务即可，如果使用了外部的GlusterFS服务，那么需要创建一个External Service来关联外部服务，然后此处选择该Service即可。</p>
+<img alt="../../_images/convoy-gfs-setting.jpg" src="../../_images/convoy-gfs-setting.jpg" />
+<p>部署完毕后，会在每个host上创建convoy-agent服务，同时只创建一个Convoy-storage-pool服务。若在Rancher UI上看到相关的Service都正常，那么再在host检查一下对应的挂载目录，是否能访问。</p>
+<img alt="../../_images/convoy-mount-dir.jpg" src="../../_images/convoy-mount-dir.jpg" />
+<p>完成以上，基础环境则大功告成，接下来就是找个应用来测试一下。</p>
+</div>
+<div class="section" id="id2">
+<h2>应用部署<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<p>我们使用nginx镜像来测试一下，这里把compose文件放出来，体验一下就了解了，这里需要注意的是volume_driver对应的就是Storage Pools中的名字，
+我的是名字是convoy-gluster-pool-b，所以:</p>
+<div class="highlight-python"><div class="highlight"><pre>#docker-compose
+ngx-k:
+labels:
+  io.rancher.scheduler.global: &#39;true&#39;
+  io.rancher.scheduler.affinity:host_label: service=storage
+tty: true
+image: registry.neunn.com/nginx
+stdin_open: true
+volume_driver: convoy-gluster-pool-b
+volumes:
+  - html:/usr/share/nginx/html
+
+#rancher-compose
+{}
+</pre></div>
+</div>
+<p>部署完成后，在任意一个容器中修改/usr/share/nginx/html 的内容，即可同步到所有容器中。值得注意的是你会在宿主host上看到创建的对应目录:</p>
+<img alt="../../_images/convoy-mount-volume.jpg" src="../../_images/convoy-mount-volume.jpg" />
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Convoy试用小记</a><ul>
+<li><a class="reference internal" href="#id1">环境准备</a></li>
+<li><a class="reference internal" href="#id2">应用部署</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="technology_stack.html"
+                        title="previous chapter">Rancher架构分析</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../knowladge/func_cache.html"
+                        title="next chapter">Python实现函数级cache</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/rancher/convoy_experience.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../knowladge/func_cache.html" title="Python实现函数级cache"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="technology_stack.html" title="Rancher架构分析"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>虚拟机数据流 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="ceilometer的数据采集机制" href="ceilometer_collect.html" />
+    <link rel="prev" title="openstack中的metadata server" href="metadata_server.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="ceilometer_collect.html" title="ceilometer的数据采集机制"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="metadata_server.html" title="openstack中的metadata server"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="id1">
+<h1>虚拟机数据流<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+<p>虚拟机之间的通信，虚拟机与外网的通信，物理网卡如何参与，本文记录一个关于虚拟机数据流向的实验结果。</p>
+<p>实验工具: iftop(或者tcp-dump也可)</p>
+<p>实验环境:</p>
+<blockquote>
+<div><p>22.22.22.107    compute-node-a1</p>
+<p>22.22.22.109    compute-node-a2</p>
+<p>22.22.22.108    network-node</p>
+</div></blockquote>
+<p>虚拟网络拓扑:</p>
+<img alt="../../_images/vdf_arch.png" src="../../_images/vdf_arch.png" />
+<p>test1 66.66.66.14 in compute-node-a1</p>
+<p>test2 66.66.66.16 in compute-node-a2</p>
+<p>test3 66.66.66.17 in compute-node-a2</p>
+<p>test4 67.67.67.2 in compute-node-a2</p>
+<div class="section" id="id2">
+<h2>同一虚拟子网<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>虚拟机在相同的Hypervisor，则通信发生在内部的ovs和虚拟网卡上。</li>
+<li>虚拟机在不同的Hypervisor，那么通过Hypervisor之间的隧道连接，不会走network-node。</li>
+</ul>
+</div>
+<div class="section" id="id3">
+<h2>不同虚拟子网<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<p>不同的虚拟子网之间通信，一定要走network-node，因为涉及到跨网段，所以需要network-node中的router-namespace进行转发。</p>
+</div>
+<div class="section" id="id4">
+<h2>与外网通信<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<p>外网通信，则需要通过Hypervisor与network-node的隧道相连，然后通过绑定在网桥br-ex上的物理网卡，与外界通信。</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">虚拟机数据流</a><ul>
+<li><a class="reference internal" href="#id2">同一虚拟子网</a></li>
+<li><a class="reference internal" href="#id3">不同虚拟子网</a></li>
+<li><a class="reference internal" href="#id4">与外网通信</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="metadata_server.html"
+                        title="previous chapter">openstack中的metadata server</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="ceilometer_collect.html"
+                        title="next chapter">ceilometer的数据采集机制</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/vm_data_flow.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="ceilometer_collect.html" title="ceilometer的数据采集机制"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="metadata_server.html" title="openstack中的metadata server"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

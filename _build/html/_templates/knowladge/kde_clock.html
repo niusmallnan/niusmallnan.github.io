@@ -1,0 +1,131 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>计算KDE桌面的二进制时钟 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="python面试题总结" href="../python_exam.html" />
+    <link rel="prev" title="Pythonic Singleton的实现" href="pythonic_singleton.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../python_exam.html" title="python面试题总结"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="pythonic_singleton.html" title="Pythonic Singleton的实现"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="kde">
+<h1>计算KDE桌面的二进制时钟<a class="headerlink" href="#kde" title="Permalink to this headline">¶</a></h1>
+<p>玩过KDE桌面的，都见过很Geek的二进制时钟，不知是否都去算他的显示时间，同事
+发我看了下，我研究了下原理，写个python脚本，计算时钟的时间，还挺有趣的。</p>
+<p>先看时钟的显示图:</p>
+<img alt="../../_images/kde_binary_clock.jpg" src="../../_images/kde_binary_clock.jpg" />
+<p>它的显示原理是，一共四行六列，从左至右看列，分别是小时十位&#8211;&gt;小时个位&#8211;&gt;分钟十位&#8211;&gt;分钟个位&#8211;&gt;秒钟十位&#8211;&gt;秒钟个位，所以统统计算一下，合并就知道了，看下面的python代码:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">functools</span>
+<span class="n">int2</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">h</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">int2</span><span class="p">(</span><span class="s">&quot;0001&quot;</span><span class="p">),</span> <span class="n">int2</span><span class="p">(</span><span class="s">&quot;0101&quot;</span><span class="p">))</span>
+<span class="n">m</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">int2</span><span class="p">(</span><span class="s">&quot;0011&quot;</span><span class="p">),</span> <span class="n">int2</span><span class="p">(</span><span class="s">&quot;0010&quot;</span><span class="p">))</span>
+<span class="n">s</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">int2</span><span class="p">(</span><span class="s">&quot;0101&quot;</span><span class="p">),</span> <span class="n">int2</span><span class="p">(</span><span class="s">&quot;0101&quot;</span><span class="p">))</span>
+<span class="n">time</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">:</span><span class="si">%s</span><span class="s">:</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="n">m</span><span class="p">,</span><span class="n">s</span><span class="p">)</span>
+<span class="k">print</span> <span class="n">time</span>
+
+
+<span class="n">output</span>
+<span class="o">---------</span>
+<span class="mi">15</span><span class="p">:</span><span class="mi">32</span><span class="p">:</span><span class="mi">55</span>
+<span class="o">---------</span>
+</pre></div>
+</div>
+<p>看！就这么简单，这里用到一个functools.partial方法简化了代码的调用，他的主要作用是能够动态设置函数的某个参数默认值，并返回一个新的函数。新的函数在执行的时候，内部逻辑不变，只是参数有了默认值。</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="pythonic_singleton.html"
+                        title="previous chapter">Pythonic Singleton的实现</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../python_exam.html"
+                        title="next chapter">python面试题总结</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/knowladge/kde_clock.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../python_exam.html" title="python面试题总结"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="pythonic_singleton.html" title="Pythonic Singleton的实现"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

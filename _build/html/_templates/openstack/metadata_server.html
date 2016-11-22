@@ -1,0 +1,191 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>openstack中的metadata server &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="虚拟机数据流" href="vm_data_flow.html" />
+    <link rel="prev" title="Nova实现虚拟机块迁移" href="block_migration.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="vm_data_flow.html" title="虚拟机数据流"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="block_migration.html" title="Nova实现虚拟机块迁移"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="openstackmetadata-server">
+<h1>openstack中的metadata server<a class="headerlink" href="#openstackmetadata-server" title="Permalink to this headline">¶</a></h1>
+<p>虚拟机启动时候需要注入hostname、password、public-key、network-info之类的信息，以便虚拟机能够被租户管理。对于这些信息的注入openstack提供了两种方式，
+guestfs-inject以及metadata-server。</p>
+<p>guestfs-inject的使用很受限制尤其是并不是所有镜像都能够支持这种方式，I版本也以及取消了这种方式；
+metadata-server使用上更为灵活，但是他们都依赖镜像内部必须装有cloud-init组件，尽管如此，由于aws力挺metadata-server，所以这已经成为了虚拟机
+信息注入方案事实上的标准。</p>
+<p>本文主要探讨metadata-server在openstack中如何实现。</p>
+<div class="section" id="cloud-init">
+<h2>cloud-init<a class="headerlink" href="#cloud-init" title="Permalink to this headline">¶</a></h2>
+<p>cloud-init是一个在启动的时候定制你的Iaas平台中虚拟机的包，它可以帮助你重新定义你的虚拟机而不需要重新安装，只需要加入对应的配置项即可。在Ec2中有很多镜像都安装了cloud-init来方便用户定制自己的虚拟机。它可以让你在虚拟机启动的时候设置语言环境，设置主机名，甚至生成私钥，添加用户自己的ssh公钥到虚拟机.ssh/authorized_keys, 设置临时挂载点等等。</p>
+<p>cloud-init 项目地址: <a class="reference external" href="https://launchpad.net/cloud-init">https://launchpad.net/cloud-init</a></p>
+<p>cloud-init 文档地址: <a class="reference external" href="http://cloudinit.readthedocs.org">http://cloudinit.readthedocs.org</a></p>
+</div>
+<div class="section" id="metadata">
+<h2>metadata元数据服务<a class="headerlink" href="#metadata" title="Permalink to this headline">¶</a></h2>
+<p>metadata字面上是元数据，是一个不容易理解的概念。在除了openstack的其他场合也经常会碰到。openstack里的metadata，是提供一个机制给用户，可以设定每一个instance 的参数。</p>
+<p>Amazon首先提出了metadata的概念，并搭建了metadata的服务，这个服务的公网IP是169.254.169.254，通常虚拟机通过cloud-init发出的请求是:</p>
+<div class="highlight-python"><div class="highlight"><pre>http://169.254.169.254/latest/meta-data
+</pre></div>
+</div>
+<p>后来很多人给亚马逊定制了一些操作系统的镜像，比如 ubuntu, fedora, centos 等等，而且将里面获取 metadta 的api地址也写死了。所以opentack为了兼容，保留了这个地址 169.254.169.254。然后通过iptables nat映射到真实的api上。</p>
+<p>metadata在openstack中的BP: <a class="reference external" href="https://blueprints.launchpad.net/nova/+spec/openstack-api-metadata">https://blueprints.launchpad.net/nova/+spec/openstack-api-metadata</a></p>
+</div>
+<div class="section" id="novametadata-server">
+<h2>nova中的metadata-server<a class="headerlink" href="#novametadata-server" title="Permalink to this headline">¶</a></h2>
+<p>metadata-server的具体实现是在nova-api组件中，nova.conf中与metadata有关的配置如下:</p>
+<div class="highlight-python"><div class="highlight"><pre>enabled_apis=ec2,osapi_compute,metadata
+
+# OpenStack metadata service manager
+metadata_manager=nova.api.manager.MetadataManager
+
+# IP address for metadata api to listen
+metadata_listen=0.0.0.0
+
+# port for metadata api to listen
+metadata_listen_port=8775
+
+# Number of workers for metadata service
+metadata_workers=&lt;None&gt;
+
+# 和neutron-metadata-agent 通信相关
+service_neutron_metadata_proxy=True
+neutron_metadata_proxy_shared_secret=
+</pre></div>
+</div>
+<p>具体的代码实现在 api/metadata 下:</p>
+<div class="highlight-python"><div class="highlight"><pre>metadata=metadata {
+  __init__.py
+  base.py
+  handler.py
+  password.py
+  vendordata_json.py
+}
+</pre></div>
+</div>
+</div>
+<div class="section" id="neutron">
+<h2>与neutron的结合使用<a class="headerlink" href="#neutron" title="Permalink to this headline">¶</a></h2>
+<p>通常我们使用neutron实现虚拟机的网络方案，neutron的metadata-agent并不会自己实现metadata服务，而是把cloud-init的请求转发给nova-api中的metadata服务，具体服务流程请看下图:</p>
+<img alt="../../_images/metadata_workflow.png" src="../../_images/metadata_workflow.png" />
+<ul>
+<li><p class="first">虚拟机通过cloud-init组件请求169.254.169.254这个地址的metadata服务，这时这个请求会有两种方式处理。</p>
+<p>当虚拟机所在的子网拥有网关而且连接了l3-router，则通过qrouter的namespace中的iptables处理；
+当虚拟机所在的子网没有网关，是个封闭的子网，那么dhcp服务的虚拟网卡会添加一个169.254.169.254的ip；</p>
+</li>
+<li><p class="first">接收的cloud-init请求由ns-metadata-proxy处理，ns-metadata-proxy与metadata-agent通过unix domain socket实现IPC，实现将对ns-metadata-proxy的请求交给metadata-agent处理。</p>
+</li>
+<li><p class="first">metadata-agent接收请求，将请求交给metadata-server的真实实现者nova-api。</p>
+</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">openstack中的metadata server</a><ul>
+<li><a class="reference internal" href="#cloud-init">cloud-init</a></li>
+<li><a class="reference internal" href="#metadata">metadata元数据服务</a></li>
+<li><a class="reference internal" href="#novametadata-server">nova中的metadata-server</a></li>
+<li><a class="reference internal" href="#neutron">与neutron的结合使用</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="block_migration.html"
+                        title="previous chapter">Nova实现虚拟机块迁移</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="vm_data_flow.html"
+                        title="next chapter">虚拟机数据流</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/metadata_server.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="vm_data_flow.html" title="虚拟机数据流"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="block_migration.html" title="Nova实现虚拟机块迁移"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

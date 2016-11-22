@@ -1,0 +1,178 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>多资源池租户融合技术方案 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../index.html" />
+    <link rel="next" title="资源池物理主机分组方案" href="host_aggregates.html" />
+    <link rel="prev" title="欢迎来访" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="host_aggregates.html" title="资源池物理主机分组方案"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="欢迎来访"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="id1">
+<h1>多资源池租户融合技术方案<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+<p>东网云平台在设计中考虑多资源池统一调用，因为会涉及到不同云平台的租户融合问题。</p>
+<div class="section" id="id2">
+<h2>前置了解<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<p>我们先来看一些基本概念，保存在您的脑海中，以便让您能够理解我们在解决什么问题。</p>
+<div class="section" id="id3">
+<h3>多租户<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<p>一个租户可以是任何一个应用——或者是企业内部应用，或外部应用，它需要有自己的安全的和排他的虚拟计算环境。
+该环境包含了从存储到用户界面的所有或者某些选定的企业架构层。所有交互式应用(或租户)必然地具有多用户的性质。
+我们在设计很多系统的时候经常用到的是多用户，那么多用户和多租户有什么区别:</p>
+<div class="highlight-python"><div class="highlight"><pre>多用户的关键点在于不同的用户拥有不同的访问权限，但是多个用户共享同一个的实例。而在多租户中，多个组织使用的实例各不相同。
+</pre></div>
+</div>
+<p>当然这些都是咬文嚼字的概念，看起来没什么太大意义。</p>
+<p>一些有助理解的参考：</p>
+<ul class="simple">
+<li>云计算多租户最佳实践(<a class="reference external" href="http://www.ibm.com/developerworks/cn/cloud/library/cl-multitenantcloud/">http://www.ibm.com/developerworks/cn/cloud/library/cl-multitenantcloud/</a>)</li>
+</ul>
+</div>
+<div class="section" id="keystone">
+<h3>Keystone简介<a class="headerlink" href="#keystone" title="Permalink to this headline">¶</a></h3>
+<p>Keystone（OpenStack Identity Service）是OpenStack框架中，负责身份验证、
+服务规则和服务令牌的功能，它实现了OpenStack的IdentityAPI。Keystone类似一
+个服务总线，或者说是整个Openstack框架的注册表，其他服务通过keystone来注
+册其服务的Endpoint（服务访问的URL），任何服务之间相互的调用，需要经过
+Keystone的身份验证，来获得目标服务的Endpoint来找到目标服务。</p>
+<p>User概念:</p>
+<div class="highlight-python"><div class="highlight"><pre>Keystone中的User，他们代表可以通过keystone进行访问的人或程序。Users通过认证信息（credentials，如密码、API Keys等）进行验证。
+</pre></div>
+</div>
+<p>Tenant概念:</p>
+<div class="highlight-python"><div class="highlight"><pre>Keystone中的Tenant，也叫Project，它是各个服务中的一些可以访问的资源集合。例如，在Nova中一个tenant可以是一些机器，
+在Swift和Glance中一个tenant可以是一些镜像存储，在Neutron中一个tenant可以是一些网络资源。Users默认的总是绑定到某些tenant上。
+</pre></div>
+</div>
+<p>一些有助理解的参考：</p>
+<ul class="simple">
+<li>Keystone官方文档(<a class="reference external" href="http://docs.openstack.org/developer/keystone">http://docs.openstack.org/developer/keystone</a>)</li>
+<li>来自网友的声音(<a class="reference external" href="http://www.cnblogs.com/yuki-lau/archive/2013/01/04/2843918.html">http://www.cnblogs.com/yuki-lau/archive/2013/01/04/2843918.html</a>)</li>
+</ul>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>业务场景<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<p>云平台的设计为了未来能够兼容多资源池，将租户业务抽象出一层，由该层统一调配租户业务。如下图所示：</p>
+<img alt="../_images/kernel_and_base.png" src="../_images/kernel_and_base.png" />
+<p>本方案的核心部分就是如何实现上图的“租户与资源池映射”功能，我们可以看到Base层有一个租户概念，
+而在kernel层中每个资源池也都有自己的租户概念，那么如何实现所有资源池的租户统一调配呢？</p>
+<p>举个例子来说，假设租户A通过“公共服务API”完成一个创建虚拟机的请求，那么这个调用过程将是这样的：</p>
+<img alt="../_images/create_instance.png" src="../_images/create_instance.png" />
+</div>
+<div class="section" id="id5">
+<h2>功能实现<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<p>TBD</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">多资源池租户融合技术方案</a><ul>
+<li><a class="reference internal" href="#id2">前置了解</a><ul>
+<li><a class="reference internal" href="#id3">多租户</a></li>
+<li><a class="reference internal" href="#keystone">Keystone简介</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id4">业务场景</a></li>
+<li><a class="reference internal" href="#id5">功能实现</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../index.html"
+                        title="previous chapter">欢迎来访</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="host_aggregates.html"
+                        title="next chapter">资源池物理主机分组方案</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/_templates/tenant_solution.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="host_aggregates.html" title="资源池物理主机分组方案"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="欢迎来访"
+             >previous</a> |</li>
+        <li><a href="../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

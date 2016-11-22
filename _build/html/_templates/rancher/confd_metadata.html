@@ -1,0 +1,199 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Confd与Rancher-metadata结合的妙用 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="Python实现函数级cache" href="../knowladge/func_cache.html" />
+    <link rel="prev" title="Convoy试用小记" href="convoy_experience.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../knowladge/func_cache.html" title="Python实现函数级cache"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="convoy_experience.html" title="Convoy试用小记"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="confdrancher-metadata">
+<h1>Confd与Rancher-metadata结合的妙用<a class="headerlink" href="#confdrancher-metadata" title="Permalink to this headline">¶</a></h1>
+<p>我们在使用rancher时会发现catalog里面提供了很多常用的中间件，诸如Galera和Mongodb等还在rancher下实现了水平扩展，水平扩展意味着随着container数量的增减能够动态修改服务配置，这里面其实就用到了confd和rancher-metadata，当然也同样离不开基础的rancher-dns服务。</p>
+<div class="section" id="confd">
+<h2>扩展Confd<a class="headerlink" href="#confd" title="Permalink to this headline">¶</a></h2>
+<p>在Docker生态圈中有一个神奇的组合就是Haproxy+etcd+confd+Docker即&#8221;HECD&#8221;神奇四侠，整合了多种开源组件，看似松散的结构，事实上已经是一个有机的整体，它们互相联系、互相作用，是Docker生态圈中最理想的组合之一。它的优势不言而喻，自动、实时发现及无感知服务刷新，支持负载均衡、故障迁移，具备资源弹性，伸缩自如。</p>
+<p>这里面confd是负责将etcd中存储的配置获取出来，并在各个服务节点上刷新配置，重载服务。而在rancher体系中并没有etcd，它用rancher-metadata服务来代替了etcd，rancher fork了confd项目，并在backends中加入了rancher-metadata。</p>
+<p>重新编译的confd组件会加入到诸如rancher/galera-conf的镜像中，galera-conf对应的container是Sidekick-container，它会负责刷新配置，你会看到它所起的服务类似这样:</p>
+<img alt="../../_images/confd-service.jpg" src="../../_images/confd-service.jpg" />
+</div>
+<div class="section" id="rancher-metadata">
+<h2>解析rancher-metadata<a class="headerlink" href="#rancher-metadata" title="Permalink to this headline">¶</a></h2>
+<p>Confd的配置有两种，一种为Confd资源配置文件，默认路径为“/etc/confd/conf.d”目录，另一种为配置模板文件，默认路径为“/etc/confd/templates”。</p>
+<p>其中“src”为指定模板文件名称（默认到路径/etc/confd/templates中查找）；“dest”指定生成的Haproxy配置文件路径；“keys”指定关联Etcd中key的URI列表；“reload_cmd”指定服务重载的命令。以galera-conf的配置为例:</p>
+<div class="highlight-python"><div class="highlight"><pre>#/etc/confd/conf.d/galera.toml
+[template]
+src=&quot;galera.cnf.tmpl&quot;
+dest=&quot;/etc/mysql/conf.d/001-galera.cnf&quot;
+keys = [
+  &quot;/self&quot;
+  ]
+
+#/etc/confd/templates/galera.cnf.tmpl
+[mysqld]
+server-id = {{getv &quot;/self/container/create_index&quot;}}
+log-bin = /var/log/mysql/mariadb-bin.index
+bind-address = {{getv &quot;/self/container/primary_ip&quot;}}
+max_connections = 1000
+report_host = {{getv &quot;/self/container/name&quot;}}
+wsrep_node_name = {{getv &quot;/self/container/name&quot;}}
+wsrep_cluster_name=&quot;{{getv &quot;/self/stack/name&quot;}}&quot;
+
+# User supplied configs
+{{if exists &quot;/self/service/metadata/mysqld&quot;}}
+{{getv &quot;/self/service/metadata/mysqld&quot;}}
+{{end}}
+</pre></div>
+</div>
+<p>我们可以通过curl来模拟confd-getv的取值结果，比如:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ curl http://rancher-metadata/latest/self/container/primary_ip
+10.42.106.51
+$ curl http://rancher-metadata/latest/self/service/metadata/mysqld
+innodb_file_per_table = 1
+innodb_autoinc_lock_mode=2
+query_cache_size=0
+query_cache_type=0
+innodb_flush_log_at_trx_commit=0
+binlog_format=ROW
+default-storage-engine=innodb
+wsrep_provider=/usr/lib/galera/libgalera_smm.so
+wsrep_provider_options=&quot;gcache.size = 2G&quot;
+wsrep_sst_method=mysqldump
+wsrep_sst_auth=root:123456
+progress=1
+</pre></div>
+</div>
+<p>而这些metadata是如何配置进去的呢？目前提供的方式就是写在rancher-compose的文件中，比如galera的:</p>
+<div class="highlight-python"><div class="highlight"><pre>galera:
+scale: 3
+metadata:
+  mysqld: |
+    innodb_file_per_table = 1
+    innodb_autoinc_lock_mode=2
+    query_cache_size=0
+    query_cache_type=0
+    innodb_flush_log_at_trx_commit=0
+    binlog_format=ROW
+    default-storage-engine=innodb
+    wsrep_provider=/usr/lib/galera/libgalera_smm.so
+    wsrep_provider_options=&quot;gcache.size = 2G&quot;
+    wsrep_sst_method=mysqldump
+    wsrep_sst_auth=root:${mysql_root_password}
+    progress=1
+</pre></div>
+</div>
+</div>
+<div class="section" id="id1">
+<h2>后记<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>能够很明显的感觉到，rancher准备会开始一些闭源的项目，在docker-hub上貌似没有找到rancher集成confd组件的基本镜像，后续rancher应该会提供更多的catalog，猜测很多使用高级特性的应用应该会采取闭源措施。</p>
+<p>目前的一些catalog镜像的dockerfile的开源地址是 <a class="reference external" href="https://github.com/rancher/compose-templates">https://github.com/rancher/compose-templates</a></p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Confd与Rancher-metadata结合的妙用</a><ul>
+<li><a class="reference internal" href="#confd">扩展Confd</a></li>
+<li><a class="reference internal" href="#rancher-metadata">解析rancher-metadata</a></li>
+<li><a class="reference internal" href="#id1">后记</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="convoy_experience.html"
+                        title="previous chapter">Convoy试用小记</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../knowladge/func_cache.html"
+                        title="next chapter">Python实现函数级cache</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/rancher/confd_metadata.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../knowladge/func_cache.html" title="Python实现函数级cache"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="convoy_experience.html" title="Convoy试用小记"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

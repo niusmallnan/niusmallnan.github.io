@@ -1,0 +1,272 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Mellanox网卡优化Neutron网络性能 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="LBaas部署及实现原理" href="lbaas_setup.html" />
+    <link rel="prev" title="Arista SDN部署" href="arista_setup.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="lbaas_setup.html" title="LBaas部署及实现原理"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="arista_setup.html" title="Arista SDN部署"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="mellanoxneutron">
+<h1>Mellanox网卡优化Neutron网络性能<a class="headerlink" href="#mellanoxneutron" title="Permalink to this headline">¶</a></h1>
+<p>我们在部署openstack时候，如果使用neutron网络组件，不得不为网络性能而头痛，因为纯软件实现的SDN（OVS+VXLAN 或者 OVS+GRE），
+性能损耗是极大的。为了能实现低时延高带宽的高性能网络，需要采用一些硬件辅助的方案，我选取了Mellanox网卡的方案进行了集成和
+测试，集成过程中坑还是比较多的，也没有一份比较完整的集成文档，这里记录一下过程（openstack I版本），希望能对他人有些益处。</p>
+<div class="section" id="id1">
+<h2>实现原理<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>优化的原理就是能够去掉openvswitch带来的性能损耗，除了使用半虚拟化网卡之外，最好能在neutron框架内使用SR-IOV技术，来看下图:</p>
+<img alt="../../_images/mlnx_setup.png" src="../../_images/mlnx_setup.png" />
+</div>
+<div class="section" id="controller">
+<h2>controller节点<a class="headerlink" href="#controller" title="Permalink to this headline">¶</a></h2>
+<p>这里使用neutron的ml2插件，安全组最好用nova的(本文安全组的配置均忽略)。</p>
+<p>修改ml2配置文件:</p>
+<div class="highlight-python"><div class="highlight"><pre>[ml2]
+type_drivers = vlan, local
+tenant_network_types = vlan, local
+mechanism_drivers = openvswitch, mlnx
+
+[ml2_type_vlan]
+network_vlan_ranges = default:2:1000  #此处根据自己需求设定
+
+[eswitch]
+#vnic_type = mlnx_direct  #Pci_passthrough 半虚拟化网卡方式
+vnic_type = hostdev   # SR-IOV 方式
+apply_profile_patch = True
+</pre></div>
+</div>
+<p>重启neutron-server</p>
+</div>
+<div class="section" id="compute">
+<h2>compute节点<a class="headerlink" href="#compute" title="Permalink to this headline">¶</a></h2>
+<p>开启iommu能够支持VT-d <a class="reference external" href="http://pve.proxmox.com/wiki/Pci_passthrough">http://pve.proxmox.com/wiki/Pci_passthrough</a></p>
+<p>安装mlnx驱动，开启SR-IOV <a class="reference external" href="http://community.mellanox.com/docs/DOC-1317">http://community.mellanox.com/docs/DOC-1317</a> ，这里注意一下，如果要使用半虚拟化网卡，那么mlx4_core.conf中probe_vf的值需要指定该计算节点你想要配置的半虚拟网卡的数量。</p>
+<p>内核装载VFIO模块:</p>
+<div class="highlight-python"><div class="highlight"><pre>modprobe pci_stub
+modprobe vfio
+modprobe vfio-pci
+</pre></div>
+</div>
+<p>初始化VFIO设备 <a class="reference external" href="http://www.linux-kvm.org/wiki/images/b/b4/2012-forum-VFIO.pdf">http://www.linux-kvm.org/wiki/images/b/b4/2012-forum-VFIO.pdf</a></p>
+<p>安装eswitch 和 相关VIF driver:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ mkdir mlnx &amp;&amp; cd mlnx
+$ wget &#39;http://www.mellanox.com/downloads/solutions/openstack/icehouse/debian/python-eswitchd_0.10-1_all.deb&#39;
+$ wget &#39;http://www.mellanox.com/downloads/solutions/openstack/icehouse/debian/python-mlnxvif_2014.1.1-1_all.deb&#39;
+$ git clone https://github.com/mellanox-openstack/mellanox-eswitchd.git
+
+$ dpkg -i eswitchd_0.8-1_amd64.deb
+$ dpka -i python-mlnxvif_2014.1.1-1_all.deb
+$ cd mellanox-eswitchd &amp;&amp; 拷贝对应的upstart启动文件
+$ apt-get install python-ethtool
+
+# eswitchd upstart方式如果启动不了 则修改upstart脚本 以root方式启动
+
+$ restart eswitchd
+</pre></div>
+</div>
+<p>修改nova-compute配置:</p>
+<div class="highlight-python"><div class="highlight"><pre>[DEFAULT]
+compute_driver=nova.virt.libvirt.driver.LibvirtDriver
+[libvirt]
+virt_type=kvm
+vif_driver=mlnxvif.vif.MlxEthVIFDriver
+
+$ restart nova-compute
+</pre></div>
+</div>
+<p>计算接点使用neutron-mlnx-agent，配置如下(mlnx_conf.ini):</p>
+<div class="highlight-python"><div class="highlight"><pre>[eswitch]
+physical_interface_mappings = default:eth6   #eth6 为mlnx的网卡
+vnic_type = hostdev  # SR-IOV
+#vnic_type = mlnx_direct  # 半虚网卡
+
+[agent]
+rpc_support_old_agents = True
+
+[securitygroup]
+enable_security_group = False
+
+
+$ restart neutron-plugin-mlnx-agent
+</pre></div>
+</div>
+</div>
+<div class="section" id="network">
+<h2>network节点<a class="headerlink" href="#network" title="Permalink to this headline">¶</a></h2>
+<p>安装mlnx驱动，但是无需开启SR-IOV。</p>
+<p>安装neutron-plugin-openvswitch-agent，配置如下:</p>
+<div class="highlight-python"><div class="highlight"><pre>#修改ml2_conf.ini 增加[ovs]配置块
+[ovs]
+tenant_network_type = vlan
+bridge_mappings = default:br-eth6
+
+# openvswitch配置
+$ ovs-vsctl add-br br-eth6
+$ ovs-vsctl add-port br-eth6 eth6
+
+# 重启各项服务
+</pre></div>
+</div>
+<p>network-node其余服务正常安装，正常配置即可。</p>
+<p>openstack data-network对应在交换机上的端口需要设置trunk，allow vlan tag 对应的虚拟网络标签。</p>
+</div>
+<div class="section" id="id2">
+<h2>性能优化<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<p>在物理机上执行:</p>
+<div class="highlight-python"><div class="highlight"><pre>./mlnxperftuner --allow_changes    #输出的log有告诉你可以优化的地方
+mlnx_affinity start
+
+#查询 离网卡最近的numa
+cat /sys/class/net/eth6/device/numa_node
+# numa 绑定
+set_irq_affinity_bynode.sh &lt;numa node&gt; eth6
+</pre></div>
+</div>
+<p>在虚拟机上执行:</p>
+<div class="highlight-python"><div class="highlight"><pre>mlnx_affinity start
+
+#查询 离网卡最近的numa
+cat /sys/class/net/eth0/device/numa_node
+# numa 绑定
+set_irq_affinity_bynode.sh &lt;numa node&gt; eth0
+</pre></div>
+</div>
+<p>最后测试的性能指标的确很惊人，物理机直接的ping值大概0.05ms左右。</p>
+<p>虚拟机之间SR-IOV方式时延0.1-0.3ms，半虚拟化网卡方式0.3ms左右，带宽能够跑到7~8Gbps(我使用的是10G以太网模式)。</p>
+</div>
+<div class="section" id="id3">
+<h2>其他注意事项<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<p>openstack的vm在启动的时候，cloudinit加载时mlnx的网卡驱动还没加载进来，会出现长时间等待获取不到ip的情况，你需要做下面的设置:</p>
+<div class="highlight-python"><div class="highlight"><pre>echo &quot;mlx4_en&quot; &gt;&gt;/etc/modules
+
+#edit /etc/udev/rules.d/81-mellanox.rules
+ACTION!=&quot;add&quot;, GOTO=&quot;drivers_end&quot;
+SUBSYSTEM==&quot;net&quot;, RUN+=&quot;/sbin/modprobe mlx4_en&quot;
+LABEL=&quot;drivers_end&quot;
+</pre></div>
+</div>
+<p>如果在I版上使用macvtap网卡，而不是hostdev那种pci passthrough直连方式，需要这样:</p>
+<div class="highlight-python"><div class="highlight"><pre>#计算节点上调整sr-iov网卡 probe_vf就是半虚拟化网卡的数量
+# edit /etc/modprobe.d/mlx4_core.conf
+options mlx4_core port_type_array=2,2 num_vfs=16 probe_vf=16 enable_64b_cqe_eqe=0  log_num_mgm_entry_size=-1
+
+#创建一个macvtap port
+$ neutron port-create &lt;net-id&gt; --name &lt;port-name&gt; --binding:vnic_type macvtap
+
+#创建vm
+$ nova boot &lt;vm-name&gt; --flavor &lt;flavor-name&gt; --availability-zone &lt;az-name&gt; --image &lt;image-name&gt; --nic port-id=&lt;port-id&gt;
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Mellanox网卡优化Neutron网络性能</a><ul>
+<li><a class="reference internal" href="#id1">实现原理</a></li>
+<li><a class="reference internal" href="#controller">controller节点</a></li>
+<li><a class="reference internal" href="#compute">compute节点</a></li>
+<li><a class="reference internal" href="#network">network节点</a></li>
+<li><a class="reference internal" href="#id2">性能优化</a></li>
+<li><a class="reference internal" href="#id3">其他注意事项</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="arista_setup.html"
+                        title="previous chapter">Arista SDN部署</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="lbaas_setup.html"
+                        title="next chapter">LBaas部署及实现原理</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/mlnx_setup.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="lbaas_setup.html" title="LBaas部署及实现原理"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="arista_setup.html" title="Arista SDN部署"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>性能调优工具OSProfiler &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="基于ceph快速创建虚机" href="create_vm_fast_base_rbd.html" />
+    <link rel="prev" title="designate实现dnsaas" href="designate_dnsaas.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="create_vm_fast_base_rbd.html" title="基于ceph快速创建虚机"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="designate_dnsaas.html" title="designate实现dnsaas"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="osprofiler">
+<h1>性能调优工具OSProfiler<a class="headerlink" href="#osprofiler" title="Permalink to this headline">¶</a></h1>
+<p>OSProfiler是Mirantis开发的用于做性能调试的工具，以切面编程的方式在程序中嵌入埋点，并将收集到的信息已MQ方式发送到ceilometer服务中，
+ceilometer将这些采样数据汇总，而后我们可以通过Ceilometer API来查看这些Profiler数据。</p>
+<p>以cinder组件为例，我们来看一下使用方式</p>
+<p>修改cinder的配置 启用profiler ，并重启cinder服务:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="n">profiler</span><span class="p">]</span>
+<span class="n">profiler_enabled</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="n">trace_sqlalchemy</span> <span class="o">=</span> <span class="bp">True</span>
+</pre></div>
+</div>
+<p>修改私有的hmac_keys，配置文件在cinder的api-paste.ini文件中:</p>
+<div class="highlight-python"><div class="highlight"><pre>[filter:osprofiler]
+paste.filter_factory = osprofiler.web:WsgiMiddleware.factory
+hmac_keys = SECRET_KEY  # 可以替换成自己的
+enabled = yes
+</pre></div>
+</div>
+<p>修改ceilometer配置，使其能够保存profiler采样数据，并重启ceilometer服务:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="n">event</span><span class="p">]</span>
+<span class="n">drop_unmatched_notifications</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="p">[</span><span class="n">notification</span><span class="p">]</span>
+<span class="n">store_events</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="n">disable_non_metric_meters</span> <span class="o">=</span> <span class="bp">False</span>
+</pre></div>
+</div>
+<p>创建一块云硬盘并跟踪profiler信息:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ cinder --profile SECRET_KEY create 5 --name test-profile-5
++---------------------------------------+--------------------------------------+
+|                Property               |                Value                 |
++---------------------------------------+--------------------------------------+
+|              attachments              |                  []                  |
+|           availability_zone           |                 nova                 |
+|                bootable               |                false                 |
+|          consistencygroup_id          |                 None                 |
+|               created_at              |      2015-11-02T02:28:09.000000      |
+|              description              |                 None                 |
+|               encrypted               |                False                 |
+|                   id                  | 4aab5bb7-aae6-4613-ad5a-13c6600b3c8f |
+|                metadata               |                  {}                  |
+|            migration_status           |                 None                 |
+|              multiattach              |                False                 |
+|                  name                 |            test-profile-5            |
+|         os-vol-host-attr:host         |                 None                 |
+|     os-vol-mig-status-attr:migstat    |                 None                 |
+|     os-vol-mig-status-attr:name_id    |                 None                 |
+|      os-vol-tenant-attr:tenant_id     |   5e30ecc3c3434f24aa56801467ef1688   |
+|   os-volume-replication:driver_data   |                 None                 |
+| os-volume-replication:extended_status |                 None                 |
+|           replication_status          |               disabled               |
+|                  size                 |                  5                   |
+|              snapshot_id              |                 None                 |
+|              source_volid             |                 None                 |
+|                 status                |               creating               |
+|                user_id                |   7e7c411d5d314d5a818361c19b85114c   |
+|              volume_type              |                 None                 |
++---------------------------------------+--------------------------------------+
+Trace ID: 141925fb-c765-4a79-8522-160a091bd2ee
+To display trace use next command:
+osprofiler trace show --html 141925fb-c765-4a79-8522-160a091bd2ee
+</pre></div>
+</div>
+<p>执行最后提示的osprofiler命令即可查看最终结果，结果样例类似这样:</p>
+<img alt="../../_images/demo.png" src="../../_images/demo.png" />
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="designate_dnsaas.html"
+                        title="previous chapter">designate实现dnsaas</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="create_vm_fast_base_rbd.html"
+                        title="next chapter">基于ceph快速创建虚机</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/osprofiler.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="create_vm_fast_base_rbd.html" title="基于ceph快速创建虚机"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="designate_dnsaas.html" title="designate实现dnsaas"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

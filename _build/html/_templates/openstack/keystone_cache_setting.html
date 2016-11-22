@@ -1,0 +1,135 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>keystone 配置token的cache &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="Nova Compute集成iSCSI" href="nova_iscsi.html" />
+    <link rel="prev" title="Maas &amp; Juju 从裸机开始部署openstack" href="maas_juju.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="nova_iscsi.html" title="Nova Compute集成iSCSI"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="maas_juju.html" title="Maas &amp; Juju 从裸机开始部署openstack"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="keystone-tokencache">
+<h1>keystone 配置token的cache<a class="headerlink" href="#keystone-tokencache" title="Permalink to this headline">¶</a></h1>
+<p>keystone的Token可以存储在多种后端介质中，你可以存储在mysql中，也可以配置KVS存储，通常存储在mysql中的话，我们需要再配置一个cache，以便能够提高token相关请求的访问性能。</p>
+<div class="section" id="id1">
+<h2>配置实现<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>首先你要安装 apt-get install python-memcache memcached</p>
+<p>配置keystone.conf中的[cache]模块如下:</p>
+<div class="highlight-python"><div class="highlight"><pre>[cache]
+expiration_time=3600 #根据你需求更改
+
+backend=dogpile.cache.memcached
+backend_argument=url:localhost:11211
+
+enabled=true
+</pre></div>
+</div>
+<p>我们这里使用的是memcached做缓存，你也可以使用redis、mongodb等等，token的cache是用dogpile.cache实现的，这里backend_argument也是兼容其配置的规范。</p>
+<p>enabled一定要设为true，否则cache将不能使用。expiration_time是全局的失效时间， 其余模块如[token]和[assignment]都有cache_time属性，cache_time是各个模块的cache失效时间，cache_time如果不配置则默认expiration_time的值。</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">keystone 配置token的cache</a><ul>
+<li><a class="reference internal" href="#id1">配置实现</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="maas_juju.html"
+                        title="previous chapter">Maas &amp; Juju 从裸机开始部署openstack</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="nova_iscsi.html"
+                        title="next chapter">Nova Compute集成iSCSI</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/keystone_cache_setting.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="nova_iscsi.html" title="Nova Compute集成iSCSI"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="maas_juju.html" title="Maas &amp; Juju 从裸机开始部署openstack"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

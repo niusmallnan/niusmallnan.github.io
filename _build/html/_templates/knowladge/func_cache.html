@@ -1,0 +1,237 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Python实现函数级cache &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="Pythonic Singleton的实现" href="pythonic_singleton.html" />
+    <link rel="prev" title="docker问题及技巧整理" href="../docker/docker_tips.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="pythonic_singleton.html" title="Pythonic Singleton的实现"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../docker/docker_tips.html" title="docker问题及技巧整理"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="pythoncache">
+<h1>Python实现函数级cache<a class="headerlink" href="#pythoncache" title="Permalink to this headline">¶</a></h1>
+<p>cache是我们在优化程序运行性能的一个很直接的手段，我们会使用Redis/MongoDB这种NoSql的K-V cache，也会使用mencache这种专业的cache系统，有时候还会自己在代码中利用数据结构做一些内存cache，本文给大家秀一个比较另类的cache，就是函数级的cache。看看如何用Python实现这个func-cache？</p>
+<div class="section" id="python">
+<h2>Python装饰器<a class="headerlink" href="#python" title="Permalink to this headline">¶</a></h2>
+<p>Python是一种很美的编程语言，而其中的Decorator(一般好像都翻译作&#8221;装饰器&#8221;)则是其优雅语法的一个代表，如果你用Python还没接触过装饰器，那么很遗憾Python还没入门。</p>
+<p>如果想了解装饰器，请Google之，这不是本文重点。</p>
+<p>推荐阅读:</p>
+<ul class="simple">
+<li><a class="reference external" href="http://www.cnblogs.com/rhcad/archive/2011/12/21/2295507.html">http://www.cnblogs.com/rhcad/archive/2011/12/21/2295507.html</a></li>
+<li><a class="reference external" href="http://www.cnblogs.com/huxi/archive/2011/03/01/1967600.html">http://www.cnblogs.com/huxi/archive/2011/03/01/1967600.html</a></li>
+<li><a class="reference external" href="http://youngsterxyf.github.io/2013/01/04/Decorators-and-Functional-Python/">http://youngsterxyf.github.io/2013/01/04/Decorators-and-Functional-Python/</a></li>
+</ul>
+</div>
+<div class="section" id="id1">
+<h2>如何实现<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>话不多说直接上代码:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">functools</span>
+
+<span class="k">class</span> <span class="nc">memoized</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&#39;args: &#39;</span><span class="p">,</span> <span class="n">args</span>
+        <span class="k">print</span> <span class="s">&#39;cache: &#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">args</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">args</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="k">return</span> <span class="n">value</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">__doc__</span> <span class="ow">or</span> <span class="s">&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">objtype</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Support instance methods. Important!!!&#39;&#39;&#39;</span>
+        <span class="k">print</span> <span class="s">&quot;obj : &quot;</span><span class="p">,</span> <span class="n">obj</span>
+        <span class="k">print</span> <span class="s">&quot;objtype : &quot;</span> <span class="p">,</span> <span class="n">objtype</span>
+        <span class="k">return</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__call__</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>我们使用下面的测试代码:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">memoized</span> <span class="kn">import</span> <span class="n">memoized</span>
+
+<span class="nd">@memoized</span>
+<span class="k">def</span> <span class="nf">fn_a</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">print</span> <span class="s">&#39;no cache, so compute it&#39;</span>
+    <span class="k">return</span> <span class="n">a</span><span class="o">+</span><span class="n">b</span>
+
+<span class="k">class</span> <span class="nc">A</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="nd">@memoized</span>
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&#39;no cache, so compute it&#39;</span>
+        <span class="k">return</span> <span class="n">a</span><span class="o">+</span><span class="n">b</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="k">print</span> <span class="n">fn_a</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&#39;##&#39;</span><span class="o">*</span><span class="mi">20</span>
+    <span class="k">print</span> <span class="n">fn_a</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&#39;##&#39;</span><span class="o">*</span><span class="mi">20</span>
+    <span class="k">print</span> <span class="n">fn_a</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n\n\n</span><span class="s">&quot;</span>
+
+    <span class="n">a</span> <span class="o">=</span> <span class="n">A</span><span class="p">()</span>
+    <span class="k">print</span> <span class="s">&#39;##&#39;</span><span class="o">*</span><span class="mi">20</span>
+    <span class="n">a</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&#39;##&#39;</span><span class="o">*</span><span class="mi">20</span>
+    <span class="n">a</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&#39;##&#39;</span><span class="o">*</span><span class="mi">20</span>
+    <span class="n">a</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>输出结果如下:</p>
+<div class="highlight-python"><div class="highlight"><pre>args:  (1, 2)
+cache:  {}
+no cache, so compute it
+3
+########################################
+args:  (2, 4)
+cache:  {(1, 2): 3}
+no cache, so compute it
+6
+########################################
+args:  (1, 2)
+cache:  {(1, 2): 3, (2, 4): 6}
+3
+
+########################################
+obj :  &lt;__main__.A object at 0x10bea79d0&gt;
+objtype :  &lt;class &#39;__main__.A&#39;&gt;
+args:  (&lt;__main__.A object at 0x10bea79d0&gt;, 1, 2)
+cache:  {}
+no cache, so compute it
+########################################
+obj :  &lt;__main__.A object at 0x10bea79d0&gt;
+objtype :  &lt;class &#39;__main__.A&#39;&gt;
+args:  (&lt;__main__.A object at 0x10bea79d0&gt;, 2, 4)
+cache:  {(&lt;__main__.A object at 0x10bea79d0&gt;, 1, 2): 3}
+no cache, so compute it
+########################################
+obj :  &lt;__main__.A object at 0x10bea79d0&gt;
+objtype :  &lt;class &#39;__main__.A&#39;&gt;
+args:  (&lt;__main__.A object at 0x10bea79d0&gt;, 1, 2)
+cache:  {(&lt;__main__.A object at 0x10bea79d0&gt;, 2, 4): 6, (&lt;__main__.A object at 0x10bea79d0&gt;, 1, 2): 3}
+</pre></div>
+</div>
+<p>作为一个程序员，以上能说明一切了。</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Python实现函数级cache</a><ul>
+<li><a class="reference internal" href="#python">Python装饰器</a></li>
+<li><a class="reference internal" href="#id1">如何实现</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../docker/docker_tips.html"
+                        title="previous chapter">docker问题及技巧整理</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="pythonic_singleton.html"
+                        title="next chapter">Pythonic Singleton的实现</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/knowladge/func_cache.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="pythonic_singleton.html" title="Pythonic Singleton的实现"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../docker/docker_tips.html" title="docker问题及技巧整理"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

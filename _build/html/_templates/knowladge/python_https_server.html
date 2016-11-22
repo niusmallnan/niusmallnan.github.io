@@ -1,0 +1,134 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>python实现精简的https服务器 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="python面试题总结" href="../python_exam.html" />
+    <link rel="prev" title="计算KDE桌面的二进制时钟" href="kde_clock.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../python_exam.html" title="python面试题总结"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="kde_clock.html" title="计算KDE桌面的二进制时钟"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="pythonhttps">
+<h1>python实现精简的https服务器<a class="headerlink" href="#pythonhttps" title="Permalink to this headline">¶</a></h1>
+<p>有时我们在处理客户问题时，需要快速模拟客户的运行环境，比如客户的服务的HTTPS的，我们需要测试这种协议在我们的网络上是否会有问题。</p>
+<p>首先生成证书:</p>
+<div class="highlight-python"><div class="highlight"><pre># 生成rsa密钥
+$ openssl genrsa -des3 -out server.key 1024
+# 去除掉密钥文件保护密码
+$ openssl rsa -in server.key -out server.key
+# 生成ca对应的csr文件
+$ openssl req -new -key server.key -out server.csr
+# 自签名
+$ openssl x509 -req -days 1024 -in server.csr -signkey server.key -out server.crt
+$ cat server.crt server.key &gt; server.pem
+</pre></div>
+</div>
+<p>python运行代码如下:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#!/usr/bin/python</span>
+
+<span class="kn">import</span> <span class="nn">BaseHTTPServer</span><span class="o">,</span> <span class="nn">SimpleHTTPServer</span>
+<span class="kn">import</span> <span class="nn">ssl</span>
+
+<span class="n">httpd</span> <span class="o">=</span> <span class="n">BaseHTTPServer</span><span class="o">.</span><span class="n">HTTPServer</span><span class="p">((</span><span class="s">&#39;localhost&#39;</span><span class="p">,</span> <span class="mi">4443</span><span class="p">),</span> <span class="n">SimpleHTTPServer</span><span class="o">.</span><span class="n">SimpleHTTPRequestHandler</span><span class="p">)</span>
+<span class="n">httpd</span><span class="o">.</span><span class="n">socket</span> <span class="o">=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">wrap_socket</span> <span class="p">(</span><span class="n">httpd</span><span class="o">.</span><span class="n">socket</span><span class="p">,</span> <span class="n">certfile</span><span class="o">=</span><span class="s">&#39;/path/to/server.pem&#39;</span><span class="p">,</span> <span class="n">server_side</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">httpd</span><span class="o">.</span><span class="n">serve_forever</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="kde_clock.html"
+                        title="previous chapter">计算KDE桌面的二进制时钟</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../python_exam.html"
+                        title="next chapter">python面试题总结</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/knowladge/python_https_server.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../python_exam.html" title="python面试题总结"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="kde_clock.html" title="计算KDE桌面的二进制时钟"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

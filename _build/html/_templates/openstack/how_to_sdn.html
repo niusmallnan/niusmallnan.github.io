@@ -1,0 +1,287 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>neutron SDN的实现 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="Nova中VIF的实现" href="nova_vif.html" />
+    <link rel="prev" title="openstack学习指南" href="learn_guide.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="nova_vif.html" title="Nova中VIF的实现"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="learn_guide.html" title="openstack学习指南"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="neutron-sdn">
+<h1>neutron SDN的实现<a class="headerlink" href="#neutron-sdn" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="id1">
+<h2>预先了解<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>在了解整个SDN机制前，我们需要了解一点基础知识，以便能够深入掌握neutron SDN的实现原理。</p>
+<ul class="simple">
+<li>NameSpace</li>
+<li>Vlan &amp; GRE</li>
+<li>物理网络拓扑</li>
+</ul>
+<div class="section" id="namespaces">
+<h3>NameSpaces<a class="headerlink" href="#namespaces" title="Permalink to this headline">¶</a></h3>
+<p>Linux Namespaces机制提供一种资源隔离方案。PID,IPC,Network等系统资源不再是全局性的，而是属于特定的Namespace。每个Namespace里面的资源对其他Namespace都是透明的。要创建新的Namespace，只需要在调用clone时指定相应的flag。Linux Namespaces机制为实现基于容器的虚拟化技术提供了很好的基础，LXC（Linux containers）就是利用这一特性实现了资源的隔离。不同container内的进程属于不同的Namespace，彼此透明，互不干扰。</p>
+<p>我们看一张图来形象了解下:</p>
+<img alt="../../_images/sdn_ns.png" src="../../_images/sdn_ns.png" />
+</div>
+<div class="section" id="vlan-gre">
+<h3>Vlan &amp; GRE<a class="headerlink" href="#vlan-gre" title="Permalink to this headline">¶</a></h3>
+<p>IEEE 802.1Q定义一个关于VLAN连接介质访问控制层和IEEE 802.1D生成树协议的具体概念模型。这个模型允许各个独立的VLAN以以太网交换机的数据链路层或路由器互相连接。</p>
+<p>以VLAN的架构而言，可以想像一个公司的IT部门希望能够只使用一个实体企业网络端以提供个别独立的逻辑网络端，其他每个部门能够分配到一个独特的VLAN网络。企业网络中的Edge switch用来替所有从设备仪器中送抵各个部门的数据帧(Data frames)，插入适合的VLAN标记。当帧(frames)在网络中被交换时，VLAN标签会在被送回部门底下的设备时被移除。用这种方法资讯在被传到其它部门时就不会外泄或被嗅探。</p>
+<p>VLAN的封包格式如下:</p>
+<img alt="../../_images/vlan_header.png" src="../../_images/vlan_header.png" />
+<p>如上图所示，vlan header总共32bits，值得注意的是VLAN Identifier一共占据12bits，所以通过VLAN隔离网络支持范围是有限度的，最多只能支持4094(2**12=4096)。</p>
+<p>GRE(Generic Routing Encapsulation)通用路由封装，可以使隧道2层的数据包通过3层网络，GRE header中的段ID有20位，大概能支持1600W个网络，目前GRE协议的商用实现是NVGRE。</p>
+<p>看下图可以让我们加深理解GRE，每个子网走的是不同的GRE隧道，以此实现网络隔离:</p>
+<img alt="../../_images/gre_demo.png" src="../../_images/gre_demo.png" />
+<p>GRE封包方式大致是这样的:</p>
+<img alt="../../_images/gre_header.png" src="../../_images/gre_header.png" />
+</div>
+<div class="section" id="id2">
+<h3>物理网络拓扑<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<p>我们部署了两种方案(VLAN &amp; GRE)，但都是controller、compute、network节点分离的架构。</p>
+<p>一种是使用纯openvswitch实现的GRE网络，另一种是基于ml2_plugin结合Arista交换机实现的Vlan网络，如下图:</p>
+<img alt="../../_images/sdn_logic_network.png" src="../../_images/sdn_logic_network.png" />
+</div>
+</div>
+<div class="section" id="vlansdn">
+<h2>VLAN网络SDN的实现<a class="headerlink" href="#vlansdn" title="Permalink to this headline">¶</a></h2>
+<p>Vlan模式需要在compute-node和network-node上创建一些bridge，如下所示:</p>
+<div class="highlight-python"><div class="highlight"><pre>#compute node
+$ ovs-vsctl show
+01eaa6d1-185f-41bd-9282-b1ad512b8351
+Bridge &quot;br-eth2&quot;
+    Port &quot;br-eth2&quot;
+        Interface &quot;br-eth2&quot;
+            type: internal
+    Port &quot;phy-br-eth2&quot;
+        Interface &quot;phy-br-eth2&quot;
+    Port &quot;eth2&quot;
+        Interface &quot;eth2&quot;
+Bridge br-int
+    Port br-int
+        Interface br-int
+            type: internal
+    Port &quot;int-br-eth2&quot;
+        Interface &quot;int-br-eth2&quot;
+    Port &quot;tap96e16c40-75&quot;
+        tag: 1
+        Interface &quot;tap96e16c40-75&quot;
+ovs_version: &quot;1.10.2&quot;
+
+
+# Network node
+$ ovs-vsctl show
+0b5063d2-47be-40c3-a7f6-167d01d9a753
+Bridge &quot;br-eth2&quot;
+    Port &quot;br-eth2&quot;
+        Interface &quot;br-eth2&quot;
+            type: internal
+    Port &quot;phy-br-eth2&quot;
+        Interface &quot;phy-br-eth2&quot;
+    Port &quot;eth2&quot;
+        Interface &quot;eth2&quot;
+Bridge br-int
+    Port br-int
+        Interface br-int
+            type: internal
+    Port &quot;int-br-eth2&quot;
+        Interface &quot;int-br-eth2&quot;
+Bridge br-ex
+    Port br-ex
+        Interface br-ex
+            type: internal
+    Port &quot;eth0&quot;
+        Interface &quot;eth0&quot;
+ovs_version: &quot;1.10.2&quot;
+</pre></div>
+</div>
+<p>这些网桥的逻辑结构图如下:</p>
+<img alt="../../_images/vlan_logic.png" src="../../_images/vlan_logic.png" />
+<p>compute node上vlan tag的封包操作发生在下面:</p>
+<img alt="../../_images/vlan_logic_2.png" src="../../_images/vlan_logic_2.png" />
+<p>veth 从名字上来看是 Virtual ETHernet 的缩写，它的作用很简单，就是要把从一个 network namespace 发出的数据包转发到另一个namespace。通常 veth 会和 bridge 搭配使用，这样一来，从外面进来的包就可以转发到 container 之中了。</p>
+<p>network node上vlan tag的封包操作仍然是在phy-br-eth2与int-br-eth2之间进行，封包是交给openvswitch来做的。</p>
+<p>那么虚拟机通信是如何通过这些网桥的呢，我们可以看一下compute-node上br-int的dump-flow:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ ovs-ofctl dump-flows br-int
+NXST_FLOW reply (xid=0x4):
+    cookie=0x0, duration=14.186s, table=0, n_packets=0, n_bytes=0, idle_age=14, priority=3,in_port=1,dl_vlan=1000 actions=mod_vlan_vid:11,NORMAL
+
+$ ovs-ofctl dump-flows br-eth2
+NXST_FLOW reply (xid=0x4):
+    cookie=0x0, duration=427.526s, table=0, n_packets=199, n_bytes=20017, idle_age=401, priority=4,in_port=2,dl_vlan=11 actions=mod_vlan_vid:1000,NORMAL
+</pre></div>
+</div>
+<p>在看一下下面这张图:</p>
+<img alt="../../_images/vlan_logic_3.png" src="../../_images/vlan_logic_3.png" />
+<p>eth0是虚拟机内部看到的网卡，而它的真实映射是宿主机系统中虚拟的tap设备，tap设备通过bridge qbr与veth pair一对设备连接，veth pair的两个设备分别是qvo和qvb，qvo连接在br-int上，我们可以查出连接qvo这个port的tag是11:</p>
+<div class="highlight-python"><div class="highlight"><pre>Bridge br-int
+    Port &quot;qvoaacd258a-a1&quot;
+    tag: 11
+    Interface &quot;qvoaacd258a-a1&quot;
+</pre></div>
+</div>
+<p>再结合上面的dump-flow信息，整个流程就应该很清晰了，该租户网络的vlan vid是1001，而虚拟机的虚拟网卡连接在openvswitch上的port tag是11， 所以dump-flow上才会出现tag1000和11的交换信息。</p>
+<p>说道这里，我们已经把compute-node通信机制讲解了，那么虚拟机是如何通过network-node上的l3-agent的上网，如何利用dhcp-agent完成二层通信，大致的机制差不多，请看图:</p>
+<img alt="../../_images/vlan_logic_4.png" src="../../_images/vlan_logic_4.png" />
+<p>这里的veth pair负责完成不同namespace之间通信的工作，network-node上的NameSpace如下:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ ip netns list
+qrouter-9d28118d-4508-4ac0-9097-7a80bbe1f6ce
+qdhcp-a22671e6-639e-4106-b0c3-c53fa9c4ae8e
+</pre></div>
+</div>
+<p>Network node上openvswitch信息如下:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ ovs-vsctl show
+0b5063d2-47be-40c3-a7f6-167d01d9a753
+Bridge &quot;br-eth2&quot;
+    Port &quot;br-eth2&quot;
+        Interface &quot;br-eth2&quot;
+            type: internal
+    Port &quot;phy-br-eth2&quot;
+        Interface &quot;phy-br-eth2&quot;
+    Port &quot;eth2&quot;
+        Interface &quot;eth2&quot;
+Bridge br-int
+    Port br-int
+        Interface br-int
+            type: internal
+    Port &quot;tap414f8b85-17&quot;
+        tag: 3
+        Interface &quot;tap414f8b85-17&quot;
+    Port &quot;qr-d4c2bdbb-cd&quot;
+        tag: 3
+        Interface &quot;qr-d4c2bdbb-cd&quot;
+            type: internal
+    Port &quot;int-br-eth2&quot;
+        Interface &quot;int-br-eth2&quot;
+Bridge br-ex
+    Port &quot;tapd1f0e2c5-46&quot;
+        Interface &quot;tapd1f0e2c5-46&quot;
+    Port br-ex
+        Interface br-ex
+            type: internal
+    Port &quot;eth0&quot;
+        Interface &quot;eth0&quot;
+ovs_version: &quot;1.10.2&quot;
+</pre></div>
+</div>
+<p>dnsmasq是一种dhcp服务器，他负责分配子网ip和二层通信，ns~是命名空间qdhcp*下的device，它和tap414f8b85-17组成一对veth device。</p>
+<p>qr~和qg~是命名空间qroute*下的device，他们都是有ip地址的，通过IPtables的NAT规则实现floating ip，qg~和tapd1f0e2c546组成一对veth device，以便能和物理网卡eth0通信，从而实现外网通信。命名空间qroute*的IPtables NAT规则如下:</p>
+<div class="highlight-python"><div class="highlight"><pre>-A neutron-l3-agent-PREROUTING -d 192.168.1.3/32 -j DNAT --to-destination 40.40.40.3
+-A neutron-l3-agent-float-snat -s 40.40.40.3/32 -j SNAT --to-source 192.168.1.3
+</pre></div>
+</div>
+<p>这样你通过floating ip就可以访问到这台虚拟机了。</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">neutron SDN的实现</a><ul>
+<li><a class="reference internal" href="#id1">预先了解</a><ul>
+<li><a class="reference internal" href="#namespaces">NameSpaces</a></li>
+<li><a class="reference internal" href="#vlan-gre">Vlan &amp; GRE</a></li>
+<li><a class="reference internal" href="#id2">物理网络拓扑</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#vlansdn">VLAN网络SDN的实现</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="learn_guide.html"
+                        title="previous chapter">openstack学习指南</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="nova_vif.html"
+                        title="next chapter">Nova中VIF的实现</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/how_to_sdn.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="nova_vif.html" title="Nova中VIF的实现"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="learn_guide.html" title="openstack学习指南"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

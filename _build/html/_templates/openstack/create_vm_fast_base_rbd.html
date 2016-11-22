@@ -1,0 +1,136 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>基于ceph快速创建虚机 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="cinder中大块rbd删除问题" href="large_rbd_delete.html" />
+    <link rel="prev" title="健康检查与自动化测试" href="fuel_ostf.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="large_rbd_delete.html" title="cinder中大块rbd删除问题"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="fuel_ostf.html" title="健康检查与自动化测试"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="ceph">
+<h1>基于ceph快速创建虚机<a class="headerlink" href="#ceph" title="Permalink to this headline">¶</a></h1>
+<p>基于ceph来构建openstack的统一存储是目前非常流行的做法，更加详细的说明，可以参考 <a class="reference external" href="https://www.ustack.com/blog/openstack_and_ceph/">openstack与ceph整合</a> 。</p>
+<p>openstack提供了5种boot虚机的方式，当然这也是时下各种云平台通用的做法，分别为:</p>
+<ul class="simple">
+<li>从镜像启动</li>
+<li>从快照启动</li>
+<li>从云硬盘启动</li>
+<li>从镜像启动（创建一个新卷）</li>
+<li>从云硬盘快照启动（创建一个新卷）</li>
+</ul>
+<p>我们所知rbd是支持copy-on-write的，这个特性可以体现在openstack的代码中调用了rbd clone这个命令，当你像复制一个非常大的卷时，rbd clone是秒级的，与之相对的做法是，重新创建一个raw文件然后上传给ceph，这明显是非常耗时的。</p>
+<p>如果我们的nova和glance都是配置使用了ceph的rbd，那么理想状况下，我们创建一台虚机，虚机的根磁盘应该是通过glance中对应image进行rbd clone而得。</p>
+<p>在Juno版本中，这的确已经实现，但是I版并非如此，本文主要介绍下讨论的便是在I版如何支持该功能。</p>
+<div class="section" id="id1">
+<h2>社区的贡献<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>openstack社区是非常强大的，早在13年就有人提出此bug，经过一系列讨论和具体实现，已经完全实现了此功能 <a class="reference external" href="https://review.openstack.org/#/c/94295/">rbd-clone-image-handler</a> 。当然这些代码在Juno版本才合入master，如果想在I版使用，你可以基于I版手动合并这些patch。</p>
+<p>对nova代码不太深入理解的，可能觉得合并patch有些困难，建议你使用网友合并好的icehouse分支 <a class="reference external" href="https://github.com/angdraug/nova/tree/rbd-ephemeral-clone-stable-icehouse">stable-icehouse</a> 。</p>
+<p>当然你需要一些额外的配置，更多的配置请参考 <a class="reference external" href="http://docs.ceph.com/docs/next/rbd/rbd-openstack/">ceph官网</a> 。</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">基于ceph快速创建虚机</a><ul>
+<li><a class="reference internal" href="#id1">社区的贡献</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="fuel_ostf.html"
+                        title="previous chapter">健康检查与自动化测试</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="large_rbd_delete.html"
+                        title="next chapter">cinder中大块rbd删除问题</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/create_vm_fast_base_rbd.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="large_rbd_delete.html" title="cinder中大块rbd删除问题"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="fuel_ostf.html" title="健康检查与自动化测试"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

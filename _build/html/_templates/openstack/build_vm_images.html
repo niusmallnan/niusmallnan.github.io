@@ -1,0 +1,196 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>虚机镜像制作 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="OVS操作指南" href="../openvswitch/operation_guide.html" />
+    <link rel="prev" title="提升dhcp agent性能" href="improve_dhcp_agent.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../openvswitch/operation_guide.html" title="OVS操作指南"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="improve_dhcp_agent.html" title="提升dhcp agent性能"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="id1">
+<h1>虚机镜像制作<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+<p>对于openstack无论你是在公有云还是私有云，创建虚机都需要系统镜像来做支撑，也就是glance组件所存放的镜像，镜像的制作是非常繁琐的，尤其是你要制作云环境下的镜像，我们称其为cloud-images，和普通的baremetal镜像不同，你需要在cloud-images内置一些组件如cloudinit等，windows还好说，但是Linux的发行版众多，每个都要制作非常麻烦。</p>
+<p>openstack官方提供了一个手动制作镜像的文档 <a class="reference external" href="http://docs.openstack.org/image-guide/content/ch_creating_images_manually.html">creating_images_manually</a> ，如果每个发行版镜像都这么做，那是相当麻烦，而且你肯定有定制镜像的需求，即在镜像内置一些组件以便支持云平台的特性，比如可能会有需要镜像支持root密码修改功能或者需要内置qga等。每次镜像修改需求都要手工来一次，想想就恶心了。</p>
+<p>官方也提供了自动构建镜像的方法 <a class="reference external" href="http://docs.openstack.org/image-guide/content/ch_creating_images_automatically.html">creating_images_automatically</a> ，但是里面提到的工具和方案，要么是已经长时间不维护的，要么是只针对某个发行版的，基本上没有提出一个工具构建全部镜像的方案，另外也无法做到对镜像的每次修改可以记录和回滚。</p>
+<p>以上铺垫，引出本文讨论的内容，如何高度灵活的构建镜像。</p>
+<p>我主要是采用了disk-image-builder来实现镜像制作，disk-image-builder是tripleO的子项目，用于给tripleO构建镜像之用，disk-image-builder采用element拼装这种灵活的架构，可以满足镜像制作时多变的需求，而且可以利用好各个linux发行版已有的基础镜像。</p>
+<div class="section" id="id2">
+<h2>安装<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<p>首先需要安装一些基本包，还有disk-image-builder依赖的项目:</p>
+<div class="highlight-python"><div class="highlight"><pre>#安装dib-utils
+$ git clone https://github.com/openstack/dib-utils.git
+$ cd dib-utils &amp;&amp; python setup.py install
+
+#安装diskimage-builder
+$ git clone https://github.com/openstack/diskimage-builder.git
+
+#添加环境变量
+export DIB_IMAGE_CACHE=&lt;your image cache path&gt;
+export PATH=&lt;xxxxx/diskimage-builder/bin&gt;:$PATH
+
+#其他依赖项
+$ apt-get install -y qemu-utils
+$ apt-get install -y kpartx
+</pre></div>
+</div>
+<p>这样基本安装就完成了，我们主要使用的命令是disk-image-create，可以加-h查看具体参数用法。</p>
+</div>
+<div class="section" id="id3">
+<h2>使用样例<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<p>我们以创建ubuntu镜像为例，可以参考下面操作一样，非常简单:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ mkdir ubuntu &amp;&amp; cd ubuntu
+
+#创建vm_profile文件 内容如下
+export DIB_RELEASE=trusty   # 可替换为其他ubuntu系统代号名称
+export DIB_DISTRIBUTION_MIRROR=http://cn.archive.ubuntu.com/ubuntu  #可替换其他mirror
+export DIB_CLOUD_INIT_DATASOURCES=&quot;ConfigDrive, OpenStack, NoCloud&quot;    #cloud-init datasource配置
+$ source vm_profile
+
+#构建
+$ disk-image-create --offline -a amd64 -o ubuntu-trusty-amd64 vm ubuntu
+</pre></div>
+</div>
+<p>注意，第一次构建时请把 &#8211;offline 去掉，第一次需要下载原始镜像，执行完毕后，会生成 一个ubuntu-trusty-amd64.qcow2。如果要raw镜像，请执行qemu-img进行转换。</p>
+</div>
+<div class="section" id="element">
+<h2>自定义element<a class="headerlink" href="#element" title="Permalink to this headline">¶</a></h2>
+<p>disk-image-builder是灵活的element架构，你可以给你的镜像添加不同的element，制作镜像时你可以灵活的控制element是否加入到镜像中。我们以让镜像支持通过openstack注入root密码为例，原理请看之前的文档( <a class="reference internal" href="inject_passwd.html"><em>实现虚拟机ROOT密码注入</em></a>)。操作如下:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ cd elements &amp;&amp; mkdir cloud-init-cfg
+$ cd elements/cloud-init-cfg &amp;&amp; mkdir  install.d
+$ cd elements/cloud-init-cfg/install.d
+</pre></div>
+</div>
+<p>创建文件 05-set-cloud-cfg 并 chmod a+x，内容如下:</p>
+<div class="highlight-python"><div class="highlight"><pre>#!/bin/bash
+set -eu
+set -o pipefail
+sed -i &quot;s/disable_root: true/disable_root: false/&quot; /etc/cloud/cloud.cfg
+sed -i &quot;s/disable_root: 1/disable_root: 0/&quot; /etc/cloud/cloud.cfg
+sed -i &quot;/package_mirrors/,+13d&quot; /etc/cloud/cloud.cfg
+cat &gt; /etc/cloud/cloud.cfg.d/92-dib-cloud-neunn.cfg &lt;&lt;EOF
+chpasswd: { expire: False }
+EOF
+
+home=$(dirname $0)
+cloudinit_dir=`python -c &quot;import os,cloudinit;print os.path.dirname(cloudinit.__file__)&quot;`
+install -m 0644 -o root -g root $home/cc_set_passwd.patch $cloudinit_dir/cc_set_passwd.patch
+cd $cloudinit_dir &amp;&amp; sudo patch -p2 &lt; cc_set_passwd.patch
+rm -f $cloudinit_dir/cc_set_passwd.patch
+</pre></div>
+</div>
+<p>创建patch文件，文件内容在之前提到的原理文档中。</p>
+<p>如果你要在ubuntu镜像中支持root密码注入，那么执行下面的命令创建ubuntu镜像:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ disk-image-create --offline -a amd64 -o ubuntu-trusty-amd64 vm cloud-init-cfg ubuntu
+</pre></div>
+</div>
+<p>其他镜像要使用，同理方法</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">虚机镜像制作</a><ul>
+<li><a class="reference internal" href="#id2">安装</a></li>
+<li><a class="reference internal" href="#id3">使用样例</a></li>
+<li><a class="reference internal" href="#element">自定义element</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="improve_dhcp_agent.html"
+                        title="previous chapter">提升dhcp agent性能</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../openvswitch/operation_guide.html"
+                        title="next chapter">OVS操作指南</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/build_vm_images.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../openvswitch/operation_guide.html" title="OVS操作指南"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="improve_dhcp_agent.html" title="提升dhcp agent性能"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

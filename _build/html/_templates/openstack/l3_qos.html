@@ -1,0 +1,294 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>l3-qos的实现思路 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="Openstack组件开发之集成Keystone" href="integrate_keystone.html" />
+    <link rel="prev" title="基于rbd虚机热迁移" href="rbd_live_migration.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="integrate_keystone.html" title="Openstack组件开发之集成Keystone"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="rbd_live_migration.html" title="基于rbd虚机热迁移"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="l3-qos">
+<h1>l3-qos的实现思路<a class="headerlink" href="#l3-qos" title="Permalink to this headline">¶</a></h1>
+<p>在L版的ReleaseNotes里面我们看到neutron已经支持了 <a class="reference external" href="https://blueprints.launchpad.net/neutron/+spec/ml2-qos">ml2-qos</a> 特性，
+这个特性可以让我们针对l2-port和l2-net做流量qos设置，
+这是一个非常实用的特性，在之前的版本中，对于虚机网络流量qos，我们只能通过flavor来去设置qos，
+flavor-qos不是很灵活，这会让我去维护很多个flavor来保证不同的qos需求。</p>
+<p>但是ml2-qos只能做二层网络的流量限制，对于floating-ip级别的并不能生效，而且ml2-qos依托于OpenVswitch本身的特性，
+且OpenVswitch的qos只能设置单向流量（虚机上行流量）。</p>
+<p>我们还是需要一个l3-qos，来实现针对floating-ip和router设置qos，且能够设置上行和下行流量。</p>
+<div class="section" id="tc">
+<h2>TC是基础<a class="headerlink" href="#tc" title="Permalink to this headline">¶</a></h2>
+<p>在Linux系统上，无论去使用怎样的工具，本质上都要使用TC来做流量控制。
+如上面所说，针对floating-ip和router的qos设置，我们必须让TC规则作用在对应的net-namespace上:</p>
+<img alt="../../_images/net_ns_tc.png" src="../../_images/net_ns_tc.png" />
+<p>使用HTB来控制虚机的上行流量，使用Ingress来控制虚机的下行流量：</p>
+<img alt="../../_images/tc_rules.png" src="../../_images/tc_rules.png" />
+<p>此处需要注意的是，TC的版本不能太低，否则TC不能支持在namespace下设置规则，如果你是ubuntu系统，
+建议至少使用这个版本iproute2_4.1.1-1ubuntu1_amd64。</p>
+<p>实现原理请参考这个脚本:</p>
+<div class="highlight-python"><div class="highlight"><pre>#!/bin/bash
+#
+#  kb or k: Kilobytes
+#  mb or m: Megabytes
+#  mbit: Megabits
+#  kbit: Kilobits
+#  To get the byte figure from bits, divide the number by 8 bit
+#
+#  ex: tc_htb.sh restart qg-f5f0ed64-84 qrouter-d5b5b595-9ae2-49e9-8fd9-6ddbf6195702
+#
+TC=/sbin/tc
+if [ -n &quot;$3&quot; ]; then
+    TC=&quot;/sbin/tc -n $3&quot; #tc utility, iproute2-ss150706
+fi
+IF=$2           # Interface
+UPLD=1mbit          # VM UPLOAD Limit
+DEF_UPLD=2mbit          # VM UPLOAD Limit
+DNLD=10mbit          # VM DOWNLOAD Limit
+DEF_DNLD=20mbit          # VM DOWNLOAD Limit
+IP=192.168.252.168  # VM IP
+GW_IP=192.168.252.141  # Router GW IP
+HTB_U32=&quot;$TC filter add dev $IF protocol all parent 1: prio 1 u32&quot;
+INGRESS_U32=&quot;$TC filter add dev $IF protocol all parent ffff:&quot;
+
+start() {
+    # UPLOAD TRAFFIC
+    $TC qdisc add dev $IF root handle 1: htb default 1000
+    $TC class add dev $IF parent 1: classid 1:1000 htb rate $DEF_UPLD #burst 100kb
+    $TC qdisc add dev $IF parent 1:1000 handle 1001: sfq perturb 10
+
+    $TC class add dev $IF parent 1: classid 1:1 htb rate $UPLD #burst 100kb
+    $TC qdisc add dev $IF parent 1:1 handle 2: sfq perturb 10
+    $HTB_U32 match ip src $IP/32 flowid 1:1
+    # DOWNLOAD TRAFFIC
+    $TC qdisc add dev $IF ingress
+    $INGRESS_U32 prio 1 u32 match ip dst $GW_IP/32 police rate $DEF_DNLD burst 512kb mtu 64kb drop flowid :1
+    $INGRESS_U32 prio 2 u32 match ip dst $IP/32 police rate $DNLD burst 256kb mtu 64kb drop flowid :1
+}
+rm() {
+    $TC qdisc del dev $IF parent 1:1
+    $TC filter del dev $IF protocol all parent 1: prio 1
+    $TC class del dev $IF parent 1: classid 1:1
+    $TC filter del dev $IF protocol all parent ffff: prio 2
+
+}
+stop() {
+    $TC qdisc del dev $IF root
+    $TC qdisc del dev $IF ingress
+}
+restart() {
+    stop
+    sleep 1
+    start
+}
+show() {
+    echo &#39;==================================&#39;
+    $TC -s -d -p qdisc show dev $IF
+    echo &#39;==================================&#39;
+    echo -e &#39;\n&#39;
+    echo &#39;==================================&#39;
+    $TC class show dev $IF
+    echo &#39;==================================&#39;
+    echo -e &#39;\n&#39;
+    echo &#39;==================================&#39;
+    $TC -s -d -p filter show dev $IF
+    echo &#39;----------------------------------&#39;
+    $TC filter show dev $IF parent ffff:
+    echo &#39;==================================&#39;
+}
+case &quot;$1&quot; in
+  start)
+    echo -n &quot;Starting bandwidth shaping: &quot;
+    start
+    echo &quot;done&quot;
+    ;;
+  stop)
+    echo -n &quot;Stopping bandwidth shaping: &quot;
+    stop
+    echo &quot;done&quot;
+    ;;
+  restart)
+    echo -n &quot;Restarting bandwidth shaping: &quot;
+    restart
+    echo &quot;done&quot;
+    ;;
+
+  rm)
+    echo -n &quot;Rm bandwidth shaping: &quot;
+    rm
+    echo &quot;done&quot;
+    ;;
+  show)
+
+    echo &quot;Bandwidth shaping status for $IF:&quot;
+    show
+    echo &quot;&quot;
+    ;;
+  *)
+    pwd=$(pwd)
+    echo &quot;Usage: $(/usr/bin/dirname $pwd)/tc.bash {start|stop|restart|show}&quot;
+    ;;
+esac
+exit 0
+</pre></div>
+</div>
+<p>将上面的实现原理整合到自己维护的neutron源码中。</p>
+</div>
+<div class="section" id="id1">
+<h2>使用案例<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>除了在底层支持l3-qos外，还需要在neutron-api层面支持设置具体属性值，
+比如创建一个具有带宽限制的router或者floatingip:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ neutron router-create aaaa --ha True --ingress_rate 14mbit --ingress_burst 512kb --egress_rate 12mbit --egress_burst 512kb
+Created a new router:
++-----------------------+--------------------------------------------------------------------------------------------------------+
+| Field                 | Value                                                                                                  |
++-----------------------+--------------------------------------------------------------------------------------------------------+
+| admin_state_up        | True                                                                                                   |
+| bandwidth             | {&quot;ingress_rate&quot;: &quot;14mbit&quot;, &quot;egress_rate&quot;: &quot;12mbit&quot;, &quot;egress_burst&quot;: &quot;512kb&quot;, &quot;ingress_burst&quot;: &quot;512kb&quot;} |
+| distributed           | False                                                                                                  |
+| external_gateway_info |                                                                                                        |
+| ha                    | True                                                                                                   |
+| id                    | d2e8813a-6619-4784-a08a-2a2725fe2fb5                                                                   |
+| name                  | aaaa                                                                                                   |
+| routes                |                                                                                                        |
+| status                | ACTIVE                                                                                                 |
+| tenant_id             | 5e30ecc3c3434f24aa56801467ef1688                                                                       |
++-----------------------+--------------------------------------------------------------------------------------------------------+
+
+$ neutron floatingip-create &lt;ext-net&gt; --egress_rate 5mbit --egress_burst 150kb
+Created a new floatingip:
++---------------------+---------------------------------------------------+
+| Field               | Value                                             |
++---------------------+---------------------------------------------------+
+| bandwidth           | {&quot;egress_rate&quot;: &quot;5mbit&quot;, &quot;egress_burst&quot;: &quot;150kb&quot;} |
+| fixed_ip_address    |                                                   |
+| floating_ip_address | 192.168.252.161                                   |
+| floating_network_id | 9946adcc-041e-4c0f-91b6-96a9fb6254c0              |
+| id                  | 432f7dd6-b171-4de1-8e43-8069c42ee5a5              |
+| port_id             |                                                   |
+| router_id           |                                                   |
+| status              | DOWN                                              |
+| tenant_id           | 5e30ecc3c3434f24aa56801467ef1688                  |
++---------------------+---------------------------------------------------+
+</pre></div>
+</div>
+<p>修改已有router的带宽规则，并让其生效:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ neutron router-update &lt;router-id&gt; --admin-state-up False --ingress_rate 8mbit --ingress_burst 256kb
+$ neutron router-update &lt;router-id&gt; --admin-state-up True
+注意这个过程中，连到这个router的所有机器都会断网
+</pre></div>
+</div>
+<p>修改已有floatingip的带宽规则，并让其生效:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ neutron floatingip-disassociate &lt;fip-id&gt; --ingress_rate 7mbit --ingress_burst 256kb
+$ neutron floatingip-associate &lt;fip-id&gt; &lt;port-id&gt;
+注意这个过程中，floatingip是从解绑到绑定
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">l3-qos的实现思路</a><ul>
+<li><a class="reference internal" href="#tc">TC是基础</a></li>
+<li><a class="reference internal" href="#id1">使用案例</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="rbd_live_migration.html"
+                        title="previous chapter">基于rbd虚机热迁移</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="integrate_keystone.html"
+                        title="next chapter">Openstack组件开发之集成Keystone</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/l3_qos.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="integrate_keystone.html" title="Openstack组件开发之集成Keystone"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="rbd_live_migration.html" title="基于rbd虚机热迁移"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

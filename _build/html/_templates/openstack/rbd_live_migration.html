@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>基于rbd虚机热迁移 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="Openstack组件开发之集成Keystone" href="integrate_keystone.html" />
+    <link rel="prev" title="基于rbd提升虚机快照创建速度" href="rbd_snap_insteadof_qemu_snap.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="integrate_keystone.html" title="Openstack组件开发之集成Keystone"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="rbd_snap_insteadof_qemu_snap.html" title="基于rbd提升虚机快照创建速度"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="rbd">
+<h1>基于rbd虚机热迁移<a class="headerlink" href="#rbd" title="Permalink to this headline">¶</a></h1>
+<p>关于在线迁移之前我写过一篇文章介绍过( <a class="reference internal" href="block_migration.html"><em>Nova实现虚拟机块迁移</em></a> )，这是使用块迁移的方式，就是说要把整个根磁盘都要通过libvirt的通道传输到目标节点上。ceph与OpenStack深度集成会有很多惊喜功能，我们之前探讨过很多。由于虚机的根磁盘在Rbd上，我们可以认为这是在共享存储上，那么这意味着我们可以用更快速的方式迁移虚机。</p>
+<p>这个功能在Juno版本以后已经集成到了OpenStack中，但是在Icehouse中我们必须修改相关代码，集成一些Juno版的patch，这些在社区中都会很容易找到。</p>
+<div class="section" id="configdrive">
+<h2>ConfigDrive的困扰<a class="headerlink" href="#configdrive" title="Permalink to this headline">¶</a></h2>
+<p>在虚机的元数据注入时，很多时候我们都会选择ConfigDrive方式，这种方式更加快速，能够提升虚拟机的初次启动速度。但是它会在计算节点本地创建一个块文件来持久化ConfigDrive的数据，这就会给在线迁移带来困扰，因为libvirt并不会把ConfigDrive Device也迁移过去，如果存在本地卷，libvirt会报错。</p>
+<p>所以我们需要在创建虚机之初，也将ConfigDrive部署到Rbd中，这样它也在共享存储上，就不会影响在线迁移。</p>
+<p>对此如何实现，可以参考社区的解决方案 <a class="reference external" href="https://review.openstack.org/#/c/123073/">Handle config drives being stored on rbd</a> ，但是没有被merge，请谨慎！</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">基于rbd虚机热迁移</a><ul>
+<li><a class="reference internal" href="#configdrive">ConfigDrive的困扰</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="rbd_snap_insteadof_qemu_snap.html"
+                        title="previous chapter">基于rbd提升虚机快照创建速度</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="integrate_keystone.html"
+                        title="next chapter">Openstack组件开发之集成Keystone</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/rbd_live_migration.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="integrate_keystone.html" title="Openstack组件开发之集成Keystone"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="rbd_snap_insteadof_qemu_snap.html" title="基于rbd提升虚机快照创建速度"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

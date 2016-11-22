@@ -1,0 +1,139 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>基于rbd提升虚机快照创建速度 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="Openstack组件开发之集成Keystone" href="integrate_keystone.html" />
+    <link rel="prev" title="&lt;no title&gt;" href="neutron_lbaas_ha.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="integrate_keystone.html" title="Openstack组件开发之集成Keystone"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="neutron_lbaas_ha.html" title="&lt;no title&gt;"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="rbd">
+<h1>基于rbd提升虚机快照创建速度<a class="headerlink" href="#rbd" title="Permalink to this headline">¶</a></h1>
+<p>现在比较流行使用ceph作为OpenStack的统一存储，以其较高的性能，较好的融合度，较多的功能特性，受到广大OpenStacker的喜爱和支持。本文讨论一下基于ceph的rbd的虚机如何提升创建快照的速度。</p>
+<p>OpenStack的默认快照方式是QEMU的全量快照，之前我写一篇文章介绍过 ( <a class="reference internal" href="vm_snapshot.html"><em>虚拟机的快照</em></a> ) 一些，而这种快照方式我们使用过都知道，速度是非常慢的，尤其是当我们使用了rbd作为虚机的root disk，disk size会非常大，动辄几十个G，这么大的disk做全量快照，速度是可想而知的。</p>
+<div class="section" id="id1">
+<h2>转机<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>真正的转机来自于使用ceph做统一存储，nova和glance会共用ceph的存储池，而rbd
+有没有一种机制可以快速复制一个卷，答案的肯定的。</p>
+<img alt="../../_images/rbd_clone.jpg" src="../../_images/rbd_clone.jpg" />
+<p>最终clone的结果就是复制了一个新卷，这个速度是非常快的，因为rbd的LAYERING特性，这个特性本文不做深入探讨。</p>
+<p>基于这个特性，我们可以考虑在虚机建快照时，先给虚机root disk做一个rbd snapshot，然后clone这个snapshot生成一个新disk，新的disk我们再做rbd snapshot，这个snapshot就可以给glance，这个过程我们就给虚机做了一个glance快照，流程可以看看下图。</p>
+<img alt="../../_images/create_glance_snap.jpg" src="../../_images/create_glance_snap.jpg" />
+<p>这里需要注意一点，在ceph中rbd clone出来的卷会和被clone卷有一个父子依赖关系，如果你想去除这个依赖关系，可以在图中标注的flatten处做flatten操作，但是flatten的过程是非常慢的，如果你的root disk size比较大，那就有的等了，看自己的需求来取舍吧。</p>
+<p>如果我们做了flatten，那么在原始虚机或者glance快照删除的时候，一般不会有什问题，因为flatten后，他们不存在任何依赖关系。如果没做flatten，那么删除的时候需要考虑，rbd snapshot的protection机制，这个机制会锁定相关的disk，导致不能删除，只能解除依赖去除保护后，才能安全删除，流程看下图。</p>
+<img alt="../../_images/delete_glance_snap.jpg" src="../../_images/delete_glance_snap.jpg" />
+<p>当然逻辑上肯定还有疏漏的地方，很可能会出现rbd中遗留了大量后缀为 _to_be_deleted_by_glance 的卷没能被删除，此时可以考虑起个定时任务去删除它。</p>
+</div>
+<div class="section" id="id2">
+<h2>实现<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<p>这个功能其实在社区中有人提了BP，而且是OpenStack与ceph集成方向的大神级人物Sébastien Han，不过这个BP <a class="reference external" href="https://blueprints.launchpad.net/nova/+spec/implement-rbd-snapshots-instead-of-qemu-snapshots">implement-rbd-snapshots-instead-of-qemu-snapshots</a> 由于错过Juno版本提交的窗口期，所以没被合并，而且里面还有些bug没有处理。</p>
+<p>那么我们需要做的工作其实就是在你的版本上合并这部分代码，并修复你认为的BUG。</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">基于rbd提升虚机快照创建速度</a><ul>
+<li><a class="reference internal" href="#id1">转机</a></li>
+<li><a class="reference internal" href="#id2">实现</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="neutron_lbaas_ha.html"
+                        title="previous chapter">&lt;no title&gt;</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="integrate_keystone.html"
+                        title="next chapter">Openstack组件开发之集成Keystone</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/rbd_snap_insteadof_qemu_snap.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="integrate_keystone.html" title="Openstack组件开发之集成Keystone"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="neutron_lbaas_ha.html" title="&lt;no title&gt;"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

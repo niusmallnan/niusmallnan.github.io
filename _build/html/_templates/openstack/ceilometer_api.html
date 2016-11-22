@@ -1,0 +1,153 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>ceilometer的API使用 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="虚拟机的快照" href="vm_snapshot.html" />
+    <link rel="prev" title="ceilometer的数据采集机制" href="ceilometer_collect.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="vm_snapshot.html" title="虚拟机的快照"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="ceilometer_collect.html" title="ceilometer的数据采集机制"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="ceilometerapi">
+<h1>ceilometer的API使用<a class="headerlink" href="#ceilometerapi" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="id1">
+<h2>基本用法<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>下面用命令行方式表达，如果要查看详细请求，请加&#8211;debug参数即可。假设某台vm的uuid为f3bc23e4-5821-462d-bdf2-476275f76a79，vm运行时间的监控项meter是instance。</p>
+<p>先来看关于sample采样点的相关API:</p>
+<div class="highlight-python"><div class="highlight"><pre>#获取该vm运行时间的全部采样点
+ceilometer sample-list -m instance -q resource_id=f3bc23e4-5821-462d-bdf2-476275f76a79
+
+#获取该vm运行时间的最近10个采样点
+ceilometer sample-list -m instance -q resource_id=f3bc23e4-5821-462d-bdf2-476275f76a79 -l
+
+#获取该vm运行时间的两个时间戳内的采样点
+ceilometer sample-list -m instance -q \
+    &quot;resource_id=f3bc23e4-5821-462d-bdf2-476275f76a79;timestamp&gt;2014-09-21T03:18:20;timestamp&lt;2014-09-21T03:30:20&quot;
+</pre></div>
+</div>
+<p>再来看看statistics统计的相关API:</p>
+<div class="highlight-python"><div class="highlight"><pre>#vm运行总时间 Duration字段就是运行的总时间
+ceilometer statistics -m instance -q &quot;resource_id=f3bc23e4-5821-462d-bdf2-476275f76a79&quot;
++--------+----------------------------+----------------------------+-------+-----+-----+------+-----+----------+----------------------------+----------------------------+
+| Period | Period Start               | Period End                 | Count | Min | Max | Sum  | Avg | Duration | Duration Start             | Duration End               |
++--------+----------------------------+----------------------------+-------+-----+-----+------+-----+----------+----------------------------+----------------------------+
+| 0      | 2014-09-22T02:51:44.337000 | 2014-09-22T02:51:44.337000 | 39    | 1.0 | 1.0 | 39.0 | 1.0 | 19453.46 | 2014-09-22T02:51:44.337000 | 2014-09-22T08:15:57.797000 |
++--------+----------------------------+----------------------------+-------+-----+-----+------+-----+----------+----------------------------+----------------------------+
+
+#某个时间段内vm的运行时间
+ceilometer statistics -m instance -q &quot;resource_id=f3bc23e4-5821-462d-bdf2-476275f76a79&quot; \
+     -q &quot;resource_id=f3bc23e4-5821-462d-bdf2-476275f76a79;timestamp&gt;2014-09-22T07:18:20;timestamp&lt;2014-09-22T08:18:20&quot;
+</pre></div>
+</div>
+<p>参考:</p>
+<ol class="arabic simple">
+<li><a class="reference external" href="http://yansu.org/2013/05/01/terminal-command-of-ceilometer.html">ceilometer命令行使用</a></li>
+<li><a class="reference external" href="https://support.rc.nectar.org.au/docs/ceilometer-statistics">ceilometer Statistics</a></li>
+</ol>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">ceilometer的API使用</a><ul>
+<li><a class="reference internal" href="#id1">基本用法</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="ceilometer_collect.html"
+                        title="previous chapter">ceilometer的数据采集机制</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="vm_snapshot.html"
+                        title="next chapter">虚拟机的快照</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/ceilometer_api.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="vm_snapshot.html" title="虚拟机的快照"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="ceilometer_collect.html" title="ceilometer的数据采集机制"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>搭建Golang的Vim开发环境 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="Python实现函数级cache" href="../knowladge/func_cache.html" />
+    <link rel="prev" title="docker问题及技巧整理" href="../docker/docker_tips.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../knowladge/func_cache.html" title="Python实现函数级cache"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../docker/docker_tips.html" title="docker问题及技巧整理"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="golangvim">
+<h1>搭建Golang的Vim开发环境<a class="headerlink" href="#golangvim" title="Permalink to this headline">¶</a></h1>
+<p>工欲善其事必先利其器，若想把Golang写得溜，首先得有个顺手得IDE不是，本文教你打造强大得vim-go环境。</p>
+<p>首先安装好Go，然后设置gopath，比如可以这样:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ apt-get install golang
+# 设置gopath 内容如下
+$ cat /etc/profile.d/golang.sh
+export GOPATH=/mnt/workspace/mygo
+export PATH=$PATH:$GOPATH/bin
+$ source /etc/profile
+</pre></div>
+</div>
+<p>安装Vim插件并设置相关配置，Vim的版本至少7.3以上:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ git clone https://github.com/monnand/vimrc
+$ cd vimrc
+$ ./deploy.sh
+$ sudo apt-get install build-essential cmake python-dev libclang-dev
+$ cd ~/.vim/bundle/YouCompleteMe
+$ ./install.sh --gocode-completer
+</pre></div>
+</div>
+<p>安装过程需要到github上下载插件比较慢，请耐心等待。vim-go依赖很多包，这些包需要到glang.org上下载，很遗憾被墙了，你进入vim里执行GoInstallBinaries可以看到。</p>
+<p>通常GoInstallBinaries是优先到golang官网上找包，但是官网在大陆是无法访问的，所以你可以手动安装依赖:</p>
+<div class="highlight-python"><div class="highlight"><pre># 主要安装的依赖包是这些
+$ go get github.com/bradfitz/goimports
+$ go get github.com/rogpeppe/godef
+$ go get github.com/nsf/gocode
+$ go get github.com/jstemmer/gotags
+$ go get github.com/golang/lint/golint
+</pre></div>
+</div>
+<p>如果仍然不能正常安装，且没有科学上网大法，可以使用 <a class="reference external" href="http://gopm.io/">http://gopm.io/</a>  把对应的包下载到go的环境中，也可以使用gopm的命令行工具，我们以安装goimports为例:</p>
+<div class="highlight-python"><div class="highlight"><pre># 将goimports安装到gopath中
+$ gopm get -g -d golang.org/x/tools/cmd/goimports
+# 使用go install 来安装
+$ go install golang.org/x/tools/cmd/goimports
+</pre></div>
+</div>
+<p>参考资料:</p>
+<ul class="simple">
+<li><a class="reference external" href="http://tonybai.com/2014/11/07/golang-development-environment-for-vim/">http://tonybai.com/2014/11/07/golang-development-environment-for-vim/</a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../docker/docker_tips.html"
+                        title="previous chapter">docker问题及技巧整理</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../knowladge/func_cache.html"
+                        title="next chapter">Python实现函数级cache</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/golang/vim_env.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../knowladge/func_cache.html" title="Python实现函数级cache"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../docker/docker_tips.html" title="docker问题及技巧整理"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

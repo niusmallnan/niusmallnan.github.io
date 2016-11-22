@@ -1,0 +1,157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>风雨兼程云计算 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="prev" title="抓取Http数据包" href="listen_http.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="listen_http.html" title="抓取Http数据包"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="id1">
+<h1>风雨兼程云计算<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+<p>2015已至年末，盘点今年的行业资讯，可以说是较为振奋人心的。国家互联网+战略中云计算作为重要支撑，克强总理也多次给云计算产业站台，
+国策定调，让我们信心百倍。国内市场上阿里云等巨头公有云日趋成熟，相继进入大数据产业，云计算是基础，
+只有云计算Iaas层业务做实，上层的应用才能正常展开。同时在资本市场和各级地方政府的推动下，全国涌现了多家云计算及其周边产业的创业公司，
+当然这其中也要感谢开源社区，降低了行业的准入门槛。总得来说，形成了上有国家战略、中有巨头领衔开拓市场、下有中小创业公司勇于创新的整体局面。</p>
+<p>上一段只是本文的引子，本文重点不是在宏观层面高谈阔论，而是要深挖一下真正去做实云计算业务的细节甚至是坑。这个看似很美好的产业，
+当我真正身体力行去做的时候，它的确和我的思想产生了深度撞击，思考甚至是反思势在必行。</p>
+<div class="section" id="id2">
+<h2>观点一： 战略上要全情投入 战术上不要左顾右盼<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<p>很多云计算初创公司都会选择OpenStack作为Iaas层的管理平台，OpenStack作为一个开源社区确实给予了很大的便捷，
+能让我们很快拥有一个Iaas层的管理能力，但是开源社区顺手带给你的也有一种原罪诱惑，开源社区里面的东西太多了，
+五花八门，能够让你脑洞大开，发散式的思维给予你很多产品的灵感。而这真的有必要么，当你去不断的调研这些开源社区的子项目时，
+你会发现它们绝大多数都是在处于迭代开发阶段，初创公司很难有能力把这些项目产品化，而你却在这些项目不断的调研中浪费了巨量的时间，
+这就是所谓的战术上左顾右盼。而与之相对的战略上要全情投入，初创公司的战略并不一定清晰，
+有时候需要那么一点孤注一掷，“拍脑袋”搏一个，然后去做，失败了再来，这其实比左顾右盼的时间成本要低的多。</p>
+</div>
+<div class="section" id="id3">
+<h2>观点二： 莫要被用户牵着走<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<p>初创公司有了第一批客户，肯定会对他们百般珍惜，有求必应。一把“客户需求”的大刀架在研发团队的脖子上，开发了很多新特性新功能。而我们需要真正冷静地去想一想，
+如果做私有云定制便无可厚非，但是如果作为一个Iaas层平台是否真正需要这些功能。无论是翻开成熟商业公司AWS还是开源OpenStack社区的文档，
+我们都会找到一份 &#8220;user guide&#8221;的文档，这证明我们的客户需要有自服务能力。初创公司无法自己去挑选客户，
+教育用户的自服务能力更是难上加难，但是如果真正要长久的维持业务，单靠运维人员的人海战术是欲求不满的，至少也应该去编写一份适合自家云平台业务的用户手册。</p>
+</div>
+<div class="section" id="id4">
+<h2>观点三： 打通关键节点<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<p>无论公司的组织架构如何，云计算业务基本需要三块职能。运营，站在第一线接受反馈来自用户的需求；运维，生产环境的首要维护者，
+是解决问题的一线人员；研发，不断地根据用户需求去升级和优化自家产品。
+这三个点一定要打通，运营在接受用户反馈问题时候，要能基本判断哪些是用户问题哪些是平台问题，
+而不是作为一个switch去把所有信息一股脑转发给运维，研发作为二线运维要对运维团队有较好的支撑，运营和运维总结的产品需求要及时反馈给研发团队。
+真正能做到这些，需要这些团队人员要经常在一起沟通，要充分了解自家的产品业务，每一个环节都至关重要</p>
+</div>
+<div class="section" id="id5">
+<h2>观点四： 尽力去帮助客户将应用“云化”<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<p>初创公司的客户很少有受过完整的云计算思维熏陶，甚至可能还有非技术的。
+部署一个应用就会只要一台虚拟机，没有负载均衡没有HA。
+最高端的技术也不可能保证这一台虚拟机永久不宕机，最正确的作法应该是引导用户充分利用云计算的特性，增加快照备份，多实例负载均衡等手段，
+去把业务“云化”，这样才能真正享受到云计算带来的特性，否则那只是单纯一台虚拟机。</p>
+</div>
+<div class="section" id="id6">
+<h2>最后<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<p>云计算的各家厂商无不在疯狂地在扩张地盘，公有云没有规模效应很难实现盈利，
+做私有云的是否也是在赔本赚吆喝。这个行业很美好，美好到越来越多的公司涌入，
+越来越多的地方政府在政绩的指引下，开始兴建数据中心，其所消耗的电力很快就会超过三峡的发电量，而真正跑起来的业务又有多少，
+我们自认为引发的这场技术革命，真正为社会为普通民众带来了多少落地的实惠。整个行业需要沉下心来，
+每家公司把业务做实落地并坚持到最后，共同培育市场教育客户，才能带来给行业带来真正的繁荣。</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">风雨兼程云计算</a><ul>
+<li><a class="reference internal" href="#id2">观点一： 战略上要全情投入 战术上不要左顾右盼</a></li>
+<li><a class="reference internal" href="#id3">观点二： 莫要被用户牵着走</a></li>
+<li><a class="reference internal" href="#id4">观点三： 打通关键节点</a></li>
+<li><a class="reference internal" href="#id5">观点四： 尽力去帮助客户将应用“云化”</a></li>
+<li><a class="reference internal" href="#id6">最后</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="listen_http.html"
+                        title="previous chapter">抓取Http数据包</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/others/fengyujiancheng.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="listen_http.html" title="抓取Http数据包"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

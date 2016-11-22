@@ -1,0 +1,155 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cinder中大块rbd删除问题 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="libvirt下获取虚机内存使用" href="libvirt_memory_usage.html" />
+    <link rel="prev" title="基于ceph快速创建虚机" href="create_vm_fast_base_rbd.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="libvirt_memory_usage.html" title="libvirt下获取虚机内存使用"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="create_vm_fast_base_rbd.html" title="基于ceph快速创建虚机"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="cinderrbd">
+<h1>cinder中大块rbd删除问题<a class="headerlink" href="#cinderrbd" title="Permalink to this headline">¶</a></h1>
+<p>我们知道cinder支持很对driver，rbd是集成度最好功能也相对齐全的driver，但是在使用中，我们会发现一个问题，就是large size的rbd会删除非常慢，而且这个删除过程会block掉cinder-volume的服务，导致新的cinder请求通过schedule时不能转到这个cinder-volume上。</p>
+<p>这个问题ceph官方也认可，主要原因是librbd对rbd的操作是同步操作会阻塞当前进程，而且ceph官方也没有修改计划，毕竟改成异步操作是大改动啊。</p>
+<p>所以我们需要在cinder层面上修复这个问题，既然会阻塞当前进程，那么我们做删除操作时，应该启一个子进程来执行这个操作，阻塞也只会阻塞子进程，不会影响cinder-volume的服务。</p>
+<div class="section" id="id1">
+<h2>修复方式<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>社区也有人提出了这个问题，有人提出了修改代码，但是目前还没有被合并，code review一直没有通过，但是功能是好用的，review没过的原因主要是代码太糙。</p>
+<p>这个问题的review地址是 <a class="reference external" href="https://review.openstack.org/#/c/145678/">review-145678</a> ，主要修改 cinder/volume/drivers/rbd.py 文件内容，如下:</p>
+<div class="highlight-python"><div class="highlight"><pre>if clone_snap is None:
+    LOG.debug(_(&quot;deleting rbd volume %s&quot;) % (volume_name))
+
+    # RBD.remove from rbd python binding will be blocked in
+    # the librbd::remove() and cannot be monkey patched by
+    # evenlet. This will block all the rest greenthread from
+    # running in the volume process until returning back from
+    # RBD.remove().
+    # librados/librbd doesn&#39;t work in the forked process.
+    # so running RBD.remove from a child process won&#39;t be an
+    # option.
+    # Before ceph community provides an async RBD.remove(), the
+    # only viable option is to execute rbd cli from child process
+
+    args = [&#39;rbd&#39;, &#39;--pool&#39;,
+            self.configuration.rbd_pool,
+            &#39;rm&#39;, volume_name]
+    args.extend(self._ceph_args())
+    try:
+        self._try_execute(*args)
+    except Exception:
+        .....
+        ....
+        ...
+        ..
+        .
+</pre></div>
+</div>
+<p>_try_execute 便会启动子进程去执行rbd rm的操作。</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">cinder中大块rbd删除问题</a><ul>
+<li><a class="reference internal" href="#id1">修复方式</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="create_vm_fast_base_rbd.html"
+                        title="previous chapter">基于ceph快速创建虚机</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="libvirt_memory_usage.html"
+                        title="next chapter">libvirt下获取虚机内存使用</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/large_rbd_delete.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="libvirt_memory_usage.html" title="libvirt下获取虚机内存使用"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="create_vm_fast_base_rbd.html" title="基于ceph快速创建虚机"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

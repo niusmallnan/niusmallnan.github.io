@@ -1,0 +1,140 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>LBaas高可用 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="基于rbd提升虚机快照创建速度" href="rbd_snap_insteadof_qemu_snap.html" />
+    <link rel="prev" title="libvirt下获取虚机内存使用" href="libvirt_memory_usage.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="rbd_snap_insteadof_qemu_snap.html" title="基于rbd提升虚机快照创建速度"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="libvirt_memory_usage.html" title="libvirt下获取虚机内存使用"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="lbaas">
+<h1>LBaas高可用<a class="headerlink" href="#lbaas" title="Permalink to this headline">¶</a></h1>
+<p>Neutron的LBaas服务是OpenStack网络组件的高级特性，也是Horizon支持的可选配置，目前LBaas比较通用的driver是Haproxy，通常我们都只在网络节点部署一个neutron-lbaas-agent，一个agent肯定无法实现高可用，但是即便我们部署多个agent，agent之间是没有协调的，某个agent挂了之后，其上面的负载均衡器就停止了。本文讨论的是Haproxy下LBaas服务的高可用方式。</p>
+<div class="section" id="id1">
+<h2>问题的由来<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>如上面所说并结合下图，LB1和LB2是分别位于不同agent上的两个负载均衡器，LB1的agent宕掉后，LB1便不再提供服务，也不会自动重建，这样我们就应该很清楚的了解目前已知的问题了。</p>
+<img alt="../../_images/lbaas_spof.jpg" src="../../_images/lbaas_spof.jpg" />
+<p>如果我们能够感知agent宕掉，并把LB1迁移到其他可用的agent上，让LB1能够继续提供服务，过程如下图。</p>
+<img alt="../../_images/lbaas_migrate.jpg" src="../../_images/lbaas_migrate.jpg" />
+</div>
+<div class="section" id="id2">
+<h2>实现方法<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<p>关于负载均衡器，可以先读一下之前的一篇文章( <a class="reference internal" href="lbaas_setup.html"><em>LBaas部署及实现原理</em></a> )做一些了解，我们可以得知一个负载均衡器中的VIP对应的是操作系统的namespace，VIP的Port是namespace中一块虚拟网卡，这块虚拟网卡要和Openvswitch连接，那么就可以得知构建一个负载均衡器需要lbaas-agent与openvswitch-agent协同工作才可以。</p>
+<p>如要感知lbaas-agent的状态，我们必须不断的收集他的活跃状态，这个事情neutron已经做了，除此之外我们还需要在neutron-server上构建一个Rescheduler loop评测当前所有lbaas-agent的状态，如果有agent宕了，则触发迁移事件。迁移过程需要lbaas-agent与openvswitch-agent共同参与，过程如下图。</p>
+<img alt="../../_images/lbaas_ha_step.jpg" src="../../_images/lbaas_ha_step.jpg" />
+<p>当宕掉的lbaas-agent重新被修复启动后，这个宿主系统上已有的namespace、tap-device、ovs-port都需要被删除掉，否则Neutron中将会出现大量重复的负载均衡器。</p>
+</div>
+<div class="section" id="id3">
+<h2>社区进展<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<p>上面提到的方案在社区中有相应的BP <a class="reference external" href="https://blueprints.launchpad.net/neutron/+spec/lbaas-ha-agent">lbaas-ha-agent</a> ，不过Code-review并没有通过，但是相关代码可借鉴来参考一下。</p>
+<p>细心的朋友们会发现上面我们提到的方案，并不能实现真正的高可用，就是说一旦出错他需要一个感知错误并重建的时间，一旦某个agent上的负载均衡器很多，这个恢复时间还是很长的。所以社区有个另外一个BP <a class="reference external" href="https://blueprints.launchpad.net/neutron/+spec/lbaas-ha-haproxy">lbaas-ha-haproxy</a> ，这个BP还在草案设计中，它旨在提供服务不中断的真正高可用。</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">LBaas高可用</a><ul>
+<li><a class="reference internal" href="#id1">问题的由来</a></li>
+<li><a class="reference internal" href="#id2">实现方法</a></li>
+<li><a class="reference internal" href="#id3">社区进展</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="libvirt_memory_usage.html"
+                        title="previous chapter">libvirt下获取虚机内存使用</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="rbd_snap_insteadof_qemu_snap.html"
+                        title="next chapter">基于rbd提升虚机快照创建速度</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/neutron_lbaas_ha.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="rbd_snap_insteadof_qemu_snap.html" title="基于rbd提升虚机快照创建速度"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="libvirt_memory_usage.html" title="libvirt下获取虚机内存使用"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

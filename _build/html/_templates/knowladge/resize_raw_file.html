@@ -1,0 +1,160 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>使用qemu-img改变镜像文件大小 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="python面试题总结" href="../python_exam.html" />
+    <link rel="prev" title="python实现精简的https服务器" href="python_https_server.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../python_exam.html" title="python面试题总结"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="python_https_server.html" title="python实现精简的https服务器"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="qemu-img">
+<h1>使用qemu-img改变镜像文件大小<a class="headerlink" href="#qemu-img" title="Permalink to this headline">¶</a></h1>
+<p>有时我们的raw文件比如虚机镜像比较大，但是它的disk size却不是很大，我们需要给他做一些精简。</p>
+<p>首先查看下raw文件的信息:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ qemu-img info test.raw
+image: test.raw
+file format: raw
+virtual size: 20G (21474836480 bytes)
+disk size: 1.1G
+</pre></div>
+</div>
+<p>可以看出他的真实大小只有1.1G，如果把其转换成qcow2格式，那边一目了然:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ qemu-img convert -f raw test.raw -O qcow2 test.qcow2
+$ qemu-img info test.qcow2
+image: test.raw
+file format: qcow2
+virtual size: 20G (21474836480 bytes)
+disk size: 1.1G
+cluster_size: 65536
+Format specific information:
+    compat: 1.1
+        lazy refcounts: false
+$ du -h test.qcow2
+1.1G    test.qcow2
+</pre></div>
+</div>
+<p>virtual_size就是qcow2转换成raw后，这个文件的大小，raw文件大小改变需要这样:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ qemu-img resize test.raw -5G
+Image resized.
+$ qemu-img info test.raw
+image: test.raw
+file format: raw
+virtual size: 15G (16106127360 bytes)
+disk size: 1.1G
+$ du -h test.raw
+15G    test.raw
+
+$ qemu-img resize test.raw +5G
+Image resized.
+$ qemu-img info test.raw
+image: test.raw
+file format: raw
+virtual size: 20G (21474836480 bytes)
+disk size: 1.1G
+$ du -h test.raw
+20G    test.raw
+</pre></div>
+</div>
+<p>如果是qcow2格式的文件，可以使用shrink来减容:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ qemu-img convert -c -O qcow2 source.qcow2 shrunk.qcow2
+</pre></div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="python_https_server.html"
+                        title="previous chapter">python实现精简的https服务器</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../python_exam.html"
+                        title="next chapter">python面试题总结</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/knowladge/resize_raw_file.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../python_exam.html" title="python面试题总结"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="python_https_server.html" title="python实现精简的https服务器"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

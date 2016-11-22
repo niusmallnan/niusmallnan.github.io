@@ -1,0 +1,165 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>屌丝级的cinder&amp;swift的解决方案 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="Maas &amp; Juju 从裸机开始部署openstack" href="maas_juju.html" />
+    <link rel="prev" title="VPNaas部署及实现原理" href="vpnaas_setup.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="maas_juju.html" title="Maas &amp; Juju 从裸机开始部署openstack"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="vpnaas_setup.html" title="VPNaas部署及实现原理"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="cinder-swift">
+<h1>屌丝级的cinder&amp;swift的解决方案<a class="headerlink" href="#cinder-swift" title="Permalink to this headline">¶</a></h1>
+<p>本文展示在没有任何存储设备的时候，如何让cinder和swift的服务可用，当然这要用到linux的loop device的特性，就是用大文件块来模拟磁盘。</p>
+<div class="section" id="cinder">
+<h2>cinder服务可用<a class="headerlink" href="#cinder" title="Permalink to this headline">¶</a></h2>
+<p>在没有多余磁盘时，cinder-api、cinder-schedule是可用的，唯独cinder-volume，所以我们要让cinder-volume在LVMISCSIDriver驱动下可用。</p>
+<p>假设我们在root根目录下操作，cinder-volumes文件块的路径是 /root/cinder-volumes</p>
+<p>安装cinder:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ apt-get install cinder-api cinder-scheduler
+$ apt-get install cinder-volume lvm2
+</pre></div>
+</div>
+<p>准备磁盘(50G):</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dd if=/dev/zero of=cinder-volumes bs=1 count=0 seek=50G
+$ losetup /dev/loop2 cinder-volumes
+$ fdisk /dev/loop2
+    Type in the followings:
+        n
+        p
+        1
+        ENTER
+        ENTER
+        t
+        8e
+        w
+
+$ partprobe
+</pre></div>
+</div>
+<p>创建物理卷组:</p>
+<div class="highlight-python"><div class="highlight"><pre>pvcreate /dev/loop2
+vgcreate cinder-volumes /dev/loop2
+</pre></div>
+</div>
+<p>为防重启服务器后丢失:</p>
+<div class="highlight-python"><div class="highlight"><pre>在rc.local添加
+losetup /dev/loop2 /root/cinder-volumes
+</pre></div>
+</div>
+<p>修改LVM filter:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># /etc/lvm/lvm.conf</span>
+<span class="nb">filter</span> <span class="o">=</span> <span class="p">[</span> <span class="s">&quot;a/sda1/&quot;</span><span class="p">,</span> <span class="s">&quot;a/loop2/&quot;</span><span class="p">,</span> <span class="s">&quot;r/.*/&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="swift">
+<h2>swift服务可用<a class="headerlink" href="#swift" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">屌丝级的cinder&amp;swift的解决方案</a><ul>
+<li><a class="reference internal" href="#cinder">cinder服务可用</a></li>
+<li><a class="reference internal" href="#swift">swift服务可用</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="vpnaas_setup.html"
+                        title="previous chapter">VPNaas部署及实现原理</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="maas_juju.html"
+                        title="next chapter">Maas &amp; Juju 从裸机开始部署openstack</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/diors_cinder_swift.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="maas_juju.html" title="Maas &amp; Juju 从裸机开始部署openstack"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="vpnaas_setup.html" title="VPNaas部署及实现原理"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

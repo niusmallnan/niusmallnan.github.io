@@ -1,0 +1,246 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>FWaas部署及实现原理 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="VPNaas部署及实现原理" href="vpnaas_setup.html" />
+    <link rel="prev" title="LBaas部署及实现原理" href="lbaas_setup.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="vpnaas_setup.html" title="VPNaas部署及实现原理"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="lbaas_setup.html" title="LBaas部署及实现原理"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="fwaas">
+<h1>FWaas部署及实现原理<a class="headerlink" href="#fwaas" title="Permalink to this headline">¶</a></h1>
+<p>FWaas(防火墙即服务)是基于neutron组件实现的L4-L7层的服务，目前的实现是社区提供的参考实现，离商用还是有很大一段距离的，不过我们可以大致学习参考下。</p>
+<div class="section" id="id1">
+<h2>安装部署<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>network-node上的操作</p>
+<ul>
+<li><p class="first">创建配置文件fwaas_driver.ini，配置如下:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="n">fwaas</span><span class="p">]</span>
+<span class="n">driver</span> <span class="o">=</span> <span class="n">neutron</span><span class="o">.</span><span class="n">services</span><span class="o">.</span><span class="n">firewall</span><span class="o">.</span><span class="n">drivers</span><span class="o">.</span><span class="n">linux</span><span class="o">.</span><span class="n">iptables_fwaas</span><span class="o">.</span><span class="n">IptablesFwaasDriver</span>
+<span class="n">enabled</span> <span class="o">=</span> <span class="bp">True</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">重启l3-agent服务:</p>
+<div class="highlight-python"><div class="highlight"><pre>/usr/bin/python /usr/bin/neutron-l3-agent \
+    --config-file=/etc/neutron/neutron.conf \
+    --config-file=/etc/neutron/l3_agent.ini \
+    --config-file /etc/neutron/fwaas_driver.ini \
+    --log-file=/var/log/neutron/l3-agent.log
+</pre></div>
+</div>
+</li>
+<li><p class="first">重启l3-agent</p>
+</li>
+</ul>
+<p>controller-node上的操作</p>
+<ul>
+<li><p class="first">修改neutron.conf，添加一个service_plugins:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#除了router外还需要添加firewall</span>
+<span class="n">service_plugins</span> <span class="o">=</span> <span class="n">router</span><span class="p">,</span><span class="n">firewall</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">重启neutron-server</p>
+</li>
+<li><p class="first">修改horizon的local_setting, enable_firewall为True:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">OPENSTACK_NEUTRON_NETWORK</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;enable_lb&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+    <span class="s">&#39;enable_firewall&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+    <span class="s">&#39;enable_quotas&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+    <span class="s">&#39;enable_vpn&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+    <span class="s">&#39;profile_support&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="s">&#39;profile_support&#39;</span><span class="p">:</span> <span class="s">&#39;cisco&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">重启horizon</p>
+</li>
+</ul>
+</div>
+<div class="section" id="id2">
+<h2>实现原理<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id3">
+<h3>基本概念<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p class="first">FirewallRule</p>
+<p>我们所说的防火墙规则,定义了包过滤所需的信息和匹配后的动作</p>
+</li>
+<li><p class="first">FirewallPolicy</p>
+<p>由若干个FirewallRule组成,它被作为模板来创建Firewall</p>
+</li>
+<li><p class="first">Firewall</p>
+<p>系统最终 要实现的防火墙</p>
+</li>
+</ul>
+<p>对象关系模型如下:</p>
+<img alt="../../_images/fwaas_er.png" src="../../_images/fwaas_er.png" />
+</div>
+<div class="section" id="id4">
+<h3>基本原理<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<p>FWaas作用在三层的Router上的Iptables，所以你如果要让防火墙生效，你的网络必须有网关，而且要有和网关连接的Router。</p>
+<p>我们的网络情况如下:</p>
+<p>Ext-Net 192.168.1.0/24, 192.168.1.1</p>
+<p>Sub-Net 20.20.20.0/24,  20.20.20.1</p>
+<p>Router  192.168.1.200&#8211;20.20.20.1</p>
+<p>Router对应的namespace如下:</p>
+<div class="highlight-python"><div class="highlight"><pre>1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+
+2: qg-e711d379-87: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc pfifo_fast state UP qlen 1000
+    inet 192.168.1.200/24 brd 192.168.1.255 scope global qg-e711d379-87
+43: qr-a04bb9f3-a9: &lt;BROADCAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue state UNKNOWN
+    inet 20.20.20.1/24 brd 20.20.20.255 scope global qr-a04bb9f3-a9
+</pre></div>
+</div>
+<p>那么当你创建FW时候，你会在Router的namespace上看到如下IPTables规则:</p>
+<div class="highlight-python"><div class="highlight"><pre>-A neutron-l3-agent-FORWARD -o qr-+ -j neutron-l3-agent-iv443916a08
+-A neutron-l3-agent-FORWARD -i qr-+ -j neutron-l3-agent-ov443916a08
+-A neutron-l3-agent-FORWARD -o qr-+ -j neutron-l3-agent-fwaas-defau
+-A neutron-l3-agent-FORWARD -i qr-+ -j neutron-l3-agent-fwaas-defau
+-A neutron-l3-agent-INPUT -d 127.0.0.1/32 -p tcp -m tcp --dport 9697 -j ACCEPT
+-A neutron-l3-agent-fwaas-defau -j DROP
+-A neutron-l3-agent-iv443916a08 -m state --state INVALID -j DROP
+-A neutron-l3-agent-iv443916a08 -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A neutron-l3-agent-ov443916a08 -m state --state INVALID -j DROP
+-A neutron-l3-agent-ov443916a08 -m state --state RELATED,ESTABLISHED -j ACCEPT
+</pre></div>
+</div>
+<p>具体的就是在每个Router的interface设备qr­{xxx}装上入向和出向两个IPTables规则链，
+在每个链上都有相应的IPTables规则来实现防火墙的规则，neutron-l3-agent-iv443916a08和neutron-l3-agent-ov443916a08就是这两个规则链，neutron-l3-agent-fwaas-defau是默认规则链，可以看出默认情况他会Drop所有进出访问。</p>
+<p>当我在horizon上增加一条可以对20.20.20.0/24可访问tcp 22端口的规则，那么IPTables会增加如下记录:</p>
+<div class="highlight-python"><div class="highlight"><pre>-A neutron-l3-agent-iv443916a08 -d 20.20.20.0/24 -p tcp -m tcp --dport 22 -j ACCEPT
+-A neutron-l3-agent-ov443916a08 -d 20.20.20.0/24 -p tcp -m tcp --dport 22 -j ACCEPT
+</pre></div>
+</div>
+<p>看！就这么简单....</p>
+</div>
+<div class="section" id="id5">
+<h3>防火墙与安全组(转)<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p class="first">安全组由L2 Agent来实现,也就是说L2 Agent,比如neutron_openvswitch_agent和 neutron_linuxbridge_agent,会将安全组规则转换成IPTables规则,而且一般发生在所有计算节点上。</p>
+<p>防火墙由L3 Agent来实现,它的规则会在租户的Router所在的L3 Agent节点上转化 成IPTables规则。</p>
+</li>
+<li><p class="first">防火墙保护只能作用于跨网段的网络流量,而安全组则可以作用于任何进出虚拟机的流量。</p>
+</li>
+<li><p class="first">防火墙作为高级网络服务,将被用于服务链中,而安全组则不能。在Neutron中同时部署防火墙和安全组可以达到双重防护。</p>
+<p>外部恶意访问可以被防火墙过滤掉,避免了计算节点的安全组去处理恶意访问所造成的资源损失。</p>
+<p>即使防火墙被突破,安全组作为下一到防线还可以保护虚拟机。最重要的是,安全组可以过滤掉来自内部的恶意访问。</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">FWaas部署及实现原理</a><ul>
+<li><a class="reference internal" href="#id1">安装部署</a></li>
+<li><a class="reference internal" href="#id2">实现原理</a><ul>
+<li><a class="reference internal" href="#id3">基本概念</a></li>
+<li><a class="reference internal" href="#id4">基本原理</a></li>
+<li><a class="reference internal" href="#id5">防火墙与安全组(转)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="lbaas_setup.html"
+                        title="previous chapter">LBaas部署及实现原理</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="vpnaas_setup.html"
+                        title="next chapter">VPNaas部署及实现原理</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/fwaas_setup.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="vpnaas_setup.html" title="VPNaas部署及实现原理"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="lbaas_setup.html" title="LBaas部署及实现原理"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

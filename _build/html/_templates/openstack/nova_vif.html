@@ -1,0 +1,194 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Nova中VIF的实现 &mdash; niusmallnan 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="niusmallnan 0.1 documentation" href="../../index.html" />
+    <link rel="next" title="Nova实现虚拟机块迁移" href="block_migration.html" />
+    <link rel="prev" title="neutron SDN的实现" href="how_to_sdn.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="block_migration.html" title="Nova实现虚拟机块迁移"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="how_to_sdn.html" title="neutron SDN的实现"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="novavif">
+<h1>Nova中VIF的实现<a class="headerlink" href="#novavif" title="Permalink to this headline">¶</a></h1>
+<p>VIF顾名思义就是虚拟网卡，为什么我的title不用虚拟网卡而用VIF，因为如果你看Nova的源码，你会发现网络部分就是各种晃眼的VIF。Nova管理的VM通过VIF连通网络，我们便来研究一下他的实现机制，本文环境是H版Nova(KVM)+Neutron(OVS)。</p>
+<div class="section" id="vm">
+<h2>VM的网络配置<a class="headerlink" href="#vm" title="Permalink to this headline">¶</a></h2>
+<p>VM安装完成后，需要为其设置网络接口，以便和主机网络，VM之间的网络通信。</p>
+<p>KVM 客户机网络连接主要有两种方式:</p>
+<ul class="simple">
+<li>用户网络(User Networking): 让虚拟机访问主机、互联网或本地网络上的资源的简单方法，但是不能从网络或其他的客户机访问客户机，性能上也需要大的调整。NAT方式，虚拟机利用host机器的ip进行上网，对外显示一个ip。</li>
+<li>虚拟网桥(Virtual Bridge): 这种方式要比用户网络复杂一些，但是设置好后客户机与互联网，客户机与主机之间的通信都很容易。Bridge方式，将虚拟机桥接到host机器的网卡上，VM和host机器都通过bridge上网，对外不同的ip。</li>
+</ul>
+<p>那么在Openstack的云环境中，很明显Bridge模式更适合虚拟机网络，因为这样外部网络可以直接能访问到VM。</p>
+<p>想象力不够的，可以看下面一张图，其实nova-network就是用的这种方式:</p>
+<img alt="../../_images/nova_bridge.png" src="../../_images/nova_bridge.png" />
+<p>了解了这些基础知识，我们来看看Neutron网络模式下，Nova的VIF是怎么做的。</p>
+</div>
+<div class="section" id="vif-by-nova">
+<h2>VIF By Nova<a class="headerlink" href="#vif-by-nova" title="Permalink to this headline">¶</a></h2>
+<p>Nova的底层虚拟化我们用的是KVM，Neutron的核心我们用的是Openvswitch，所以万变不离其宗，VM的网络肯定还是Bridge模式，那么Nova和Neutron如何实现的？</p>
+<p>先看nova.conf中几个重要配置:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">compute_driver</span><span class="o">=</span><span class="n">libvirt</span><span class="o">.</span><span class="n">LibvirtDriver</span>
+<span class="n">libvirt_type</span><span class="o">=</span><span class="n">kvm</span>
+<span class="n">libvirt_vif_driver</span><span class="o">=</span><span class="n">nova</span><span class="o">.</span><span class="n">virt</span><span class="o">.</span><span class="n">libvirt</span><span class="o">.</span><span class="n">vif</span><span class="o">.</span><span class="n">LibvirtGenericVIFDriver</span>
+</pre></div>
+</div>
+<p>compute_driver是创建删除修改VM的具体实现，我们这里是使用libvirt，当然libvirt本身不是虚拟化平台，它只是一个统一操作接口，它背后是kvm、xen等各种虚拟化技术，libvirt_type指定了我们使用kvm虚拟化技术，libvirt_vif_driver指定了我们如何挂载虚拟网络设备。</p>
+<p>LibvirtDriver中当你创建虚拟时，它会执行_create_domain_and_network，就是根据你设定的网络策略设备虚拟网卡，虚拟网卡的创建交给LibvirtGenericVIFDriver。</p>
+<p>我们使用的是OVS实现虚拟网络的二层三层功能，所以我们之间看plug_ovs的关键代码:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">plug_ovs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">vif</span><span class="p">):</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_firewall_required</span><span class="p">():</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plug_ovs_hybrid</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="n">vif</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_libvirt_version</span><span class="p">(</span><span class="n">LIBVIRT_OVS_VPORT_VERSION</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plug_ovs_bridge</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="n">vif</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plug_ovs_ethernet</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="n">vif</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>我们看到一共有plug_ovs_hybrid、plug_ovs_bridge、plug_ovs_ethernet三种模式。plug_ovs_hybrid模式之前我们在讲Neutron SDN的时候有提到过，一张图(VLAN网络)来了解下:</p>
+<img alt="../../_images/compute_vif.png" src="../../_images/compute_vif.png" />
+<p>qbr就是KVM Bridge模式需要的网桥，但是这种模式比较浪费，因为每个虚拟机都要建立一个qbr和一对veth设备，以便连接到ovs的br-int上。</p>
+<p>这个明显是能优化的，libvirt 0.9.11版本之后，libvirt能够和ovs之间集成起来，省去qbr和veth pair的开销，这就是plug_ovs_bridge模式，这种模式原理也是KVM Bridge模式，只不过由ovs的br-int实现KVM Bridge的功能，随意选择一台虚机查看它的libvirt.xml</p>
+<div class="highlight-python"><div class="highlight"><pre>&lt;interface type=&quot;bridge&quot;&gt;
+    &lt;mac address=&quot;fa:16:3e:f4:c9:bb&quot;/&gt;
+    &lt;model type=&quot;virtio&quot;/&gt;
+    &lt;source bridge=&quot;br-int&quot;/&gt;
+    &lt;target dev=&quot;tap8a6107b1-3e&quot;/&gt;
+    &lt;virtualport type=&quot;openvswitch&quot;&gt;
+        &lt;parameters interfaceid=&quot;8a6107b1-3e72-4b71-bd5f-1aa772517004&quot;/&gt;
+    &lt;/virtualport&gt;
+&lt;/interface&gt;
+</pre></div>
+</div>
+<p>这样一来，虚拟机对应的虚拟网卡(tap device)就会直接连接到br-int的port上(图示为GRE网络):</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>01eaa6d1-185f-41bd-9282-b1ad512b8351</dt>
+<dd><dl class="first last docutils">
+<dt>Port &#8220;tap0256b6ea-d1&#8221;</dt>
+<dd>tag: 2
+Interface &#8220;tap0256b6ea-d1&#8221;</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<img alt="../../_images/compute_ovs_bridge.png" src="../../_images/compute_ovs_bridge.png" />
+<p>plug_ovs_ethernet其实和plug_ovs_bridge是一样的，只不过是兼容了下不能和OVS直接集成的libvirt低版本而已。</p>
+<p>无论哪种模式，归根结底都是实现KVM Bridge网络，虚拟网卡tap device就是一个dhcp设备，它不会有静态ip，而对应的dhcp服务是由dnsmasq实现的，
+dhcp服务的host-file中保存着这些tap device的mac地址对应的ip:</p>
+<div class="highlight-python"><div class="highlight"><pre>root@ncloud-network:~# cat /var/lib/neutron/dhcp/34552b7d-e6de-4ec0-b170-72fe0afa9d90/host
+fa:16:3e:9b:10:b6,host-20-20-20-4.openstacklocal,20.20.20.4
+fa:16:3e:fd:77:64,host-20-20-20-3.openstacklocal,20.20.20.3
+fa:16:3e:69:bc:20,host-20-20-20-1.openstacklocal,20.20.20.1
+fa:16:3e:49:85:42,host-20-20-20-6.openstacklocal,20.20.20.6
+</pre></div>
+</div>
+<p>就这样，虚拟机就有了IP，无论是要二层通信还是三层外网，这都是基础。</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Nova中VIF的实现</a><ul>
+<li><a class="reference internal" href="#vm">VM的网络配置</a></li>
+<li><a class="reference internal" href="#vif-by-nova">VIF By Nova</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="how_to_sdn.html"
+                        title="previous chapter">neutron SDN的实现</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="block_migration.html"
+                        title="next chapter">Nova实现虚拟机块迁移</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/_templates/openstack/nova_vif.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="block_migration.html" title="Nova实现虚拟机块迁移"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="how_to_sdn.html" title="neutron SDN的实现"
+             >previous</a> |</li>
+        <li><a href="../../index.html">niusmallnan 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, niusmallnan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>
