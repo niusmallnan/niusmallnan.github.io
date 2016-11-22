@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Niusmallnan</title>
+    <link>http://niusmallnan.com/index.xml</link>
+    <description>Recent content on Niusmallnan</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <copyright>Niusmallnan</copyright>
+    <lastBuildDate>Tue, 22 Nov 2016 13:59:30 +0800</lastBuildDate>
+    <atom:link href="http://niusmallnan.com/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>基于容器实现树莓派的动态域名绑定</title>
+      <link>http://niusmallnan.com/2016/11/22/rpi-noip-with-docker</link>
+      <pubDate>Tue, 22 Nov 2016 13:59:30 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2016/11/22/rpi-noip-with-docker</guid>
+      <description>&lt;p&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
+
+&lt;p&gt;我们在家里使用树莓派时，如果在上面搭建了一些服务，有时会期待能在外网可以访问。
+家庭宽带会给我们分配一个外网IP，可以通过这个IP在公网上访问树莓派上的服务。
+但是运营商提供的这个IP是非静态的，很可能在凌晨的时候会被重新分配，
+而且IP也不是很好记，所以通常我们都希望能有一个域名可以直接访问。
+动态域名解析是个老话题，国内最早花生壳就做过，具体原理不必多说。&lt;/p&gt;
+
+&lt;h3 id=&#34;我们的需求清单如下&#34;&gt;我们的需求清单如下：&lt;/h3&gt;
+
+&lt;ol&gt;
+&lt;li&gt;一个动态域名解析的软件，最好是一定程度Free。&lt;/li&gt;
+&lt;li&gt;域名解析的client端一定要是开源的（谁也不想被当肉鸡&amp;hellip;）。&lt;/li&gt;
+&lt;li&gt;部署控制要非常简单。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&#34;最终选型如下&#34;&gt;最终选型如下：&lt;/h3&gt;
+
+&lt;ol&gt;
+&lt;li&gt;使用国外&lt;a href=&#34;https://www.noip.com/&#34;&gt;noip&lt;/a&gt;的服务，免费账户可以绑定三个免费域名，
+每个域名30天有效，失效后需要手动添加回来。这种程度对于我这种玩家已经完全足够了。&lt;/li&gt;
+&lt;li&gt;noip的client端支持各种平台，支持&lt;a href=&#34;https://www.noip.com/download?page=linux&#34;&gt;Linux&lt;/a&gt;，同时是开源。&lt;/li&gt;
+&lt;li&gt;为了让部署变得更加简洁，决定使用Docker容器来部署。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&#34;执行过程&#34;&gt;执行过程&lt;/h3&gt;
+
+&lt;p&gt;首先，需要到&lt;a href=&#34;https://www.noip.com/&#34;&gt;noip&lt;/a&gt;上注册账户，并填写自己的域名，注册过程请自行体验，比如：
+&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tNc79jw1fa0utbt10oj30ja04maap.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;然后，我们就需要在下载客户端，并在树莓派上进行编译，生成适合ARM运行的版本，编译只要执行make即可：
+&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tNc79jw1fa0uxw14ulj30fk0a4wgz.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;初次执行需要先在client端注册账号信息，其实就是生成一下相关配置文件，再次执行就可以运行起来了。&lt;/p&gt;
+
+&lt;p&gt;这么看来，对于很多用户来说还是太复杂，所以我们决定使用容器来简化这个过程。
+可以把上面繁琐操作，全部放在容器中，为了精简程序的编译环境，
+我们使用alpine-linux来进行编译，容器的Dockerfile如下：
+&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tNc79jw1fa0uz7rv7oj30i304pmyk.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;接着，我们需要对树莓派的系统进行容器化，以便我们可以运行noip容器程序，此时可以有三种选择：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;RancherOS&lt;/li&gt;
+&lt;li&gt;HypriotOS&lt;/li&gt;
+&lt;li&gt;Rasbian 基础上安装Docker&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;前两个都是内置Docker Engine的，用起来比较方便，Rasbian需要自行安装Docker。我选择的OS是RancherOS。&lt;/p&gt;
+
+&lt;h3 id=&#34;最简方式部署noip-只需三步&#34;&gt;最简方式部署noip，只需三步&lt;/h3&gt;
+
+&lt;p&gt;在RancherOS上修改registry mirror后，可以加速镜像下载，然后拉取前面Dockerfile编译的镜像：&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;$ docker pull hypriot/rpi-noip&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;注册noip client，按照提示添加用户名密码等信息：&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;$ docker run -ti -v noip:/usr/local/etc/ hypriot/rpi-noip noip2 -C&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;运行noip clent：&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;$ docker run -v noip:/usr/local/etc/ --restart=always hypriot/rpi-noip&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;登录No-IP的&lt;a href=&#34;https://my.noip.com/#!/dynamic-dns&#34;&gt;控制台&lt;/a&gt;可以看到 dns绑定情况：
+&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tNc79jw1fa0v2h5umhj30km05rjs0.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;在本地使用dig确认一下解析情况：
+&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tNc79jw1fa0v2po6wfj30gy08yjt4.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;以上所有源码可以参考：&lt;a href=&#34;https://github.com/hypriot/rpi-noip&#34;&gt;https://github.com/hypriot/rpi-noip&lt;/a&gt;。
+这样，我们就在树莓派上非常简单的实现了动态域名绑定。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>关于我</title>
+      <link>http://niusmallnan.com/aboutme/</link>
+      <pubDate>Tue, 22 Nov 2016 12:07:35 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/aboutme/</guid>
+      <description>&lt;p&gt;
+张智博（niusmallnan），笔名牛小腩，初出茅庐在阿里巴巴口碑网，参与本地搜索业务研发工作，
+后与朋友联合创办美食点评社区“美食行”，之后在各种公司从事云计算研发工作。&lt;/p&gt;
+
+&lt;p&gt;喜欢参与技术社区活动，曾担任：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;OpenStack中国社区长期作者&lt;/li&gt;
+&lt;li&gt;InfoQ兼职编辑&lt;/li&gt;
+&lt;li&gt;Rancher中国社区布道师&lt;/li&gt;
+&lt;li&gt;MBH树莓派社区成员&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;热爱coding，热爱技术分享，技术宅&amp;amp;科幻粉。&lt;/p&gt;
+
+&lt;p&gt;简历更多信息，请参考&lt;a href=&#34;https://cn.linkedin.com/in/niusmallnan&#34;&gt;LinkedIn&lt;/a&gt;。&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>
