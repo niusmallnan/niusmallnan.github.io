@@ -187,7 +187,7 @@
     </div>
     <div class="article-info profile-block">
       <div class="article-info-block">
-        2
+        3
         <span>文章</span>
       </div>
       <div class="article-info-block">
@@ -570,6 +570,154 @@
         </div>
     </article>
     
+    <article class="article article-type-post" itemscope="" itemprop="blogPost">
+        <div class="article-inner">
+            
+            </a>
+
+            <header class="article-header">
+    <a href="http://niusmallnan.com/2016/08/25/rancher-envent">
+    <h1 class="article-title" itemprop="name">
+        Rancher event机制及其实践指南
+    </h1>
+    </a>
+    <div class="article-meta">
+        <div class="article-date">
+            <i class="fa fa-calendar"></i>
+            <time datetime="2016-08-25 13:44:04 &#43;0800 CST" itemprop="datePublished">2016-08-25</time>
+            &middot;
+            3775
+            字数
+            &middot;
+            8
+            分钟阅读
+        </div>
+
+
+        
+            
+            
+            <div class="article-category">
+                <i class="fa fa-folder"></i>
+                
+                
+                <a class="article-category-link" href="categories/coding">coding</a>
+                
+                
+            </div>
+            
+        
+
+        
+            
+            
+            <div class="article-category">
+                <i class="fa fa-tags"></i>
+                
+                
+                <a class="article-category-link" href="tags/rancher">Rancher</a>
+                
+                
+            </div>
+            
+        
+    </div>
+</header>
+
+            <div class="article-entry" itemprop="articleBody">
+                <p>
+                    Rancher在v1.0版本为了Kubernetes的集成，开始扩展并逐步完善了Rancher event机制，
+event机制可以完成技术架构上的解耦。那么Rancher都提供了哪些event？
+Rancher内部是如何使用的？以及我们如何用event来增强一些定制服务？
+
+                    <br>
+                </p>
+                <p class="article-more-link">
+                    <a href="http://niusmallnan.com/2016/08/25/rancher-envent">
+                        查看更多
+                    </a>
+                </p>
+            </div>
+            <footer class="article-footer">
+    <a data-url="http://niusmallnan.com/2016/08/25/rancher-envent" data-id="7b92c2c0d8f3c2932e8a2ba4e514acfd" class="article-share-link">
+        <i class="fa fa-share"></i>
+        分享
+    </a>
+    
+    <a href="http://niusmallnan.com/2016/08/25/rancher-envent/#disqus_thread" class="article-comment-link">
+        评论
+    </a>
+    
+
+    <script>
+    (function ($) {
+        
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+    </script>
+</footer>
+
+        </div>
+    </article>
+    
 
     <nav id="page-nav">
 
@@ -639,6 +787,32 @@
                 </div>
             </li>
             
+            <li>
+                <div class="item-thumbnail">
+                    <a href="http://niusmallnan.com/2016/08/25/rancher-envent" class="thumbnail">
+                    
+                        <span class="thumbnail-image thumbnail-none"></span>
+                    
+                    </a>
+                </div>
+                <div class="item-inner">
+                    
+                    
+                    <p class="item-category">
+                        
+                        <a class="article-category-link" href="http://niusmallnan.com/categories/coding">
+                        coding
+                        </a>
+                    </p>
+                    
+                    
+                    <p class="item-title"><a href="http://niusmallnan.com/2016/08/25/rancher-envent" class="title">Rancher event机制及其实践指南</a></p>
+                    <p class="item-date">
+                        <time datetime="2016-08-25 13:44:04 &#43;0800 CST" itemprop="datePublished">2016-08-25</time>
+                    </p>
+                </div>
+            </li>
+            
         </ul>
     </div>
 </div>
@@ -657,7 +831,7 @@
                 <a class="category-list-link" href="http://niusmallnan.com/categories/coding">
                     coding
                 </a>
-                <span class="category-list-count">2</span>
+                <span class="category-list-count">3</span>
             </li>
             
         </ul>
@@ -698,7 +872,7 @@
                 <a class="category-list-link" href="http://niusmallnan.com/tags/rancher">
                     rancher
                 </a>
-                <span class="category-list-count">1</span>
+                <span class="category-list-count">2</span>
             </li>
             
             <li class="category-list-item">

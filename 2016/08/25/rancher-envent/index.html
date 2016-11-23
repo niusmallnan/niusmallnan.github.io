@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>如何hack一下rancher k8s &middot; Niusmallnan</title>
+    <title>Rancher event机制及其实践指南 &middot; Niusmallnan</title>
     <meta name="generator" content="Hugo 0.17" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -10,7 +10,7 @@
       <meta name="description" content="Niusmallnan Blog Site">
     
     
-    <link rel="canonical" href="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking"/>
+    <link rel="canonical" href="http://niusmallnan.com/2016/08/25/rancher-envent"/>
     <link rel="icon" href="http://niusmallnan.com/favicon.ico">
     <link rel="apple-touch-icon" href="http://niusmallnan.com/apple-touch-icon.png"/>
     <link rel="stylesheet" href="http://niusmallnan.com/css/style.css">
@@ -20,15 +20,16 @@
     
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,400,600' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-    <meta property="og:title" content="如何hack一下rancher k8s" />
-<meta property="og:description" content="Rancher可以轻松实现Kubernetes的部署，尽管默认的部署已经完全可用，
-但是如果我们想修改部署的K8s版本，这时应当如何应对？
+    <meta property="og:title" content="Rancher event机制及其实践指南" />
+<meta property="og:description" content="Rancher在v1.0版本为了Kubernetes的集成，开始扩展并逐步完善了Rancher event机制，
+event机制可以完成技术架构上的解耦。那么Rancher都提供了哪些event？
+Rancher内部是如何使用的？以及我们如何用event来增强一些定制服务？
 " />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking" />
+<meta property="og:url" content="http://niusmallnan.com/2016/08/25/rancher-envent" />
 
 
-<meta property="og:updated_time" content="2016-10-08T16:09:24&#43;08:00"/>
+<meta property="og:updated_time" content="2016-08-25T13:44:04&#43;08:00"/>
 
 
 
@@ -41,14 +42,15 @@
 
     
     
-<meta itemprop="name" content="如何hack一下rancher k8s">
-<meta itemprop="description" content="Rancher可以轻松实现Kubernetes的部署，尽管默认的部署已经完全可用，
-但是如果我们想修改部署的K8s版本，这时应当如何应对？
+<meta itemprop="name" content="Rancher event机制及其实践指南">
+<meta itemprop="description" content="Rancher在v1.0版本为了Kubernetes的集成，开始扩展并逐步完善了Rancher event机制，
+event机制可以完成技术架构上的解耦。那么Rancher都提供了哪些event？
+Rancher内部是如何使用的？以及我们如何用event来增强一些定制服务？
 ">
 
 
-<meta itemprop="dateModified" content="2016-10-08T16:09:24&#43;08:00" />
-<meta itemprop="wordCount" content="1375">
+<meta itemprop="dateModified" content="2016-08-25T13:44:04&#43;08:00" />
+<meta itemprop="wordCount" content="3775">
 
 
 
@@ -60,9 +62,10 @@
 
 
 
-<meta name="twitter:title" content="如何hack一下rancher k8s"/>
-<meta name="twitter:description" content="Rancher可以轻松实现Kubernetes的部署，尽管默认的部署已经完全可用，
-但是如果我们想修改部署的K8s版本，这时应当如何应对？
+<meta name="twitter:title" content="Rancher event机制及其实践指南"/>
+<meta name="twitter:description" content="Rancher在v1.0版本为了Kubernetes的集成，开始扩展并逐步完善了Rancher event机制，
+event机制可以完成技术架构上的解耦。那么Rancher都提供了哪些event？
+Rancher内部是如何使用的？以及我们如何用event来增强一些定制服务？
 "/>
 
 
@@ -297,20 +300,20 @@
             
 
             <header class="article-header">
-    <a href="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking">
+    <a href="http://niusmallnan.com/2016/08/25/rancher-envent">
     <h1 class="article-title" itemprop="name">
-        如何hack一下rancher k8s
+        Rancher event机制及其实践指南
     </h1>
     </a>
     <div class="article-meta">
         <div class="article-date">
             <i class="fa fa-calendar"></i>
-            <time datetime="2016-10-08 16:09:24 &#43;0800 CST" itemprop="datePublished">2016-10-08</time>
+            <time datetime="2016-08-25 13:44:04 &#43;0800 CST" itemprop="datePublished">2016-08-25</time>
             &middot;
-            1375
+            3775
             字数
             &middot;
-            3
+            8
             分钟阅读
         </div>
 
@@ -337,10 +340,6 @@
                 
                 
                 <a class="article-category-link" href="tags/rancher">Rancher</a>
-                &middot;
-                
-                
-                <a class="article-category-link" href="tags/kubernetes">Kubernetes</a>
                 
                 
             </div>
@@ -350,66 +349,140 @@
 </header>
 
             <div class="article-entry" itemprop="articleBody">
-                <p>Rancher可以轻松实现Kubernetes的部署，尽管默认的部署已经完全可用，
-但是如果我们想修改部署的K8s版本，这时应当如何应对？
+                <p>Rancher在v1.0版本为了Kubernetes的集成，开始扩展并逐步完善了Rancher event机制，
+event机制可以完成技术架构上的解耦。那么Rancher都提供了哪些event？
+Rancher内部是如何使用的？以及我们如何用event来增强一些定制服务？
 </p>
 
-<h3 id="原理分析与执行">原理分析与执行</h3>
+<h3 id="引言">引言</h3>
 
-<p>在Rancher中，由于K8s是基于Cattle引擎来部署，所以在K8s在部署完成之后，
-我们可以通过Link Graph来很清晰的看到整体的部署情况。<br />
-<img src="http://ww1.sinaimg.cn/large/006tNc79jw1fa0ybyprq4j30mi07tdh0.jpg" alt="" /></p>
+<p>我们的Rancher官方技术社区已经创立些许时日了，相信通过我们的线下meetup和线上布道工作，
+很多朋友对Rancher的使用已经掌握得很纯熟了。一些高级用户开始真正把自己的业务进行微服务化并向Rancher迁移，
+在迁移的过程中，由于业务本身的复杂性特殊性，
+可能需要利用Rancher的一些高级特性甚至要对Rancher进行一定的扩展，
+这就需要对Rancher的一些组件的实现机制有些许了解。</p>
 
-<p>既然基于Cattle引擎部署，也就是说需要两个compose文件，
-k8s引擎的compose文件放在<a href="https://github.com/rancher/rancher-catalog/tree/master/templates">https://github.com/rancher/rancher-catalog/tree/master/templates</a>下面，
-这里面有两个相关目录kubernetes与k8s，k8s是Rancher1.2开始使用的，
-而kubernetes则是Rancher1.2之后开始使用的。<br />
-<img src="http://ww1.sinaimg.cn/large/006tNc79jw1fa0ydzd1dgj30gt07qmyg.jpg" alt="" /></p>
+<p>本次分享就介绍一下Rancher的event机制，由于相关内容文档极其欠缺，本人也只是通过实践和代码阅读分析其原理，
+如有谬误欢迎交流指正，小腩双手红包奉上！同时为保证收视率，本次分享会以原理+实践的方式进行。</p>
 
-<p>为了我们可以自己hack一下rancher k8s的部署，我们可以在github上fork一下rancher-catalog，
-同时还需要修改一下Rancher中默认的catalog的repo地址，
-这个可以在<a href="http://rancher-server/v1/settings">http://rancher-server/v1/settings</a>页面下，
-寻找名为 catalog.url 的配置项，然后进入编辑修改。比如我这里将library库的地址换成了自己的：
-<a href="https://github.com/niusmallnan/rancher-catalog.git">https://github.com/niusmallnan/rancher-catalog.git</a><br />
-<img src="http://ww3.sinaimg.cn/large/006tNc79jw1fa0yff7sbzj30h206imyy.jpg" alt="" /></p>
+<h3 id="原理分析">原理分析</h3>
 
-<p>此时，我们就可以修改了，找一个比较实用的场景。我们都知道k8s的pod都会依赖一个基础镜像，
-这个镜像默认的地址是被GFW挡在墙外了，一般我们会把kubelet的启动参数调整一下，
-以便重新指定这个镜像地址，比如指定到国内的镜像源上。<br />
-<strong>&ndash;pod-infra-container-image=index.tenxcloud.com/google_containers/pause:2.0</strong>。</p>
+<p>在大规模系统架构中，event机制通常采用消息驱动 ，它对提升分布式架构的容错性灵活性有很大帮助，
+同时也是各个组件之间解耦的利器。Rancher能够管理N多的agent同时又拆分出各种服务组件，
+event机制是必不可少的。为实现event机制，通常我们会采用RabbitMQ、ActiveMQ、ZeroMQ等中间件来实现。
+而Rancher则采用了基于websocket协议的一种非常轻量级的实现方式，
+它的好处就是极大程度的精简了Rancher的部署，Rancher无需额外维护一个MQ集群，
+毕竟websocket的消息收发实现是非常简单的，各种语言库均可以支持。</p>
 
-<p>如果我们要让rancher k8s部署时自动加上该参数，
-可以直接修改私有rancher-catalog中的k8s compose文件。<br />
-<img src="http://ww4.sinaimg.cn/large/006tNc79jw1fa0ygscal6j30gv0asjtp.jpg" alt="" /></p>
+<p>这里我们会考虑一个问题，websocket毕竟不是真正工业级MQ的实现，消息不能持久化，
+一旦某个event的处理出现问题，或者发生消息丢失，Rancher如何保证各个资源的原子性一致性？
+Rancher中有一个processpool的概念，它可以看做一个所有event的执行池，
+当API/UI/CLI有操作时，Rancher会把操作分解成多个event并放入processpool中。
+比如删除一个容器时会把 compute.instance.remove 放入processpool中，
+这个event会发送到对应的host agent上，agent处理完成后会发送reply给rancher-server。
+如果在这个过程中，由于网络问题消息丢失，或者agent上执行出现问题，
+rancher-server没有收到reply信息，cattle会把这个event重新放到processpool中再次重复上面的过程，
+直到 compute.instance.remove 完成操作，这个容器的状态才会在DB中更新，
+否则该容器状态会一直处于lock不能被其他服务更新。当然cattle不会把这些event不停的重复执行下去，
+通常会设置一下TIMEOUT超出后便不再执行（有些资源没有TIMEOUT机制）。</p>
 
-<p>修改之后稍等片刻（主要是为了让rancher-server更新到新的catalog compose文件），
-添加一个k8s env并在其中添加host，k8s引擎就开始自动部署，
-部署完毕后，我们可以看到Kubernetes Stack的compose文件，
-已经有了&ndash;pod-infra-container-image这个启动参数。<br />
-<img src="http://ww4.sinaimg.cn/large/006tNc79jw1fa0yhg3alsj30gn09rtav.jpg" alt="" /><br />
-如此我们在添加pod时再也不用手动导入pod基础镜像了。</p>
+<p>上面的表述，我们其实可以在UI上看到这个过程，RancherUI上的Processes的Running Tab页上就能实时得看到这些信息，
+Processes 在排查一些Rancher的相关问题是非常有用的，大家可以养成 ”查问题先查Processes“的好习惯：<br />
+<img src="http://ww4.sinaimg.cn/large/7853084cjw1fa1zux9y7bj20ly091dh6.jpg" alt="" /><br />
+那么监听event的URL怎么设定呢？非常简单：<br />
+<code>ws://&lt;rancher-server-ip&gt;:8080/v1/projects/&lt;projectId&gt;/subscribe?eventNames=xxxx</code><br />
+除此之外还需要加上basic-auth的header信息：<br />
+<code>Authorization: Basic +base64encode(&lt;cattle-access-key&gt;:&lt;cattle-secret-key&gt;)</code><br />
+如果是Host上的agent组件，除此之外还需要添加agentId参数：<br />
+<code>ws://&lt;rancher-server-ip&gt;:8080/v1/projects/&lt;projectId&gt;/subscribe?eventNames=xxxx&amp;agentId=xxxx</code><br />
+agentId 是注册Host时生成的，如果没有agentId参数，
+任何有关无关的event都会发送到所有的Host agent上，这样就会发生类似“广播风暴”的效果。</p>
 
-<p>在compose file中，部署k8s的基础镜像是rancher/k8s，这个镜像的Dockerfile在rancher维护的k8s分支中，
-如在rancher-k8s 1.2.4分支中可以看到：<br />
-<img src="http://ww2.sinaimg.cn/large/006tNc79jw1fa0yi5rmplj30e007ogmr.jpg" alt="" /></p>
+<p>Host agent上运行很多组件，其中python-agent是负责接收和回执event信息的，
+其运行日志可以在Host上的/var/log/rancher/agent.log文件中查看。
+细心的朋友可能会有疑问，我们在添加Host时执行agent容器时并没有指定cattle-access-key和cattle-secret-key，
+也就是说python-agent运行时如何获取这两个秘钥信息呢？</p>
 
-<p>这样如果想对rancher-k8s发行版进行深度定制，就可以重新build相关镜像，通过rancher-compose来部署自己的发行版。</p>
+<p>其实Rancher有两种apikey：一种是我们熟知的在UI上手动创建的apikey；
+另外一种就是agentApikey，它是系统级的，专门为agent设定，
+添加Host时会先把agentApikey发送到Host上。在cattle的credential表中可以查询到相关信息：<br />
+<img src="http://ww1.sinaimg.cn/large/7853084cjw1fa1zxokn7dj20ea05774u.jpg" alt="" /></p>
 
-<h3 id="总结">总结</h3>
+<p>eventNames都定义了哪些呢？下面两个文件可以参考：<br />
+* <a href="https://github.com/rancher/cattle/blob/master/code/iaas/events/src/main/java/io/cattle/platform/iaas/event/IaasEvents.java">IaasEvents.java</a>
+* <a href="https://github.com/rancher/cattle/blob/master/code/packaging/app-config/src/main/resources/META-INF/cattle/process/spring-process-context.xml">系统级的event定义</a>，详细到每种资源(host、volume、instance、stack、service等)的event定义。</p>
 
-<p>本文写于Rancher1.2行将发布之际，1.2版本是非常重大的更新，Rancher会支持部署原生的K8s版本，
-同时CNI网络和Cloud Provider等都会以插件方式，用户可以自己定义，并且在UI上都会有很好的体现。
-只要了解Rancher部署K8s的原理和过程，我们就可以定制非常适合自身使用的k8s，
-通过Rancher来部署自定义的k8s，我们就可以很容易的扩展了k8s不擅长的UI、Catalog、
-用户管理、审计日志维护等功能，这也是本文的目的。</p>
+<p>此外，我们在UI/CLI/API上的某个操作都会被分解成多个event来执行，
+每个event信息都会被保存在mysql中，每个event执行成功后会设置成purged状态，
+所以记录并不会真正删除，这就会导致相应的表（container_event表、service_event表、process_instance表）会无限膨胀下去。
+Rancher为解决此问题提供了周期性清理机制：</p>
+
+<ol>
+<li>events.purge.after.seconds 可以清理container_event和service_event，每两周清理一次</li>
+<li>process_instance.purge.after.seconds可以清理process_instance，每天清理一次。<br />
+这两个配置我们都可以在<a href="http://rancher-server-ip:8080/v1/settings">http://rancher-server-ip:8080/v1/settings</a>动态修改。</li>
+</ol>
+
+<h3 id="实践操作">实践操作</h3>
+
+<p>下面我们来实践一下，看看如何在程序中实现对Rancher event的监听。
+Rancher提供了resource.change事件，这个事件是不用reply的，就是说不会影响Rancher系统的运行，
+它是专门开放给开发者用来实现一些自己的定制功能，所以我们就以resource.change作为例子实践一下。</p>
+
+<p>Rancher的组件大部分都是基于Golang编写，所以我们也采用相同的语言。
+为了能够快速实现这个程序，我们需要了解一些辅助快速开发的小工具。</p>
+
+<ul>
+<li>Trash，Golang package管理的小工具，可以帮助我们定义依赖包的路径和版本，非常轻量且方便；</li>
+<li>Dapper，这个是基于容器实现Golang编译的工具，主要是可以帮助我们统一编译环境；</li>
+<li>Go-skel，它可以帮我们快速创建一个Rancher式的微服务程序，可以为我们省去很多的基本代码，
+同时还集成了Trash和Dapper这两个实用的小工具。</li>
+</ul>
+
+<p>首先我们基于go-skel创建一个工程名为 scale-subscriber （名字很随意），执行过程需要耐心的等待：<br />
+<img src="http://ww4.sinaimg.cn/large/7853084cjw1fa2044jpu9j20im0ce78n.jpg" alt="" /></p>
+
+<p>执行完毕后，我们把工程放到GOPATH中，开始添加相关的逻辑代码。
+在这之前我们可以考虑添加一个healthcheck的服务端口，纵观Rancher所有的微服务组件，
+基本上除了主程序之外都会添加 healthcheck port，这个主要是为了与Rancher中的healthcheck功能配合，
+通过设定对这个端口的检查机制来保证微服务的可靠性。我们利用Golang的goroutine机制，
+分别添加主服务和healthcheck服务：<br />
+<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa2053h2k7j20i908u0uu.jpg" alt="" /></p>
+
+<p>主服务的核心就是监听resource.change的信息，同时注册handler来获取event的payload信息，
+从而可以定制扩展自己的逻辑，这里需要利用Rancher提供的
+<a href="https://github.com/rancher/event-subscriber">event-subsriber</a>库来快速实现。
+如下图，在<strong>reventhandlers.NewResourceChangeHandler().Handler</strong>中就可以实现自己的逻辑：<br />
+<img src="http://ww4.sinaimg.cn/large/7853084cjw1fa206sahqtj20ka07habz.jpg" alt="" /></p>
+
+<p>这里我们只是演示监听event的机制，所以我们就不做过多的业务逻辑处理，打印输出event信息即可。
+然后在项目根目录下执行make，make会自动调用dapper，在bin目录下生成scale-subscriber，
+我们执行scale-subscriber就可以监听resource.change的信息：<br />
+<img src="http://ww4.sinaimg.cn/large/7853084cjw1fa207fymwlj20u904gdhf.jpg" alt="" /></p>
+
+<p>这里我们可以看到分别启动了healthcheck功能和event listener。然后可以在UI上随意删除一个stack，
+scale-subsciber就可以获取event信息：<br />
+<img src="http://ww1.sinaimg.cn/large/7853084cjw1fa207xudcej20ni07mgpy.jpg" alt="" /></p>
+
+<h3 id="附加小技巧">附加小技巧</h3>
+
+<p>如要将其部署在Rancher中，那就可以将scale-subsciber执行程序打包放到镜像中，通过compose来启动。
+但是我们知道scale-subsciber启动需要指定CATTLE_URL、CATTLE_ACCESS_KEY、CATTLE_SECRET_KEY，
+正常的做法就是我们需要先生成好apikey，然后启动service的时候设置对应的环境变量。
+这样做就会有弊端，就是apikey这种私密的信息不得不对外暴露，而且还要手动维护这些apikey，非常不方便。</p>
+
+<p>Rancher提供了一个非常方便的做法，就是在service中添加两个label，
+<strong>io.rancher.container.create_agent: true</strong>和<strong>io.rancher.container.agent.role: environment</strong>，
+设定这两个label后，Rancher引擎会自动创建apikey，并把相应的值设置到容器的ENV中，
+只要你的程序通过系统环境变量来读取这些值，就会非常顺利的运行起来。</p>
             </div>
             <footer class="article-footer">
-    <a data-url="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking" data-id="b444c6b23f47cc350c11a4494d466946" class="article-share-link">
+    <a data-url="http://niusmallnan.com/2016/08/25/rancher-envent" data-id="7b92c2c0d8f3c2932e8a2ba4e514acfd" class="article-share-link">
         <i class="fa fa-share"></i>
         分享
     </a>
     
-    <a href="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking/#disqus_thread" class="article-comment-link">
+    <a href="http://niusmallnan.com/2016/08/25/rancher-envent/#disqus_thread" class="article-comment-link">
         评论
     </a>
     
@@ -485,20 +558,13 @@ k8s引擎的compose文件放在<a href="https://github.com/rancher/rancher-catal
         
 <nav id="article-nav">
     
-    <a href="http://niusmallnan.com/2016/08/25/rancher-envent" id="article-nav-older" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">
-          老的
-      </strong>
-      <div class="article-nav-title">Rancher event机制及其实践指南</div>
-    </a>
-    
 
     
-    <a href="http://niusmallnan.com/2016/11/22/rpi-noip-with-docker" id="article-nav-newer" class="article-nav-link-wrap">
+    <a href="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking" id="article-nav-newer" class="article-nav-link-wrap">
       <strong class="article-nav-caption">
           新的
       </strong>
-      <div class="article-nav-title">基于容器实现树莓派的动态域名绑定</div>
+      <div class="article-nav-title">如何hack一下rancher k8s</div>
     </a>
     
 </nav>
@@ -512,9 +578,9 @@ k8s引擎的compose文件放在<a href="https://github.com/rancher/rancher-catal
             <div id="disqus_thread"></div>
 <script type="text/javascript">
     var disqus_shortname = 'niusmallnan';
-    var disqus_identifier = 'http:\/\/niusmallnan.com\/2016\/10\/08\/rancher-k8s-hacking';
-    var disqus_title = '如何hack一下rancher k8s';
-    var disqus_url = 'http:\/\/niusmallnan.com\/2016\/10\/08\/rancher-k8s-hacking';
+    var disqus_identifier = 'http:\/\/niusmallnan.com\/2016\/08\/25\/rancher-envent';
+    var disqus_title = 'Rancher event机制及其实践指南';
+    var disqus_url = 'http:\/\/niusmallnan.com\/2016\/08\/25\/rancher-envent';
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
