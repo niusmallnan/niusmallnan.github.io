@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>Kubernetes in Rancher1.0 架构分析 &middot; Niusmallnan</title>
+    <title>树莓派上的Docker集群管理 &middot; Niusmallnan</title>
     <meta name="generator" content="Hugo 0.17" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -10,7 +10,7 @@
       <meta name="description" content="Niusmallnan Blog Site">
     
     
-    <link rel="canonical" href="http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0"/>
+    <link rel="canonical" href="http://niusmallnan.com/2016/11/07/docker-on-rpi"/>
     <link rel="icon" href="http://niusmallnan.com/favicon.ico">
     <link rel="apple-touch-icon" href="http://niusmallnan.com/apple-touch-icon.png"/>
     <link rel="stylesheet" href="http://niusmallnan.com/css/style.css">
@@ -20,16 +20,16 @@
     
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,400,600' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-    <meta property="og:title" content="Kubernetes in Rancher1.0 架构分析" />
-<meta property="og:description" content="该主题是本人于Rancher k8s 北京meetup进行的一次线下分享，应Rancher China官方之邀，
-重新梳理成文字版本，便于大家阅读传播，如有问题纰漏或任何不妥之处随时联系牛小腩（niusmallnan），
-我会以最快速度更正。
+    <meta property="og:title" content="树莓派上的Docker集群管理" />
+<meta property="og:description" content="随着IOT市场的火热发展，Docker天然的轻量级以及帮助业务快速重构的特性，
+将会在IOT领域迎来巨大发展潜力，甚至有可能会比它在云端的潜力更大。
+本文将致力于构建一个利用RancherOS来管理运行在树莓派上的容器集群。
 " />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0" />
+<meta property="og:url" content="http://niusmallnan.com/2016/11/07/docker-on-rpi" />
 
 
-<meta property="og:updated_time" content="2016-07-28T14:49:47&#43;08:00"/>
+<meta property="og:updated_time" content="2016-11-07T17:36:37&#43;08:00"/>
 
 
 
@@ -42,15 +42,15 @@
 
     
     
-<meta itemprop="name" content="Kubernetes in Rancher1.0 架构分析">
-<meta itemprop="description" content="该主题是本人于Rancher k8s 北京meetup进行的一次线下分享，应Rancher China官方之邀，
-重新梳理成文字版本，便于大家阅读传播，如有问题纰漏或任何不妥之处随时联系牛小腩（niusmallnan），
-我会以最快速度更正。
+<meta itemprop="name" content="树莓派上的Docker集群管理">
+<meta itemprop="description" content="随着IOT市场的火热发展，Docker天然的轻量级以及帮助业务快速重构的特性，
+将会在IOT领域迎来巨大发展潜力，甚至有可能会比它在云端的潜力更大。
+本文将致力于构建一个利用RancherOS来管理运行在树莓派上的容器集群。
 ">
 
 
-<meta itemprop="dateModified" content="2016-07-28T14:49:47&#43;08:00" />
-<meta itemprop="wordCount" content="2675">
+<meta itemprop="dateModified" content="2016-11-07T17:36:37&#43;08:00" />
+<meta itemprop="wordCount" content="2676">
 
 
 
@@ -62,10 +62,10 @@
 
 
 
-<meta name="twitter:title" content="Kubernetes in Rancher1.0 架构分析"/>
-<meta name="twitter:description" content="该主题是本人于Rancher k8s 北京meetup进行的一次线下分享，应Rancher China官方之邀，
-重新梳理成文字版本，便于大家阅读传播，如有问题纰漏或任何不妥之处随时联系牛小腩（niusmallnan），
-我会以最快速度更正。
+<meta name="twitter:title" content="树莓派上的Docker集群管理"/>
+<meta name="twitter:description" content="随着IOT市场的火热发展，Docker天然的轻量级以及帮助业务快速重构的特性，
+将会在IOT领域迎来巨大发展潜力，甚至有可能会比它在云端的潜力更大。
+本文将致力于构建一个利用RancherOS来管理运行在树莓派上的容器集群。
 "/>
 
 
@@ -300,17 +300,17 @@
             
 
             <header class="article-header">
-    <a href="http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0">
+    <a href="http://niusmallnan.com/2016/11/07/docker-on-rpi">
     <h1 class="article-title" itemprop="name">
-        Kubernetes in Rancher1.0 架构分析
+        树莓派上的Docker集群管理
     </h1>
     </a>
     <div class="article-meta">
         <div class="article-date">
             <i class="fa fa-calendar"></i>
-            <time datetime="2016-07-28 14:49:47 &#43;0800 CST" itemprop="datePublished">2016-07-28</time>
+            <time datetime="2016-11-07 17:36:37 &#43;0800 CST" itemprop="datePublished">2016-11-07</time>
             &middot;
-            2675
+            2676
             字数
             &middot;
             6
@@ -339,11 +339,11 @@
                 <i class="fa fa-tags"></i>
                 
                 
-                <a class="article-category-link" href="tags/rancher">Rancher</a>
+                <a class="article-category-link" href="tags/rancheros">RancherOS</a>
                 &middot;
                 
                 
-                <a class="article-category-link" href="tags/kubernetes">Kubernetes</a>
+                <a class="article-category-link" href="tags/raspberry-pi">Raspberry Pi</a>
                 
                 
             </div>
@@ -353,99 +353,164 @@
 </header>
 
             <div class="article-entry" itemprop="articleBody">
-                <p>该主题是本人于Rancher k8s 北京meetup进行的一次线下分享，应Rancher China官方之邀，
-重新梳理成文字版本，便于大家阅读传播，如有问题纰漏或任何不妥之处随时联系牛小腩（niusmallnan），
-我会以最快速度更正。
+                <p>随着IOT市场的火热发展，Docker天然的轻量级以及帮助业务快速重构的特性，
+将会在IOT领域迎来巨大发展潜力，甚至有可能会比它在云端的潜力更大。
+本文将致力于构建一个利用RancherOS来管理运行在树莓派上的容器集群。
 </p>
 
 <h3 id="引言">引言</h3>
 
-<p>在Rancher 1.0版本开始，Rancher逐步增加了Kubernetes、Swarm、Mesos等多编排引擎的支持，
-很多朋友就此产生了疑惑，诸如Cattle引擎和这几个之间到底什么关系？
-每种引擎是如何支持的？自家的业务环境如何选型？我们将逐步揭开这些神秘面纱，
-了解基础架构才能在遇到问题时进行有效的分析，进而准确的定位问题并解决问题，
-因为没有一种生产环境是完全可靠的。基于这个背景下，这次我们首先向大家介绍kubernetes in Rancher的架构。</p>
+<p>目前业界主流基本都是在x86架构上使用Docker，除了因为Intel在服务器领域的绝对领导地位之外，
+x86 CPU的确在性能上有着卓越的表现。但是近些年来，随着云计算的迅猛发展，
+引来了数据中心的大规模建设，慢慢地大家对数据中心PUE尤其是CPU功耗有了更高的要求。
+ARM CPU虽然性能不如x86，但是在功耗上绝对有着无法比拟的优势，
+同时我们知道并不是所有的服务都有高性能的CPU需要。很多厂商在都对ARM服务器投入了研发资源，
+但是效果上目前来看并不是太好，ARM处理器在服务器领域并没有如在移动端那样被快速接受，
+主要是因为市场接受度及服务器市场的性能要求所致。<br />
+<img src="http://ww4.sinaimg.cn/large/7853084cjw1fa26h172hoj20ib09dgmz.jpg" alt="" /></p>
 
-<h3 id="分析">分析</h3>
+<p>但是在物联网（IOT）领域，ARM处理器却是霸主级的地位，毕竟在这个领域功耗胜过一切。
+那么我们可以想象，未来会占大市场的IOT设备中，会出现各种尺寸各种架构，
+内置操作系统也不统一，没有通用程序打包标准，几乎每种设备程序的开发框架均不同，
+IOT设备中程序部署升级回滚等操作不够灵活，等等这样那样的问题。</p>
 
-<p>从现在Rancher的发展节奏来看，Cattle引擎已经被定义成Rancher的基础设施引擎，
-而Rancher的基础设施服务都包括哪些呢？如下：</p>
+<h3 id="分析与实践">分析与实践</h3>
+
+<p>这些问题，我们可以借鉴X86时代的经验，用Docker容器来解决它们。
+Docker能降低IOT应用管理的负载度，但是在物理设备和Docker之间，
+我们还需要一个轻量级的操作系统。这个OS需要是完全可以定制的，
+可以针对不同设备需求，裁剪或增加对应的程序模块，更小体积更少进程意味着更低的功耗。</p>
+
+<p>根据以上判断和需求，我经过了一番探索，最终选择了RancherOS。它本身的特性是：</p>
+
+<ol>
+<li>真正容器化的Linux操作系统极致精简，所有服务（包括系统服务）均运行在容器中，
+可以以容器方式对其进行任意定制</li>
+<li>内置了Docker Engine，无需在安装系统后再进行Docker安装</li>
+<li>完全开源<a href="https://github.com/rancher/os">https://github.com/rancher/os</a>，我们可以进行各种深度定制</li>
+<li>最最重要的，支持ARM</li>
+</ol>
+
+<p>在RancherOS的整体架构中，最底层毋庸置疑是Linux kernel，系统启动后的PID 1用system-docker代替，
+由它来把udev、dhcp、console等系统服务启动，同时会启动user-docker，
+用户运行的应用程序均跑在user-docker下。<br />
+<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa26kta7rkj20l109s3zt.jpg" alt="" /></p>
+
+<p>我们以树莓派为例，将RancherOS部署在其之上。这里需要提示的是，RancherOS每个版本release之时，
+都会放出树莓派的支持版本，
+比如本次分享使用的<a href="https://github.com/rancher/os/releases/
+download/v0.7.0/rancheros-raspberry-pi.zip">v0.7.0版本</a>。通过dd命令将RancherOS写到树莓派的SD卡上，
+通电点亮树莓派。<br />
+<img src="http://ww4.sinaimg.cn/large/7853084cjw1fa26m5gaz0j20aq0aawg4.jpg" alt="" /></p>
+
+<p>查看PID 1是system-docker：<br />
+<img src="http://ww1.sinaimg.cn/large/7853084cjw1fa26mgfy51j20fn03ldh0.jpg" alt="" /></p>
+
+<p>通过system-docker ps 查看启动的系统服务：<br />
+<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa26mp3zphj20s603u0uw.jpg" alt="" /></p>
+
+<p>正常来说，我们都得设置一下docker registry mirror，这样方便pull镜像。
+RancherOS的配置，都是通过ros config命令来配置，比如设置user-docker的mirror：</p>
+
+<pre><code>$ sudo ros config set rancher.docker.extra_args [--registry-mirror,https://xxxxxxx]
+$ sudo system-docker restart docker # 重启user-docker
+</code></pre>
+
+<p>最终，可以看到：<br />
+<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa26nqlvixj20wf02ydi4.jpg" alt="" /></p>
+
+<p>RancherOS有一个我认为比较好的特性，就是支持很方便的对Docker Engine版本进行切换。
+目前Docker迭代的速度并不慢，实际上很多程序不一定会兼容比较新的Engine，
+Docker Engine版本的管理变得越来越重要。尤其是在测试环境中，
+我们有时确实需要变换Docker Engine版本，来构建测试场景：</p>
+
+<pre><code>$ sudo ros engine list  #查看当前版本支持的engine有哪些
+disabled docker-1.10.3
+disabled docker-1.11.2
+current  docker-1.12.1
+$ sudo ros engine switch docker-1.11.2 #切换docker-1.11版本
+</code></pre>
+
+<p>此外，如果对docker engine有更特殊的需求，还可以定制自己的版本，然后让system-docker来加载它。
+只需将编译好的docker engine放到scrach镜像中即可：<br />
+<img src="http://ww3.sinaimg.cn/large/7853084cjw1fa26p7gcphj20fx06fmy1.jpg" alt="" /><br />
+这部分可以参考：<a href="https://github.com/rancher/os-engines">https://github.com/rancher/os-engines</a></p>
+
+<p>另外，如果习惯了使用相应Linux发行版的命令行，
+那么也可以加载对应的console镜像（当然如果考虑精简系统也可不必加载）：<br />
+<img src="http://ww3.sinaimg.cn/large/7853084cjw1fa26pvzryej20by03pdg5.jpg" alt="" /><br />
+此部分需要进行深度定制，可以参考：<a href="https://github.com/rancher/os-images">https://github.com/rancher/os-images</a><br />
+<img src="http://ww1.sinaimg.cn/large/7853084cjw1fa26qd06b7j20ej0bm410.jpg" alt="" /></p>
+
+<p>RancherOS更多酷炫的功能，可以访问官方的文档：<a href="http://docs.rancher.com/os">http://docs.rancher.com/os</a></p>
+
+<p>RancherOS介绍完毕后，我们可以在单机树莓派上做容器管理了，喜欢命令行的当然最好，
+喜欢UI管理的，推荐两款可以在树莓派上运行的管理程序。
+<strong>portainer</strong><a href="https://github.com/portainer/portainer">https://github.com/portainer/portainer</a>，
+其有专门的arm镜像portainer/portainer:arm ，运行后：
+<code>$ docker run --restart=always -d -p 9000:9000 --privileged 
+    -v /var/run/docker.sock:/var/run/docker.sock 
+    portainer/portainer:arm</code><br />
+<img src="http://ww3.sinaimg.cn/large/7853084cjw1fa26s6xjj2j20oz0e2jtp.jpg" alt="" /></p>
+
+<p>更加简约的 ui-for-docker <a href="https://github.com/kevana/ui-for-docker">https://github.com/kevana/ui-for-docker</a> ，运行如下：
+<code>$ docker run --restart=always -d -p 9000:9000 
+    -v /var/run/docker.sock:/var/run/docker.sock 
+    hypriot/rpi-dockerui</code><br />
+<img src="http://ww3.sinaimg.cn/large/7853084cjw1fa26sxv8ofj20ot0g0abm.jpg" alt="" /></p>
+
+<p>单机树莓派之后，我们就要考虑如何将多个树莓派组成Docker集群。
+一提到Docker集群，我们就会考虑需要编排引擎的支持，
+无非就是主流的Mesos、Kubernetes、Swarm，还有非主流的Cattle、Nomad之流。
+那么在IOT场景下，我们最需要考虑的就是精简，所以我选择了新版的Swarm。
+将RancherOS的Engine切换到1.12.3，然后构建Swarm集群。</p>
+
+<p>简单得执行swarm init和join后，我们就得到了一个树莓派Docker集群：<br />
+<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa26tjxxlyj20fi01twey.jpg" alt="" /></p>
+
+<p>然后我们可以快速执行一个小demo：</p>
+
+<pre><code>#swarmkit demo
+$ docker service create --replicas 1 -p 80 --name app armhf/httpd
+$ docker service scale app=2
+$ docker service ps app
+</code></pre>
+
+<p><img src="http://ww3.sinaimg.cn/large/7853084cjw1fa26u6875lj20jk01y751.jpg" alt="" /></p>
+
+<p>更多ARM相关的Docker镜像，可以到这两个地方查找：</p>
 
 <ul>
-<li>Networking，rancher的统一网络服务，由rancher-net组件提供</li>
-<li>Load Balancer，rancher的负载均衡服务，目前来看套路基本上是基于Haproxy来构建</li>
-<li>DNS Service，rancher的dns服务，主要是为了提供服务发现能力，由rancher-dns组件来提供</li>
-<li>Metadata Service，rancher的元数据服务，metadata是我们通过compose编排应用时的利器，
-可以很灵活的像service中注入特定信息</li>
-<li>Persistent Storage Service，持久化存储服务目前是由convoy来提供，
-而对于真正的后端存储的实现rancher还有longhorn没有完全放出</li>
-<li>Audit Logging，审计日志服务是企业场景中比较重要的一个属性，
-目前是集成在cattle内部没有被完全分离出来</li>
+<li><a href="https://hub.docker.com/r/armhf">https://hub.docker.com/r/armhf</a></li>
+<li><a href="https://hub.docker.com/u/aarch64">https://hub.docker.com/u/aarch64</a></li>
 </ul>
 
-<p>所以Rancher在接入任何一种编排引擎，最终都会把基础设施服务整合到该引擎中，
-Kubernetes in Rancher的做法正是如此。</p>
+<p>RancherOS设计之初是为了构建一个运行Rancher的轻量级操作系统，
+那么Rancher本身在ARM的支持上也在不断推进中，
+相应的<a href="https://github.com/rancher/rancher/pull/4704">PR</a>也有提交。
+不过目前来看，对rancher-server的ARM化还是比较麻烦，对agent的节点支持ARM相对简单一些，
+也就是说rancher-server仍然运行在x86架构上，而agent节点可以支持ARM和x86。</p>
 
-<p>Kubernetes各个组件的角色可以归为三类即Master、Minion、Etcd，
-Master主要是kube-apiserver、kube-scheduler、kube-controller-manager，
-Minion主要是kubelet和kube-proxy。Rancher为了融合k8s的管控功能，
-又在Master中添加了kuberctrld、ingress-controller、kubernetes-agent三个服务来打通Rancher和K8s，
-同时每个node上都会依赖Rancher提供的rancher-dns、rancher-metadata、rancher-net这些基础设施服务。<br />
-<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa21xnsfbrj20p40c0wgm.jpg" alt="" /></p>
+<p>Kubernetes的ARM支持在社区中也有很多人在做，比如：
+<a href="https://github.com/luxas/kubernetes-on-arm">https://github.com/luxas/kubernetes-on-arm</a>，来自社区的分享：<br />
+<img src="http://ww4.sinaimg.cn/large/7853084cjw1fa26w8ifrrj20i00h577r.jpg" alt="" /></p>
 
-<p>由于K8s是基于Cattle引擎来部署，所以在K8s在部署完成之后，
-我们可以通过Link Graph来很清晰的看到整体的部署情况。<br />
-<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa21y87258j20mi07tdh0.jpg" alt="" /><br />
-整个服务基于Cattle引擎的rancher-compose构建，新增节点后自动添加kubelet和kube-proxy服务
-（此处利用了Global Label的特性），各个组件都添加了health-check机制，
-保证一定程度的高可用。考虑到Etcd最低1个最多3个节点，
-单台agent host就可以部署K8s，三节点agent host则更合理些。</p>
+<p>秀一下，我的“家庭树莓派数据中心”：<br />
+<img src="http://ww3.sinaimg.cn/large/7853084cjw1fa26wjj274j20c50chmzj.jpg" alt="" /></p>
 
-<p>K8s集群完成部署后，我们就可以在其中添加各种应用服务，
-目前Rancher支持管理K8s的service、pod、replication-controller等，
-我们可以用一张图来形象得描述一下应用视图结构。<br />
-<img src="http://ww1.sinaimg.cn/large/7853084cjw1fa21z5ellcj20qj0cuq5u.jpg" alt="" /><br />
-rancher-net组件会给每个pod分配一个ip，rancher-dns则替代了K8s的Skydns来实现服务发现，
-在pod的容器内部依然可以访问rancher-metadata服务来获取元数据信息。除了这三个基础服务外，
-我们之前提到的kuberctrld、ingress-controller、kubernetes-agent也在其中扮演者重要角色。</p>
+<hr />
 
-<p>无论是K8s还是Rancher，其中一些抽象对象（如rancher的stack/service，或者K8s的serivice/pod）
-在属性更新时都会有events产生，在任何服务入口来更改这些抽象对象都会有events产生，
-所以要保证Rancher和k8s能够互相感知各自对象的更新，那么kubernetes-agent就应运而生了。<br />
-<img src="http://ww3.sinaimg.cn/large/7853084cjw1fa22166xnyj20nt0d60ut.jpg" alt="" /><br />
-诸如K8s的namespaces、services、replicationcontrollers、pods等对象的信息变更会及时通知给Rancher，
-而Cattle管理的Host资源出现信息变更（诸如host label的变动）也会通知给K8s。</p>
-
-<p>简单得说kubernetes-agent是为了维护Rancher和K8s之间的对象一致性，
-而真正要通过Rancher来创建K8s中的service或者pod之类的对象，
-还需要另外一个服务来实现，它就是kubectrld，直观的讲它就是包装了kubectrl，
-实现了其中kubectl create/apply/get 等功能。<br />
-<img src="http://ww3.sinaimg.cn/large/7853084cjw1fa221z612jj20o80bhq4q.jpg" alt="" /><br />
-所有的K8s对象创建请求都会走cattle引擎，cattle会把请求代理到kubectrld启动的一个api服务。
-除此之外，还会监听rancher events来辅助实现相关对象的CRUD。</p>
-
-<p>K8s上创建的service如需对外暴露访问，那么必然会用到LoadBalancer Type和Ingress kind，
-注意K8s概念下的LoadBalancer和Ingress略有不同，LoadBalancer的功能主要关注在L4支持http/tcp，
-而Ingrees则是要实现L7的负载均衡且只能支持http。K8s 的LoadBalancer需要在K8s中实现一个Cloud Provider，
-目前只有GCE，而Rancher则维护了自己的K8s版本在其中提供了Rancher Cloud Provider。
-对于Ingress则是提供了Ingress-controller组件，它实现了K8s的ingress框架，
-可以获取ingress的创建信息并执行相应的接口。当然最终这两者都会调用cattle api来创建Rancher的负载均衡，
-且都是通过Haproxy完成负责均衡功能。<br />
-<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa22370rzfj20hv0b6gn5.jpg" alt="" /></p>
-
-<h3 id="后语">后语</h3>
-
-<p>以目前K8s社区的火热势头，Rancher应该会持续跟进并不断更新功能优化架构，
-待到Rancher1.2发布之后，CNI的支持会是一个里程碑，
-到那时Kubernetes in Rancher也会更加成熟，一起向着最好用Kubernetes发行版大踏步的前进。</p>
+<p>最后，我要特别感谢RancherOS的开发者们，他们帮助我解决了很多问题；
+另外还要特别感谢MBH树莓派社区的伙伴，提供了硬件设备，支持我的技术探索，
+并提供了很多帮助。</p>
             </div>
             <footer class="article-footer">
-    <a data-url="http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0" data-id="dbb71ddd09b847c12947556ffc8a357b" class="article-share-link">
+    <a data-url="http://niusmallnan.com/2016/11/07/docker-on-rpi" data-id="c34d71f33537b81e4bd9c2d65e1a80b1" class="article-share-link">
         <i class="fa fa-share"></i>
         分享
     </a>
     
-    <a href="http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0/#disqus_thread" class="article-comment-link">
+    <a href="http://niusmallnan.com/2016/11/07/docker-on-rpi/#disqus_thread" class="article-comment-link">
         评论
     </a>
     
@@ -521,13 +586,20 @@ rancher-net组件会给每个pod分配一个ip，rancher-dns则替代了K8s的Sk
         
 <nav id="article-nav">
     
+    <a href="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">
+          老的
+      </strong>
+      <div class="article-nav-title">如何hack一下rancher k8s</div>
+    </a>
+    
 
     
-    <a href="http://niusmallnan.com/2016/08/15/rancher-smart-tools" id="article-nav-newer" class="article-nav-link-wrap">
+    <a href="http://niusmallnan.com/2016/11/22/rpi-noip-with-docker" id="article-nav-newer" class="article-nav-link-wrap">
       <strong class="article-nav-caption">
           新的
       </strong>
-      <div class="article-nav-title">扒一扒Rancher社区中的小工具</div>
+      <div class="article-nav-title">基于容器实现树莓派的动态域名绑定</div>
     </a>
     
 </nav>
@@ -541,9 +613,9 @@ rancher-net组件会给每个pod分配一个ip，rancher-dns则替代了K8s的Sk
             <div id="disqus_thread"></div>
 <script type="text/javascript">
     var disqus_shortname = 'niusmallnan';
-    var disqus_identifier = 'http:\/\/niusmallnan.com\/2016\/07\/28\/k8s-in-rancher-1-0';
-    var disqus_title = 'Kubernetes in Rancher1.0 架构分析';
-    var disqus_url = 'http:\/\/niusmallnan.com\/2016\/07\/28\/k8s-in-rancher-1-0';
+    var disqus_identifier = 'http:\/\/niusmallnan.com\/2016\/11\/07\/docker-on-rpi';
+    var disqus_title = '树莓派上的Docker集群管理';
+    var disqus_url = 'http:\/\/niusmallnan.com\/2016\/11\/07\/docker-on-rpi';
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
