@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>如何hack一下rancher k8s &middot; Niusmallnan</title>
+    <title>扒一扒Rancher社区中的小工具 &middot; Niusmallnan</title>
     <meta name="generator" content="Hugo 0.17" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -10,7 +10,7 @@
       <meta name="description" content="Niusmallnan Blog Site">
     
     
-    <link rel="canonical" href="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking"/>
+    <link rel="canonical" href="http://niusmallnan.com/2016/08/15/rancher-smart-tools"/>
     <link rel="icon" href="http://niusmallnan.com/favicon.ico">
     <link rel="apple-touch-icon" href="http://niusmallnan.com/apple-touch-icon.png"/>
     <link rel="stylesheet" href="http://niusmallnan.com/css/style.css">
@@ -20,15 +20,15 @@
     
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,400,600' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-    <meta property="og:title" content="如何hack一下rancher k8s" />
-<meta property="og:description" content="Rancher可以轻松实现Kubernetes的部署，尽管默认的部署已经完全可用，
-但是如果我们想修改部署的K8s版本，这时应当如何应对？
+    <meta property="og:title" content="扒一扒Rancher社区中的小工具" />
+<meta property="og:description" content="除了我们所熟知的Rancher &amp; RancherOS，Rancher Labs的开发团队在实践中提炼了很多实用的小工具，
+这些小工具虽然并不会左右Rancher发展的大局，但是在项目标准化和开发效率上给团队带来巨大的便捷。
 " />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking" />
+<meta property="og:url" content="http://niusmallnan.com/2016/08/15/rancher-smart-tools" />
 
 
-<meta property="og:updated_time" content="2016-10-08T16:09:24&#43;08:00"/>
+<meta property="og:updated_time" content="2016-08-15T14:16:42&#43;08:00"/>
 
 
 
@@ -41,14 +41,14 @@
 
     
     
-<meta itemprop="name" content="如何hack一下rancher k8s">
-<meta itemprop="description" content="Rancher可以轻松实现Kubernetes的部署，尽管默认的部署已经完全可用，
-但是如果我们想修改部署的K8s版本，这时应当如何应对？
+<meta itemprop="name" content="扒一扒Rancher社区中的小工具">
+<meta itemprop="description" content="除了我们所熟知的Rancher &amp; RancherOS，Rancher Labs的开发团队在实践中提炼了很多实用的小工具，
+这些小工具虽然并不会左右Rancher发展的大局，但是在项目标准化和开发效率上给团队带来巨大的便捷。
 ">
 
 
-<meta itemprop="dateModified" content="2016-10-08T16:09:24&#43;08:00" />
-<meta itemprop="wordCount" content="1375">
+<meta itemprop="dateModified" content="2016-08-15T14:16:42&#43;08:00" />
+<meta itemprop="wordCount" content="3128">
 
 
 
@@ -60,9 +60,9 @@
 
 
 
-<meta name="twitter:title" content="如何hack一下rancher k8s"/>
-<meta name="twitter:description" content="Rancher可以轻松实现Kubernetes的部署，尽管默认的部署已经完全可用，
-但是如果我们想修改部署的K8s版本，这时应当如何应对？
+<meta name="twitter:title" content="扒一扒Rancher社区中的小工具"/>
+<meta name="twitter:description" content="除了我们所熟知的Rancher &amp; RancherOS，Rancher Labs的开发团队在实践中提炼了很多实用的小工具，
+这些小工具虽然并不会左右Rancher发展的大局，但是在项目标准化和开发效率上给团队带来巨大的便捷。
 "/>
 
 
@@ -297,20 +297,20 @@
             
 
             <header class="article-header">
-    <a href="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking">
+    <a href="http://niusmallnan.com/2016/08/15/rancher-smart-tools">
     <h1 class="article-title" itemprop="name">
-        如何hack一下rancher k8s
+        扒一扒Rancher社区中的小工具
     </h1>
     </a>
     <div class="article-meta">
         <div class="article-date">
             <i class="fa fa-calendar"></i>
-            <time datetime="2016-10-08 16:09:24 &#43;0800 CST" itemprop="datePublished">2016-10-08</time>
+            <time datetime="2016-08-15 14:16:42 &#43;0800 CST" itemprop="datePublished">2016-08-15</time>
             &middot;
-            1375
+            3128
             字数
             &middot;
-            3
+            7
             分钟阅读
         </div>
 
@@ -337,10 +337,6 @@
                 
                 
                 <a class="article-category-link" href="tags/rancher">Rancher</a>
-                &middot;
-                
-                
-                <a class="article-category-link" href="tags/kubernetes">Kubernetes</a>
                 
                 
             </div>
@@ -350,66 +346,153 @@
 </header>
 
             <div class="article-entry" itemprop="articleBody">
-                <p>Rancher可以轻松实现Kubernetes的部署，尽管默认的部署已经完全可用，
-但是如果我们想修改部署的K8s版本，这时应当如何应对？
+                <p>除了我们所熟知的Rancher &amp; RancherOS，Rancher Labs的开发团队在实践中提炼了很多实用的小工具，
+这些小工具虽然并不会左右Rancher发展的大局，但是在项目标准化和开发效率上给团队带来巨大的便捷。
 </p>
 
-<h3 id="原理分析与执行">原理分析与执行</h3>
+<h3 id="引言">引言</h3>
 
-<p>在Rancher中，由于K8s是基于Cattle引擎来部署，所以在K8s在部署完成之后，
-我们可以通过Link Graph来很清晰的看到整体的部署情况。<br />
-<img src="http://ww1.sinaimg.cn/large/006tNc79jw1fa0ybyprq4j30mi07tdh0.jpg" alt="" /></p>
+<p>与Linux、OpenStack等成熟的技术社区相比，Rancher社区还是处于初级发展阶段，
+一个技术社区的成败并不是单纯的代码贡献，而学习文档的数量和代码管理作业流程也是非常重要的。
+如何让怀揣不同需求的工程师都能在社区中快速找到相应的解决方案，这就需要大家协同合作共同促进社区发展与完善。
+除了我们所熟知的Rancher &amp; RancherOS，Rancher Labs的开发团队在实践中提炼了很多实用的小工具，
+这些小工具虽然并不会左右Rancher发展的大局，但是在项目标准化和开发效率上给团队带来巨大的便捷。
+这次主要是带着大家一起来认识一下这些小工具。</p>
 
-<p>既然基于Cattle引擎部署，也就是说需要两个compose文件，
-k8s引擎的compose文件放在<a href="https://github.com/rancher/rancher-catalog/tree/master/templates">https://github.com/rancher/rancher-catalog/tree/master/templates</a>下面，
-这里面有两个相关目录kubernetes与k8s，k8s是Rancher1.2开始使用的，
-而kubernetes则是Rancher1.2之后开始使用的。<br />
-<img src="http://ww1.sinaimg.cn/large/006tNc79jw1fa0ydzd1dgj30gt07qmyg.jpg" alt="" /></p>
+<h5 id="golang包管理工具-trash">Golang包管理工具-Trash</h5>
 
-<p>为了我们可以自己hack一下rancher k8s的部署，我们可以在github上fork一下rancher-catalog，
-同时还需要修改一下Rancher中默认的catalog的repo地址，
-这个可以在<a href="http://rancher-server/v1/settings">http://rancher-server/v1/settings</a>页面下，
-寻找名为 catalog.url 的配置项，然后进入编辑修改。比如我这里将library库的地址换成了自己的：
-<a href="https://github.com/niusmallnan/rancher-catalog.git">https://github.com/niusmallnan/rancher-catalog.git</a><br />
-<img src="http://ww3.sinaimg.cn/large/006tNc79jw1fa0yff7sbzj30h206imyy.jpg" alt="" /></p>
+<p>项目地址：<a href="https://github.com/rancher/trash">https://github.com/rancher/trash</a><br />
+目前主流的编程语言 Python、Ruby、Java、Php 等已经把包管理的流程设计的犹如行云流水般流畅，
+一般情况下开发者是不需要操心类库包依赖管理以及升级、备份、团队协作的。Golang在1.5版本开始，
+官方开始引入包管理的设计，加了 vendor目录来支持本地包管理依赖，
+但是需要特殊设置 GO15VENDOREXPERIMENT=1，在1.6时代这个特性已经是默认的了。
+可是vendor并没有统一的版本号管理功能，只是额外提供了project内包的依赖路径。
+于是Trash这个工具就应运而生了，Trash的使用非常简单，只需要有一份依赖包的描述文件即可。</p>
 
-<p>此时，我们就可以修改了，找一个比较实用的场景。我们都知道k8s的pod都会依赖一个基础镜像，
-这个镜像默认的地址是被GFW挡在墙外了，一般我们会把kubelet的启动参数调整一下，
-以便重新指定这个镜像地址，比如指定到国内的镜像源上。<br />
-<strong>&ndash;pod-infra-container-image=index.tenxcloud.com/google_containers/pause:2.0</strong>。</p>
+<p>描述文件 trash.conf 支持两种格式，普通方式和YAML方式，
+可以直接在其中描述依赖库的远程地址、版本号等，一个简单的例子（我这里使用普通格式）：<br />
+<img src="http://ww1.sinaimg.cn/large/7853084cjw1fa20qdpd40j20c302t0t0.jpg" alt="" /></p>
 
-<p>如果我们要让rancher k8s部署时自动加上该参数，
-可以直接修改私有rancher-catalog中的k8s compose文件。<br />
-<img src="http://ww4.sinaimg.cn/large/006tNc79jw1fa0ygscal6j30gv0asjtp.jpg" alt="" /></p>
+<p>然后在根目录执行trash，即可获得相关版本的依赖包，非常轻量级，非常简洁：<br />
+<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa20qtj6kcj20av06cjrr.jpg" alt="" /></p>
 
-<p>修改之后稍等片刻（主要是为了让rancher-server更新到新的catalog compose文件），
-添加一个k8s env并在其中添加host，k8s引擎就开始自动部署，
-部署完毕后，我们可以看到Kubernetes Stack的compose文件，
-已经有了&ndash;pod-infra-container-image这个启动参数。<br />
-<img src="http://ww4.sinaimg.cn/large/006tNc79jw1fa0yhg3alsj30gn09rtav.jpg" alt="" /><br />
-如此我们在添加pod时再也不用手动导入pod基础镜像了。</p>
+<h5 id="golang编译工具-dapper">Golang编译工具-Dapper</h5>
 
-<p>在compose file中，部署k8s的基础镜像是rancher/k8s，这个镜像的Dockerfile在rancher维护的k8s分支中，
-如在rancher-k8s 1.2.4分支中可以看到：<br />
-<img src="http://ww2.sinaimg.cn/large/006tNc79jw1fa0yi5rmplj30e007ogmr.jpg" alt="" /></p>
+<p>项目地址：<a href="https://github.com/rancher/dapper">https://github.com/rancher/dapper</a><br />
+我们在编译golang执行程序的时候，因为涉及到协作开发，这就会碰到一个问题，
+就是如何保证编译环境的一致性。环境一致性最好的办法就是使用容器技术，
+Dapper就是利用Docker build镜像的过程中可以执行各种命令生成容器的原理。
+只需在项目的根目录下创建 Dockerfile.dapper 文件，这是一个参考Dockerfile标准的文件，
+执行dapper命令即可按照约定规则生成最终的执行程序，通过这种方式统一的编译环境。</p>
 
-<p>这样如果想对rancher-k8s发行版进行深度定制，就可以重新build相关镜像，通过rancher-compose来部署自己的发行版。</p>
+<p>几乎所有的Rancher项目都是基于Dapper来编译的，随意打开一个项目比如
+<a href="https://github.com/rancher/rancher-dns">rancher-dns</a>就可以看到Dockerfile.dapper文件：<br />
+<img src="http://ww3.sinaimg.cn/large/7853084cjw1fa20thy5rhj20j809ojtr.jpg" alt="" /></p>
 
-<h3 id="总结">总结</h3>
+<p>DAPPER_SOURCE 指定了容器内的源码路径<br />
+DAPPER_OUTPUT 指定了编译后的输出路径，bin dist 目录会自动在项目根目录下创建<br />
+DAPPER_DOCKER_SOCKET 设置为True相当于<code>docker run -v /var/run/docker.sock:/var/run/docker.sock ...</code><br />
+DAPPER_ENV 相当于<code>docker run -e TAG -e REPO ...</code></p>
 
-<p>本文写于Rancher1.2行将发布之际，1.2版本是非常重大的更新，Rancher会支持部署原生的K8s版本，
-同时CNI网络和Cloud Provider等都会以插件方式，用户可以自己定义，并且在UI上都会有很好的体现。
-只要了解Rancher部署K8s的原理和过程，我们就可以定制非常适合自身使用的k8s，
-通过Rancher来部署自定义的k8s，我们就可以很容易的扩展了k8s不擅长的UI、Catalog、
-用户管理、审计日志维护等功能，这也是本文的目的。</p>
+<p>有一点需要注意的是，目前Dapper装载源码有两种方式bind和cp，bind就是直接mount本地的源码路径，
+但是如果使用remote docker daemon方式那就得使用cp模式了。</p>
+
+<h5 id="golang项目标准化工具-go-skel">Golang项目标准化工具 Go-skel</h5>
+
+<p>项目地址：<a href="https://github.com/rancher/go-skel">https://github.com/rancher/go-skel</a><br />
+介绍了包管理工具和打包编译工具，如果我们在创建一个golang项目时能把这两个工具整合起来一起使用，
+那就太赞了。go-skel就是提供了这样一个便利，我们直接来demo一下。</p>
+
+<p>clone一份go-skel的源码，创建一个rancher-tour（./skel.sh rancher-tour）的项目：<br />
+<img src="http://ww1.sinaimg.cn/large/7853084cjw1fa20wzh1pxj20jt09v0vf.jpg" alt="" /></p>
+
+<p>执行完毕后，会创建一个标准的项目，包含了dapper和trash这两个工具，
+同时定义了一份Makefile，我们可以通过make命令来简化操作：<br />
+<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa20xj5jd3j20cw0art9r.jpg" alt="" /></p>
+
+<p>比如我们要执行一个ci操作，那就可以直接运行 make ci，自动运行单元测试，
+并在bin目录下生成最终的可执行程序：<br />
+<img src="http://ww1.sinaimg.cn/large/7853084cjw1fa20xw28tzj20gz05kmyl.jpg" alt="" /></p>
+
+<p>标准项目已经创建了一些初始化代码，集成了 github.com/urfave/cli ，所以我们可以执行执行rancher-tour：<br />
+<img src="http://ww1.sinaimg.cn/large/7853084cjw1fa20y6wzdjj20kq08xgmw.jpg" alt="" /></p>
+
+<h5 id="微服务辅助小工具-giddyup">微服务辅助小工具 Giddyup</h5>
+
+<p>项目地址：<a href="https://github.com/cloudnautique/giddyup">https://github.com/cloudnautique/giddyup</a><br />
+一个传统的服务在容器化的过程中，通常我们会将其拆分成多个微服务，
+充分展现每个容器只做好一件事情这样的哲学。那么就会出现我们在Rancher中看到的sidekick容器，
+数据卷容器，专门负责更新配置信息的容器等等。实际应用中我们会遇到一些问题，
+比如这些微服务容器的启动是无序的，无序启动会导致微服务之间可能出现连接失败，
+进而导致整个服务不可用；再比如我们如何来判定依赖的微服务已经正常启动，
+这可能需要一个health check的服务端口。giddyup就是简化这种微服务检查工作的利器，它都能做些什么呢：</p>
+
+<ol>
+<li>Get connection strings from DNS or Rancher Metadata.</li>
+<li>Determine if your container is the leader in the service.</li>
+<li>Proxy traffic to the leader.</li>
+<li>Wait for service to have the desired scale.</li>
+<li>Get the scale of the service.</li>
+<li>Get Managed-IP of the container (/self/container/primary_ip).</li>
+</ol>
+
+<p>我们还是创建stack并在其中创建service来体验一下giddyup的部分功能，
+service中包含两个容器分别为主容器main和sidekick容器conf，他们共享网络栈：<br />
+<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa210w5l9pj20c807xt9a.jpg" alt="" /></p>
+
+<p>我们可以在conf内启动giddyup health，会启动一个监听1620端口的http服务，服务路径是/ping：<br />
+<img src="http://ww4.sinaimg.cn/large/7853084cjw1fa2115foy9j20a703h3yl.jpg" alt="" /></p>
+
+<p>此时我们可以在其他服务的容器内查看这个服务 health port的健康状态，
+通过giddyup ip stringify获取服务地址，使用giddyup probe可以查看相关状态：<br />
+<img src="http://ww1.sinaimg.cn/large/7853084cjw1fa211iwkz2j20ql03jgmj.jpg" alt="" /></p>
+
+<p>可以看到probe返回了OK的信息，说明giddy/main的health port是正常的，
+如果我们把giddyup health的端口停掉，giddyup probe会如何？<br />
+<img src="http://ww4.sinaimg.cn/large/7853084cjw1fa211ulol7j20mw06kn1u.jpg" alt="" /></p>
+
+<p>除了开启health port功能外，还可以sleep等待service内所有容器都启动，
+比如刚才的service，我在main上做wait操作，同时在UI上对service扩容，
+可以看到为了等待完成扩容差不多sleep了3s：<br />
+<img src="http://ww1.sinaimg.cn/large/7853084cjw1fa212n0tykj20ep031mxg.jpg" alt="" /></p>
+
+<p>更多功能可以去看一看giddyup项目的README文档，另外也可以看看catalog中的一些项目是怎么使用giddyup的，
+参考：<a href="https://github.com/rancher/catalog-dockerfiles">https://github.com/rancher/catalog-dockerfiles</a></p>
+
+<h5 id="rancher-cli-工具">Rancher CLI 工具</h5>
+
+<p>项目地址：<a href="https://github.com/rancher/cli">https://github.com/rancher/cli</a><br />
+现在我们管理Rancher的方式包括UI、API方式，为了能够和其他工具更好的融合Rancher开发了CLI工具，
+可以非常轻量级的嵌入到其他工具中。CLI将会在Rancher 1.2-pre2版本中正式放出，
+兼容性上目前来看没有支持老版本的计划，所以在老版本上出现各种问题也是正常的。</p>
+
+<p>直接在<a href="https://github.com/rancher/cli/releases">https://github.com/rancher/cli/releases</a>下载最新版本即可试用，
+将rancher cli放到PATH中，正式使用前需要初始化：<br />
+<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa214oqzn5j20hy07a405.jpg" alt="" /></p>
+
+<p>然后便可以执行各种犀利的操作，比如针对某个service进行scale操作，
+这比之前需要用rancher-compose cli要简洁的多：<br />
+<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa2155xxeaj20ps05ggng.jpg" alt="" /></p>
+
+<p>再比如可以实时监听rancher events，可以即时查看Rancher中正在发生的各种任务，
+对协助排查问题，分析系统运行情况都非常有用：<br />
+<img src="http://ww4.sinaimg.cn/large/7853084cjw1fa215gzjcrj20dr077myp.jpg" alt="" /></p>
+
+<h4 id="后语">后语</h4>
+
+<p>小工具中内含着大智慧，工具文化是工程师Team高效协作的重要标志，
+高质量的工具能让项目开发有事半功倍之效，其背后也蕴藏着深厚的团队文化理念，
+就是不计项目KPI利用个人业余时间为团队做贡献的和谐氛围。
+其实国内很多互联网公司都是有专门设立工具开发工程师的岗位，
+对工具带来的生产效率提升，其重视程度不言而喻！</p>
             </div>
             <footer class="article-footer">
-    <a data-url="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking" data-id="b444c6b23f47cc350c11a4494d466946" class="article-share-link">
+    <a data-url="http://niusmallnan.com/2016/08/15/rancher-smart-tools" data-id="2054e121c8ee620c794589a437ad545b" class="article-share-link">
         <i class="fa fa-share"></i>
         分享
     </a>
     
-    <a href="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking/#disqus_thread" class="article-comment-link">
+    <a href="http://niusmallnan.com/2016/08/15/rancher-smart-tools/#disqus_thread" class="article-comment-link">
         评论
     </a>
     
@@ -485,20 +568,20 @@ k8s引擎的compose文件放在<a href="https://github.com/rancher/rancher-catal
         
 <nav id="article-nav">
     
-    <a href="http://niusmallnan.com/2016/08/25/rancher-envent" id="article-nav-older" class="article-nav-link-wrap">
+    <a href="http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0" id="article-nav-older" class="article-nav-link-wrap">
       <strong class="article-nav-caption">
           老的
       </strong>
-      <div class="article-nav-title">Rancher event机制及其实践指南</div>
+      <div class="article-nav-title">Kubernetes in Rancher1.0 架构分析</div>
     </a>
     
 
     
-    <a href="http://niusmallnan.com/2016/11/22/rpi-noip-with-docker" id="article-nav-newer" class="article-nav-link-wrap">
+    <a href="http://niusmallnan.com/2016/08/25/rancher-envent" id="article-nav-newer" class="article-nav-link-wrap">
       <strong class="article-nav-caption">
           新的
       </strong>
-      <div class="article-nav-title">基于容器实现树莓派的动态域名绑定</div>
+      <div class="article-nav-title">Rancher event机制及其实践指南</div>
     </a>
     
 </nav>
@@ -512,9 +595,9 @@ k8s引擎的compose文件放在<a href="https://github.com/rancher/rancher-catal
             <div id="disqus_thread"></div>
 <script type="text/javascript">
     var disqus_shortname = 'niusmallnan';
-    var disqus_identifier = 'http:\/\/niusmallnan.com\/2016\/10\/08\/rancher-k8s-hacking';
-    var disqus_title = '如何hack一下rancher k8s';
-    var disqus_url = 'http:\/\/niusmallnan.com\/2016\/10\/08\/rancher-k8s-hacking';
+    var disqus_identifier = 'http:\/\/niusmallnan.com\/2016\/08\/15\/rancher-smart-tools';
+    var disqus_title = '扒一扒Rancher社区中的小工具';
+    var disqus_url = 'http:\/\/niusmallnan.com\/2016\/08\/15\/rancher-smart-tools';
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

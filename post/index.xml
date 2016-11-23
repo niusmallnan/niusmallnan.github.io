@@ -282,5 +282,245 @@ scale-subsciber就可以获取event信息：&lt;br /&gt;
 只要你的程序通过系统环境变量来读取这些值，就会非常顺利的运行起来。&lt;/p&gt;</description>
     </item>
     
+    <item>
+      <title>扒一扒Rancher社区中的小工具</title>
+      <link>http://niusmallnan.com/2016/08/15/rancher-smart-tools</link>
+      <pubDate>Mon, 15 Aug 2016 14:16:42 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2016/08/15/rancher-smart-tools</guid>
+      <description>&lt;p&gt;除了我们所熟知的Rancher &amp;amp; RancherOS，Rancher Labs的开发团队在实践中提炼了很多实用的小工具，
+这些小工具虽然并不会左右Rancher发展的大局，但是在项目标准化和开发效率上给团队带来巨大的便捷。
+&lt;/p&gt;
+
+&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
+
+&lt;p&gt;与Linux、OpenStack等成熟的技术社区相比，Rancher社区还是处于初级发展阶段，
+一个技术社区的成败并不是单纯的代码贡献，而学习文档的数量和代码管理作业流程也是非常重要的。
+如何让怀揣不同需求的工程师都能在社区中快速找到相应的解决方案，这就需要大家协同合作共同促进社区发展与完善。
+除了我们所熟知的Rancher &amp;amp; RancherOS，Rancher Labs的开发团队在实践中提炼了很多实用的小工具，
+这些小工具虽然并不会左右Rancher发展的大局，但是在项目标准化和开发效率上给团队带来巨大的便捷。
+这次主要是带着大家一起来认识一下这些小工具。&lt;/p&gt;
+
+&lt;h5 id=&#34;golang包管理工具-trash&#34;&gt;Golang包管理工具-Trash&lt;/h5&gt;
+
+&lt;p&gt;项目地址：&lt;a href=&#34;https://github.com/rancher/trash&#34;&gt;https://github.com/rancher/trash&lt;/a&gt;&lt;br /&gt;
+目前主流的编程语言 Python、Ruby、Java、Php 等已经把包管理的流程设计的犹如行云流水般流畅，
+一般情况下开发者是不需要操心类库包依赖管理以及升级、备份、团队协作的。Golang在1.5版本开始，
+官方开始引入包管理的设计，加了 vendor目录来支持本地包管理依赖，
+但是需要特殊设置 GO15VENDOREXPERIMENT=1，在1.6时代这个特性已经是默认的了。
+可是vendor并没有统一的版本号管理功能，只是额外提供了project内包的依赖路径。
+于是Trash这个工具就应运而生了，Trash的使用非常简单，只需要有一份依赖包的描述文件即可。&lt;/p&gt;
+
+&lt;p&gt;描述文件 trash.conf 支持两种格式，普通方式和YAML方式，
+可以直接在其中描述依赖库的远程地址、版本号等，一个简单的例子（我这里使用普通格式）：&lt;br /&gt;
+&lt;img src=&#34;http://ww1.sinaimg.cn/large/7853084cjw1fa20qdpd40j20c302t0t0.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;然后在根目录执行trash，即可获得相关版本的依赖包，非常轻量级，非常简洁：&lt;br /&gt;
+&lt;img src=&#34;http://ww2.sinaimg.cn/large/7853084cjw1fa20qtj6kcj20av06cjrr.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;h5 id=&#34;golang编译工具-dapper&#34;&gt;Golang编译工具-Dapper&lt;/h5&gt;
+
+&lt;p&gt;项目地址：&lt;a href=&#34;https://github.com/rancher/dapper&#34;&gt;https://github.com/rancher/dapper&lt;/a&gt;&lt;br /&gt;
+我们在编译golang执行程序的时候，因为涉及到协作开发，这就会碰到一个问题，
+就是如何保证编译环境的一致性。环境一致性最好的办法就是使用容器技术，
+Dapper就是利用Docker build镜像的过程中可以执行各种命令生成容器的原理。
+只需在项目的根目录下创建 Dockerfile.dapper 文件，这是一个参考Dockerfile标准的文件，
+执行dapper命令即可按照约定规则生成最终的执行程序，通过这种方式统一的编译环境。&lt;/p&gt;
+
+&lt;p&gt;几乎所有的Rancher项目都是基于Dapper来编译的，随意打开一个项目比如
+&lt;a href=&#34;https://github.com/rancher/rancher-dns&#34;&gt;rancher-dns&lt;/a&gt;就可以看到Dockerfile.dapper文件：&lt;br /&gt;
+&lt;img src=&#34;http://ww3.sinaimg.cn/large/7853084cjw1fa20thy5rhj20j809ojtr.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;DAPPER_SOURCE 指定了容器内的源码路径&lt;br /&gt;
+DAPPER_OUTPUT 指定了编译后的输出路径，bin dist 目录会自动在项目根目录下创建&lt;br /&gt;
+DAPPER_DOCKER_SOCKET 设置为True相当于&lt;code&gt;docker run -v /var/run/docker.sock:/var/run/docker.sock ...&lt;/code&gt;&lt;br /&gt;
+DAPPER_ENV 相当于&lt;code&gt;docker run -e TAG -e REPO ...&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;有一点需要注意的是，目前Dapper装载源码有两种方式bind和cp，bind就是直接mount本地的源码路径，
+但是如果使用remote docker daemon方式那就得使用cp模式了。&lt;/p&gt;
+
+&lt;h5 id=&#34;golang项目标准化工具-go-skel&#34;&gt;Golang项目标准化工具 Go-skel&lt;/h5&gt;
+
+&lt;p&gt;项目地址：&lt;a href=&#34;https://github.com/rancher/go-skel&#34;&gt;https://github.com/rancher/go-skel&lt;/a&gt;&lt;br /&gt;
+介绍了包管理工具和打包编译工具，如果我们在创建一个golang项目时能把这两个工具整合起来一起使用，
+那就太赞了。go-skel就是提供了这样一个便利，我们直接来demo一下。&lt;/p&gt;
+
+&lt;p&gt;clone一份go-skel的源码，创建一个rancher-tour（./skel.sh rancher-tour）的项目：&lt;br /&gt;
+&lt;img src=&#34;http://ww1.sinaimg.cn/large/7853084cjw1fa20wzh1pxj20jt09v0vf.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;执行完毕后，会创建一个标准的项目，包含了dapper和trash这两个工具，
+同时定义了一份Makefile，我们可以通过make命令来简化操作：&lt;br /&gt;
+&lt;img src=&#34;http://ww2.sinaimg.cn/large/7853084cjw1fa20xj5jd3j20cw0art9r.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;比如我们要执行一个ci操作，那就可以直接运行 make ci，自动运行单元测试，
+并在bin目录下生成最终的可执行程序：&lt;br /&gt;
+&lt;img src=&#34;http://ww1.sinaimg.cn/large/7853084cjw1fa20xw28tzj20gz05kmyl.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;标准项目已经创建了一些初始化代码，集成了 github.com/urfave/cli ，所以我们可以执行执行rancher-tour：&lt;br /&gt;
+&lt;img src=&#34;http://ww1.sinaimg.cn/large/7853084cjw1fa20y6wzdjj20kq08xgmw.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;h5 id=&#34;微服务辅助小工具-giddyup&#34;&gt;微服务辅助小工具 Giddyup&lt;/h5&gt;
+
+&lt;p&gt;项目地址：&lt;a href=&#34;https://github.com/cloudnautique/giddyup&#34;&gt;https://github.com/cloudnautique/giddyup&lt;/a&gt;&lt;br /&gt;
+一个传统的服务在容器化的过程中，通常我们会将其拆分成多个微服务，
+充分展现每个容器只做好一件事情这样的哲学。那么就会出现我们在Rancher中看到的sidekick容器，
+数据卷容器，专门负责更新配置信息的容器等等。实际应用中我们会遇到一些问题，
+比如这些微服务容器的启动是无序的，无序启动会导致微服务之间可能出现连接失败，
+进而导致整个服务不可用；再比如我们如何来判定依赖的微服务已经正常启动，
+这可能需要一个health check的服务端口。giddyup就是简化这种微服务检查工作的利器，它都能做些什么呢：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Get connection strings from DNS or Rancher Metadata.&lt;/li&gt;
+&lt;li&gt;Determine if your container is the leader in the service.&lt;/li&gt;
+&lt;li&gt;Proxy traffic to the leader.&lt;/li&gt;
+&lt;li&gt;Wait for service to have the desired scale.&lt;/li&gt;
+&lt;li&gt;Get the scale of the service.&lt;/li&gt;
+&lt;li&gt;Get Managed-IP of the container (/self/container/primary_ip).&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;我们还是创建stack并在其中创建service来体验一下giddyup的部分功能，
+service中包含两个容器分别为主容器main和sidekick容器conf，他们共享网络栈：&lt;br /&gt;
+&lt;img src=&#34;http://ww2.sinaimg.cn/large/7853084cjw1fa210w5l9pj20c807xt9a.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;我们可以在conf内启动giddyup health，会启动一个监听1620端口的http服务，服务路径是/ping：&lt;br /&gt;
+&lt;img src=&#34;http://ww4.sinaimg.cn/large/7853084cjw1fa2115foy9j20a703h3yl.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;此时我们可以在其他服务的容器内查看这个服务 health port的健康状态，
+通过giddyup ip stringify获取服务地址，使用giddyup probe可以查看相关状态：&lt;br /&gt;
+&lt;img src=&#34;http://ww1.sinaimg.cn/large/7853084cjw1fa211iwkz2j20ql03jgmj.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;可以看到probe返回了OK的信息，说明giddy/main的health port是正常的，
+如果我们把giddyup health的端口停掉，giddyup probe会如何？&lt;br /&gt;
+&lt;img src=&#34;http://ww4.sinaimg.cn/large/7853084cjw1fa211ulol7j20mw06kn1u.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;除了开启health port功能外，还可以sleep等待service内所有容器都启动，
+比如刚才的service，我在main上做wait操作，同时在UI上对service扩容，
+可以看到为了等待完成扩容差不多sleep了3s：&lt;br /&gt;
+&lt;img src=&#34;http://ww1.sinaimg.cn/large/7853084cjw1fa212n0tykj20ep031mxg.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;更多功能可以去看一看giddyup项目的README文档，另外也可以看看catalog中的一些项目是怎么使用giddyup的，
+参考：&lt;a href=&#34;https://github.com/rancher/catalog-dockerfiles&#34;&gt;https://github.com/rancher/catalog-dockerfiles&lt;/a&gt;&lt;/p&gt;
+
+&lt;h5 id=&#34;rancher-cli-工具&#34;&gt;Rancher CLI 工具&lt;/h5&gt;
+
+&lt;p&gt;项目地址：&lt;a href=&#34;https://github.com/rancher/cli&#34;&gt;https://github.com/rancher/cli&lt;/a&gt;&lt;br /&gt;
+现在我们管理Rancher的方式包括UI、API方式，为了能够和其他工具更好的融合Rancher开发了CLI工具，
+可以非常轻量级的嵌入到其他工具中。CLI将会在Rancher 1.2-pre2版本中正式放出，
+兼容性上目前来看没有支持老版本的计划，所以在老版本上出现各种问题也是正常的。&lt;/p&gt;
+
+&lt;p&gt;直接在&lt;a href=&#34;https://github.com/rancher/cli/releases&#34;&gt;https://github.com/rancher/cli/releases&lt;/a&gt;下载最新版本即可试用，
+将rancher cli放到PATH中，正式使用前需要初始化：&lt;br /&gt;
+&lt;img src=&#34;http://ww2.sinaimg.cn/large/7853084cjw1fa214oqzn5j20hy07a405.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;然后便可以执行各种犀利的操作，比如针对某个service进行scale操作，
+这比之前需要用rancher-compose cli要简洁的多：&lt;br /&gt;
+&lt;img src=&#34;http://ww2.sinaimg.cn/large/7853084cjw1fa2155xxeaj20ps05ggng.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;再比如可以实时监听rancher events，可以即时查看Rancher中正在发生的各种任务，
+对协助排查问题，分析系统运行情况都非常有用：&lt;br /&gt;
+&lt;img src=&#34;http://ww4.sinaimg.cn/large/7853084cjw1fa215gzjcrj20dr077myp.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;h4 id=&#34;后语&#34;&gt;后语&lt;/h4&gt;
+
+&lt;p&gt;小工具中内含着大智慧，工具文化是工程师Team高效协作的重要标志，
+高质量的工具能让项目开发有事半功倍之效，其背后也蕴藏着深厚的团队文化理念，
+就是不计项目KPI利用个人业余时间为团队做贡献的和谐氛围。
+其实国内很多互联网公司都是有专门设立工具开发工程师的岗位，
+对工具带来的生产效率提升，其重视程度不言而喻！&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Kubernetes in Rancher1.0 架构分析</title>
+      <link>http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0</link>
+      <pubDate>Thu, 28 Jul 2016 14:49:47 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0</guid>
+      <description>&lt;p&gt;该主题是本人于Rancher k8s 北京meetup进行的一次线下分享，应Rancher China官方之邀，
+重新梳理成文字版本，便于大家阅读传播，如有问题纰漏或任何不妥之处随时联系牛小腩（niusmallnan），
+我会以最快速度更正。
+&lt;/p&gt;
+
+&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
+
+&lt;p&gt;在Rancher 1.0版本开始，Rancher逐步增加了Kubernetes、Swarm、Mesos等多编排引擎的支持，
+很多朋友就此产生了疑惑，诸如Cattle引擎和这几个之间到底什么关系？
+每种引擎是如何支持的？自家的业务环境如何选型？我们将逐步揭开这些神秘面纱，
+了解基础架构才能在遇到问题时进行有效的分析，进而准确的定位问题并解决问题，
+因为没有一种生产环境是完全可靠的。基于这个背景下，这次我们首先向大家介绍kubernetes in Rancher的架构。&lt;/p&gt;
+
+&lt;h3 id=&#34;分析&#34;&gt;分析&lt;/h3&gt;
+
+&lt;p&gt;从现在Rancher的发展节奏来看，Cattle引擎已经被定义成Rancher的基础设施引擎，
+而Rancher的基础设施服务都包括哪些呢？如下：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Networking，rancher的统一网络服务，由rancher-net组件提供&lt;/li&gt;
+&lt;li&gt;Load Balancer，rancher的负载均衡服务，目前来看套路基本上是基于Haproxy来构建&lt;/li&gt;
+&lt;li&gt;DNS Service，rancher的dns服务，主要是为了提供服务发现能力，由rancher-dns组件来提供&lt;/li&gt;
+&lt;li&gt;Metadata Service，rancher的元数据服务，metadata是我们通过compose编排应用时的利器，
+可以很灵活的像service中注入特定信息&lt;/li&gt;
+&lt;li&gt;Persistent Storage Service，持久化存储服务目前是由convoy来提供，
+而对于真正的后端存储的实现rancher还有longhorn没有完全放出&lt;/li&gt;
+&lt;li&gt;Audit Logging，审计日志服务是企业场景中比较重要的一个属性，
+目前是集成在cattle内部没有被完全分离出来&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;所以Rancher在接入任何一种编排引擎，最终都会把基础设施服务整合到该引擎中，
+Kubernetes in Rancher的做法正是如此。&lt;/p&gt;
+
+&lt;p&gt;Kubernetes各个组件的角色可以归为三类即Master、Minion、Etcd，
+Master主要是kube-apiserver、kube-scheduler、kube-controller-manager，
+Minion主要是kubelet和kube-proxy。Rancher为了融合k8s的管控功能，
+又在Master中添加了kuberctrld、ingress-controller、kubernetes-agent三个服务来打通Rancher和K8s，
+同时每个node上都会依赖Rancher提供的rancher-dns、rancher-metadata、rancher-net这些基础设施服务。&lt;br /&gt;
+&lt;img src=&#34;http://ww2.sinaimg.cn/large/7853084cjw1fa21xnsfbrj20p40c0wgm.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;由于K8s是基于Cattle引擎来部署，所以在K8s在部署完成之后，
+我们可以通过Link Graph来很清晰的看到整体的部署情况。&lt;br /&gt;
+&lt;img src=&#34;http://ww2.sinaimg.cn/large/7853084cjw1fa21y87258j20mi07tdh0.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
+整个服务基于Cattle引擎的rancher-compose构建，新增节点后自动添加kubelet和kube-proxy服务
+（此处利用了Global Label的特性），各个组件都添加了health-check机制，
+保证一定程度的高可用。考虑到Etcd最低1个最多3个节点，
+单台agent host就可以部署K8s，三节点agent host则更合理些。&lt;/p&gt;
+
+&lt;p&gt;K8s集群完成部署后，我们就可以在其中添加各种应用服务，
+目前Rancher支持管理K8s的service、pod、replication-controller等，
+我们可以用一张图来形象得描述一下应用视图结构。&lt;br /&gt;
+&lt;img src=&#34;http://ww1.sinaimg.cn/large/7853084cjw1fa21z5ellcj20qj0cuq5u.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
+rancher-net组件会给每个pod分配一个ip，rancher-dns则替代了K8s的Skydns来实现服务发现，
+在pod的容器内部依然可以访问rancher-metadata服务来获取元数据信息。除了这三个基础服务外，
+我们之前提到的kuberctrld、ingress-controller、kubernetes-agent也在其中扮演者重要角色。&lt;/p&gt;
+
+&lt;p&gt;无论是K8s还是Rancher，其中一些抽象对象（如rancher的stack/service，或者K8s的serivice/pod）
+在属性更新时都会有events产生，在任何服务入口来更改这些抽象对象都会有events产生，
+所以要保证Rancher和k8s能够互相感知各自对象的更新，那么kubernetes-agent就应运而生了。&lt;br /&gt;
+&lt;img src=&#34;http://ww3.sinaimg.cn/large/7853084cjw1fa22166xnyj20nt0d60ut.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
+诸如K8s的namespaces、services、replicationcontrollers、pods等对象的信息变更会及时通知给Rancher，
+而Cattle管理的Host资源出现信息变更（诸如host label的变动）也会通知给K8s。&lt;/p&gt;
+
+&lt;p&gt;简单得说kubernetes-agent是为了维护Rancher和K8s之间的对象一致性，
+而真正要通过Rancher来创建K8s中的service或者pod之类的对象，
+还需要另外一个服务来实现，它就是kubectrld，直观的讲它就是包装了kubectrl，
+实现了其中kubectl create/apply/get 等功能。&lt;br /&gt;
+&lt;img src=&#34;http://ww3.sinaimg.cn/large/7853084cjw1fa221z612jj20o80bhq4q.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
+所有的K8s对象创建请求都会走cattle引擎，cattle会把请求代理到kubectrld启动的一个api服务。
+除此之外，还会监听rancher events来辅助实现相关对象的CRUD。&lt;/p&gt;
+
+&lt;p&gt;K8s上创建的service如需对外暴露访问，那么必然会用到LoadBalancer Type和Ingress kind，
+注意K8s概念下的LoadBalancer和Ingress略有不同，LoadBalancer的功能主要关注在L4支持http/tcp，
+而Ingrees则是要实现L7的负载均衡且只能支持http。K8s 的LoadBalancer需要在K8s中实现一个Cloud Provider，
+目前只有GCE，而Rancher则维护了自己的K8s版本在其中提供了Rancher Cloud Provider。
+对于Ingress则是提供了Ingress-controller组件，它实现了K8s的ingress框架，
+可以获取ingress的创建信息并执行相应的接口。当然最终这两者都会调用cattle api来创建Rancher的负载均衡，
+且都是通过Haproxy完成负责均衡功能。&lt;br /&gt;
+&lt;img src=&#34;http://ww2.sinaimg.cn/large/7853084cjw1fa22370rzfj20hv0b6gn5.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;后语&#34;&gt;后语&lt;/h3&gt;
+
+&lt;p&gt;以目前K8s社区的火热势头，Rancher应该会持续跟进并不断更新功能优化架构，
+待到Rancher1.2发布之后，CNI的支持会是一个里程碑，
+到那时Kubernetes in Rancher也会更加成熟，一起向着最好用Kubernetes发行版大踏步的前进。&lt;/p&gt;</description>
+    </item>
+    
   </channel>
 </rss>
