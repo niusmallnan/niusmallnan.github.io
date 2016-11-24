@@ -307,6 +307,153 @@ k8s引擎的compose文件放在&lt;a href=&#34;https://github.com/rancher/ranche
     </item>
     
     <item>
+      <title>Rancher HA部署实践</title>
+      <link>http://niusmallnan.com/2016/09/23/rancher-ha-practice</link>
+      <pubDate>Fri, 23 Sep 2016 17:12:27 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2016/09/23/rancher-ha-practice</guid>
+      <description>&lt;p&gt;Rancher1.1版本HA结构部署实践记录
+&lt;/p&gt;
+
+&lt;h3 id=&#34;过程记录&#34;&gt;过程记录&lt;/h3&gt;
+
+&lt;p&gt;以三节点为例，节点信息：
+ubuntu(aufs)+docker1.11.2+rancher1.1.x
+Haproxy+Mysql 放在同一节点 使用VM
+Rancher HA Node 三个节点 使用baremetal（也可以使用VM，建议使用4核8G以上flavor）&lt;/p&gt;
+
+&lt;p&gt;先部署Haproxy：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;docker run -d --name rancher-haproxy \
+           -v /opt/conf/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro \
+           -p 80:80 \
+           haproxy
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;文件 /opt/conf/haproxy.cfg参考：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;global
+        log 127.0.0.1 local0
+        log 127.0.0.1 local1 notice
+        maxconn 4096
+        maxpipes 1024
+        daemon
+
+defaults
+        log     global
+        mode    tcp
+        option  tcplog
+        option  dontlognull
+        option  redispatch
+        option http-server-close
+        option forwardfor
+        retries 3
+        timeout connect 5000
+        timeout client 50000
+        timeout server 50000
+
+frontend default_frontend
+        bind *:80
+        mode http
+
+        default_backend rancher-ha-node
+
+backend rancher-ha-node
+        mode http
+        server r-ha-1 xx.xx.xx.xx
+        server r-ha-2 xx.xx.xx.xx
+        server r-ha-3 xx.xx.xx.xx
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;创建容器化的mysql：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;docker run --name rancher-mysql \
+    -v /opt/data/mysql:/var/lib/mysql \
+    -e MYSQL_ROOT_PASSWORD=root \
+    -p 3306:3306 \
+    -d mysql:5.5
+
+mysql -uroot -proot
+CREATE DATABASE IF NOT EXISTS cattle COLLATE = &#39;utf8_general_ci&#39; CHARACTER SET = &#39;utf8&#39;;
+GRANT ALL ON cattle.* TO &#39;cattle&#39;@&#39;%&#39; IDENTIFIED BY &#39;cattle&#39;;
+GRANT ALL ON cattle.* TO &#39;cattle&#39;@&#39;localhost&#39; IDENTIFIED BY &#39;cattle&#39;;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;正常运行rancher，配置并下载HA脚本，如果不想用HTTPS，
+记得把&lt;strong&gt;CATTLE_HA_HOST_REGISTRATION_URL&lt;/strong&gt;的值换成HTTP的，再执行脚本。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>CNM macvlan实践</title>
+      <link>http://niusmallnan.com/2016/09/19/docker-cnm-practice</link>
+      <pubDate>Mon, 19 Sep 2016 17:22:00 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2016/09/19/docker-cnm-practice</guid>
+      <description>&lt;p&gt;针对Dcoker原生网络模型CNM的一次实践记录，网络模式macvlan。&lt;/p&gt;
+
+&lt;p&gt;
+首先测试一下系统对bridge和namespace的支持情况：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# add the namespaces
+ip netns add ns1
+ip netns add ns2
+
+# create the macvlan link attaching it to the parent host eno1
+ip link add mv1 link eno1 type macvlan mode bridge
+ip link add mv2 link eno1 type macvlan mode bridge
+
+# move the new interface mv1/mv2 to the new namespace
+ip link set mv1 netns ns1
+ip link set mv2 netns ns2
+
+# bring the two interfaces up
+ip netns exec ns1 ip link set dev mv1 up
+ip netns exec ns2 ip link set dev mv2 up
+
+# set ip addresses
+ip netns exec ns1 ifconfig mv1 192.168.1.50/24 up
+ip netns exec ns2 ifconfig mv2 192.168.1.60/24 up
+
+# show interface detail
+ip netns exec ns1 ip a
+ip netns exec ns2 ip a
+
+# ping from one ns to another
+ip netns exec ns1 ping -c 4 192.168.1.60
+
+# cleanup
+ip netns del ns1
+ip netns del ns2
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;给网卡创建一个vlan设备：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# create a new subinterface tied to dot1q vlan 1045
+ip link add link eno1 name eno1.1045 type vlan id 1045
+
+# assign an IP addr
+ip a add 192.168.120.24/24 dev eno1.1045
+
+# enable the new sub-interface
+ip link set eno1.1045 up
+
+# remove sub-interface
+#ip link del eno1.1045
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;创建docker network：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;docker network create -d macvlan \
+    --subnet=192.168.225.0/24 \
+    --gateway=192.168.225.1 \
+    -o parent=eno1.1045 macvlan1045
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;创建容器，测试网络连通性：
+&lt;code&gt;docker run --net=macvlan1045 --rm --ip=192.168.225.24 -it alpine /bin/sh&lt;/code&gt;&lt;/p&gt;</description>
+    </item>
+    
+    <item>
       <title>Rancher event机制及其实践指南</title>
       <link>http://niusmallnan.com/2016/08/25/rancher-envent</link>
       <pubDate>Thu, 25 Aug 2016 13:44:04 +0800</pubDate>

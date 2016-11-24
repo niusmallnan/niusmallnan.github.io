@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>树莓派上的Docker集群管理 &middot; Niusmallnan</title>
+    <title>Rancher HA部署实践 &middot; Niusmallnan</title>
     <meta name="generator" content="Hugo 0.17" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -10,7 +10,7 @@
       <meta name="description" content="Niusmallnan Blog Site">
     
     
-    <link rel="canonical" href="http://niusmallnan.com/2016/11/07/docker-on-rpi"/>
+    <link rel="canonical" href="http://niusmallnan.com/2016/09/23/rancher-ha-practice"/>
     <link rel="icon" href="http://niusmallnan.com/favicon.ico">
     <link rel="apple-touch-icon" href="http://niusmallnan.com/apple-touch-icon.png"/>
     <link rel="stylesheet" href="http://niusmallnan.com/css/style.css">
@@ -20,16 +20,14 @@
     
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,400,600' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-    <meta property="og:title" content="树莓派上的Docker集群管理" />
-<meta property="og:description" content="随着IOT市场的火热发展，Docker天然的轻量级以及帮助业务快速重构的特性，
-将会在IOT领域迎来巨大发展潜力，甚至有可能会比它在云端的潜力更大。
-本文将致力于构建一个利用RancherOS来管理运行在树莓派上的容器集群。
+    <meta property="og:title" content="Rancher HA部署实践" />
+<meta property="og:description" content="Rancher1.1版本HA结构部署实践记录
 " />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="http://niusmallnan.com/2016/11/07/docker-on-rpi" />
+<meta property="og:url" content="http://niusmallnan.com/2016/09/23/rancher-ha-practice" />
 
 
-<meta property="og:updated_time" content="2016-11-07T17:36:37&#43;08:00"/>
+<meta property="og:updated_time" content="2016-09-23T17:12:27&#43;08:00"/>
 
 
 
@@ -42,15 +40,13 @@
 
     
     
-<meta itemprop="name" content="树莓派上的Docker集群管理">
-<meta itemprop="description" content="随着IOT市场的火热发展，Docker天然的轻量级以及帮助业务快速重构的特性，
-将会在IOT领域迎来巨大发展潜力，甚至有可能会比它在云端的潜力更大。
-本文将致力于构建一个利用RancherOS来管理运行在树莓派上的容器集群。
+<meta itemprop="name" content="Rancher HA部署实践">
+<meta itemprop="description" content="Rancher1.1版本HA结构部署实践记录
 ">
 
 
-<meta itemprop="dateModified" content="2016-11-07T17:36:37&#43;08:00" />
-<meta itemprop="wordCount" content="2676">
+<meta itemprop="dateModified" content="2016-09-23T17:12:27&#43;08:00" />
+<meta itemprop="wordCount" content="349">
 
 
 
@@ -62,10 +58,8 @@
 
 
 
-<meta name="twitter:title" content="树莓派上的Docker集群管理"/>
-<meta name="twitter:description" content="随着IOT市场的火热发展，Docker天然的轻量级以及帮助业务快速重构的特性，
-将会在IOT领域迎来巨大发展潜力，甚至有可能会比它在云端的潜力更大。
-本文将致力于构建一个利用RancherOS来管理运行在树莓派上的容器集群。
+<meta name="twitter:title" content="Rancher HA部署实践"/>
+<meta name="twitter:description" content="Rancher1.1版本HA结构部署实践记录
 "/>
 
 
@@ -300,20 +294,20 @@
             
 
             <header class="article-header">
-    <a href="http://niusmallnan.com/2016/11/07/docker-on-rpi">
+    <a href="http://niusmallnan.com/2016/09/23/rancher-ha-practice">
     <h1 class="article-title" itemprop="name">
-        树莓派上的Docker集群管理
+        Rancher HA部署实践
     </h1>
     </a>
     <div class="article-meta">
         <div class="article-date">
             <i class="fa fa-calendar"></i>
-            <time datetime="2016-11-07 17:36:37 &#43;0800 CST" itemprop="datePublished">2016-11-07</time>
+            <time datetime="2016-09-23 17:12:27 &#43;0800 CST" itemprop="datePublished">2016-09-23</time>
             &middot;
-            2676
+            349
             字数
             &middot;
-            6
+            1
             分钟阅读
         </div>
 
@@ -339,11 +333,7 @@
                 <i class="fa fa-tags"></i>
                 
                 
-                <a class="article-category-link" href="tags/rancheros">RancherOS</a>
-                &middot;
-                
-                
-                <a class="article-category-link" href="tags/raspberry-pi">Raspberry Pi</a>
+                <a class="article-category-link" href="tags/rancher">Rancher</a>
                 
                 
             </div>
@@ -353,164 +343,83 @@
 </header>
 
             <div class="article-entry" itemprop="articleBody">
-                <p>随着IOT市场的火热发展，Docker天然的轻量级以及帮助业务快速重构的特性，
-将会在IOT领域迎来巨大发展潜力，甚至有可能会比它在云端的潜力更大。
-本文将致力于构建一个利用RancherOS来管理运行在树莓派上的容器集群。
+                <p>Rancher1.1版本HA结构部署实践记录
 </p>
 
-<h3 id="引言">引言</h3>
+<h3 id="过程记录">过程记录</h3>
 
-<p>目前业界主流基本都是在x86架构上使用Docker，除了因为Intel在服务器领域的绝对领导地位之外，
-x86 CPU的确在性能上有着卓越的表现。但是近些年来，随着云计算的迅猛发展，
-引来了数据中心的大规模建设，慢慢地大家对数据中心PUE尤其是CPU功耗有了更高的要求。
-ARM CPU虽然性能不如x86，但是在功耗上绝对有着无法比拟的优势，
-同时我们知道并不是所有的服务都有高性能的CPU需要。很多厂商在都对ARM服务器投入了研发资源，
-但是效果上目前来看并不是太好，ARM处理器在服务器领域并没有如在移动端那样被快速接受，
-主要是因为市场接受度及服务器市场的性能要求所致。<br />
-<img src="http://ww4.sinaimg.cn/large/7853084cjw1fa26h172hoj20ib09dgmz.jpg" alt="" /></p>
+<p>以三节点为例，节点信息：
+ubuntu(aufs)+docker1.11.2+rancher1.1.x
+Haproxy+Mysql 放在同一节点 使用VM
+Rancher HA Node 三个节点 使用baremetal（也可以使用VM，建议使用4核8G以上flavor）</p>
 
-<p>但是在物联网（IOT）领域，ARM处理器却是霸主级的地位，毕竟在这个领域功耗胜过一切。
-那么我们可以想象，未来会占大市场的IOT设备中，会出现各种尺寸各种架构，
-内置操作系统也不统一，没有通用程序打包标准，几乎每种设备程序的开发框架均不同，
-IOT设备中程序部署升级回滚等操作不够灵活，等等这样那样的问题。</p>
+<p>先部署Haproxy：</p>
 
-<h3 id="分析与实践">分析与实践</h3>
-
-<p>这些问题，我们可以借鉴X86时代的经验，用Docker容器来解决它们。
-Docker能降低IOT应用管理的负载度，但是在物理设备和Docker之间，
-我们还需要一个轻量级的操作系统。这个OS需要是完全可以定制的，
-可以针对不同设备需求，裁剪或增加对应的程序模块，更小体积更少进程意味着更低的功耗。</p>
-
-<p>根据以上判断和需求，我经过了一番探索，最终选择了RancherOS。它本身的特性是：</p>
-
-<ol>
-<li>真正容器化的Linux操作系统极致精简，所有服务（包括系统服务）均运行在容器中，
-可以以容器方式对其进行任意定制</li>
-<li>内置了Docker Engine，无需在安装系统后再进行Docker安装</li>
-<li>完全开源<a href="https://github.com/rancher/os">https://github.com/rancher/os</a>，我们可以进行各种深度定制</li>
-<li>最最重要的，支持ARM</li>
-</ol>
-
-<p>在RancherOS的整体架构中，最底层毋庸置疑是Linux kernel，系统启动后的PID 1用system-docker代替，
-由它来把udev、dhcp、console等系统服务启动，同时会启动user-docker，
-用户运行的应用程序均跑在user-docker下。<br />
-<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa26kta7rkj20l109s3zt.jpg" alt="" /></p>
-
-<p>我们以树莓派为例，将RancherOS部署在其之上。这里需要提示的是，RancherOS每个版本release之时，
-都会放出树莓派的支持版本，
-比如本次分享使用的<a href="https://github.com/rancher/os/releases/
-download/v0.7.0/rancheros-raspberry-pi.zip">v0.7.0版本</a>。通过dd命令将RancherOS写到树莓派的SD卡上，
-通电点亮树莓派。<br />
-<img src="http://ww4.sinaimg.cn/large/7853084cjw1fa26m5gaz0j20aq0aawg4.jpg" alt="" /></p>
-
-<p>查看PID 1是system-docker：<br />
-<img src="http://ww1.sinaimg.cn/large/7853084cjw1fa26mgfy51j20fn03ldh0.jpg" alt="" /></p>
-
-<p>通过system-docker ps 查看启动的系统服务：<br />
-<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa26mp3zphj20s603u0uw.jpg" alt="" /></p>
-
-<p>正常来说，我们都得设置一下docker registry mirror，这样方便pull镜像。
-RancherOS的配置，都是通过ros config命令来配置，比如设置user-docker的mirror：</p>
-
-<pre><code>$ sudo ros config set rancher.docker.extra_args [--registry-mirror,https://xxxxxxx]
-$ sudo system-docker restart docker # 重启user-docker
+<pre><code>docker run -d --name rancher-haproxy \
+           -v /opt/conf/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro \
+           -p 80:80 \
+           haproxy
 </code></pre>
 
-<p>最终，可以看到：<br />
-<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa26nqlvixj20wf02ydi4.jpg" alt="" /></p>
+<p>文件 /opt/conf/haproxy.cfg参考：</p>
 
-<p>RancherOS有一个我认为比较好的特性，就是支持很方便的对Docker Engine版本进行切换。
-目前Docker迭代的速度并不慢，实际上很多程序不一定会兼容比较新的Engine，
-Docker Engine版本的管理变得越来越重要。尤其是在测试环境中，
-我们有时确实需要变换Docker Engine版本，来构建测试场景：</p>
+<pre><code>global
+        log 127.0.0.1 local0
+        log 127.0.0.1 local1 notice
+        maxconn 4096
+        maxpipes 1024
+        daemon
 
-<pre><code>$ sudo ros engine list  #查看当前版本支持的engine有哪些
-disabled docker-1.10.3
-disabled docker-1.11.2
-current  docker-1.12.1
-$ sudo ros engine switch docker-1.11.2 #切换docker-1.11版本
+defaults
+        log     global
+        mode    tcp
+        option  tcplog
+        option  dontlognull
+        option  redispatch
+        option http-server-close
+        option forwardfor
+        retries 3
+        timeout connect 5000
+        timeout client 50000
+        timeout server 50000
+
+frontend default_frontend
+        bind *:80
+        mode http
+
+        default_backend rancher-ha-node
+
+backend rancher-ha-node
+        mode http
+        server r-ha-1 xx.xx.xx.xx
+        server r-ha-2 xx.xx.xx.xx
+        server r-ha-3 xx.xx.xx.xx
 </code></pre>
 
-<p>此外，如果对docker engine有更特殊的需求，还可以定制自己的版本，然后让system-docker来加载它。
-只需将编译好的docker engine放到scrach镜像中即可：<br />
-<img src="http://ww3.sinaimg.cn/large/7853084cjw1fa26p7gcphj20fx06fmy1.jpg" alt="" /><br />
-这部分可以参考：<a href="https://github.com/rancher/os-engines">https://github.com/rancher/os-engines</a></p>
+<p>创建容器化的mysql：</p>
 
-<p>另外，如果习惯了使用相应Linux发行版的命令行，
-那么也可以加载对应的console镜像（当然如果考虑精简系统也可不必加载）：<br />
-<img src="http://ww3.sinaimg.cn/large/7853084cjw1fa26pvzryej20by03pdg5.jpg" alt="" /><br />
-此部分需要进行深度定制，可以参考：<a href="https://github.com/rancher/os-images">https://github.com/rancher/os-images</a><br />
-<img src="http://ww1.sinaimg.cn/large/7853084cjw1fa26qd06b7j20ej0bm410.jpg" alt="" /></p>
+<pre><code>docker run --name rancher-mysql \
+    -v /opt/data/mysql:/var/lib/mysql \
+    -e MYSQL_ROOT_PASSWORD=root \
+    -p 3306:3306 \
+    -d mysql:5.5
 
-<p>RancherOS更多酷炫的功能，可以访问官方的文档：<a href="http://docs.rancher.com/os">http://docs.rancher.com/os</a></p>
-
-<p>RancherOS介绍完毕后，我们可以在单机树莓派上做容器管理了，喜欢命令行的当然最好，
-喜欢UI管理的，推荐两款可以在树莓派上运行的管理程序。
-<strong>portainer</strong><a href="https://github.com/portainer/portainer">https://github.com/portainer/portainer</a>，
-其有专门的arm镜像portainer/portainer:arm ，运行后：
-<code>$ docker run --restart=always -d -p 9000:9000 --privileged 
-    -v /var/run/docker.sock:/var/run/docker.sock 
-    portainer/portainer:arm</code><br />
-<img src="http://ww3.sinaimg.cn/large/7853084cjw1fa26s6xjj2j20oz0e2jtp.jpg" alt="" /></p>
-
-<p>更加简约的 ui-for-docker <a href="https://github.com/kevana/ui-for-docker">https://github.com/kevana/ui-for-docker</a> ，运行如下：
-<code>$ docker run --restart=always -d -p 9000:9000 
-    -v /var/run/docker.sock:/var/run/docker.sock 
-    hypriot/rpi-dockerui</code><br />
-<img src="http://ww3.sinaimg.cn/large/7853084cjw1fa26sxv8ofj20ot0g0abm.jpg" alt="" /></p>
-
-<p>单机树莓派之后，我们就要考虑如何将多个树莓派组成Docker集群。
-一提到Docker集群，我们就会考虑需要编排引擎的支持，
-无非就是主流的Mesos、Kubernetes、Swarm，还有非主流的Cattle、Nomad之流。
-那么在IOT场景下，我们最需要考虑的就是精简，所以我选择了新版的Swarm。
-将RancherOS的Engine切换到1.12.3，然后构建Swarm集群。</p>
-
-<p>简单得执行swarm init和join后，我们就得到了一个树莓派Docker集群：<br />
-<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa26tjxxlyj20fi01twey.jpg" alt="" /></p>
-
-<p>然后我们可以快速执行一个小demo：</p>
-
-<pre><code>#swarmkit demo
-$ docker service create --replicas 1 -p 80 --name app armhf/httpd
-$ docker service scale app=2
-$ docker service ps app
+mysql -uroot -proot
+CREATE DATABASE IF NOT EXISTS cattle COLLATE = 'utf8_general_ci' CHARACTER SET = 'utf8';
+GRANT ALL ON cattle.* TO 'cattle'@'%' IDENTIFIED BY 'cattle';
+GRANT ALL ON cattle.* TO 'cattle'@'localhost' IDENTIFIED BY 'cattle';
 </code></pre>
 
-<p><img src="http://ww3.sinaimg.cn/large/7853084cjw1fa26u6875lj20jk01y751.jpg" alt="" /></p>
-
-<p>更多ARM相关的Docker镜像，可以到这两个地方查找：</p>
-
-<ul>
-<li><a href="https://hub.docker.com/r/armhf">https://hub.docker.com/r/armhf</a></li>
-<li><a href="https://hub.docker.com/u/aarch64">https://hub.docker.com/u/aarch64</a></li>
-</ul>
-
-<p>RancherOS设计之初是为了构建一个运行Rancher的轻量级操作系统，
-那么Rancher本身在ARM的支持上也在不断推进中，
-相应的<a href="https://github.com/rancher/rancher/pull/4704">PR</a>也有提交。
-不过目前来看，对rancher-server的ARM化还是比较麻烦，对agent的节点支持ARM相对简单一些，
-也就是说rancher-server仍然运行在x86架构上，而agent节点可以支持ARM和x86。</p>
-
-<p>Kubernetes的ARM支持在社区中也有很多人在做，比如：
-<a href="https://github.com/luxas/kubernetes-on-arm">https://github.com/luxas/kubernetes-on-arm</a>，来自社区的分享：<br />
-<img src="http://ww4.sinaimg.cn/large/7853084cjw1fa26w8ifrrj20i00h577r.jpg" alt="" /></p>
-
-<p>秀一下，我的“家庭树莓派数据中心”：<br />
-<img src="http://ww3.sinaimg.cn/large/7853084cjw1fa26wjj274j20c50chmzj.jpg" alt="" /></p>
-
-<hr />
-
-<p>最后，我要特别感谢RancherOS的开发者们，他们帮助我解决了很多问题；
-另外还要特别感谢MBH树莓派社区的伙伴，提供了硬件设备，支持我的技术探索，
-并提供了很多帮助。</p>
+<p>正常运行rancher，配置并下载HA脚本，如果不想用HTTPS，
+记得把<strong>CATTLE_HA_HOST_REGISTRATION_URL</strong>的值换成HTTP的，再执行脚本。</p>
             </div>
             <footer class="article-footer">
-    <a data-url="http://niusmallnan.com/2016/11/07/docker-on-rpi" data-id="c34d71f33537b81e4bd9c2d65e1a80b1" class="article-share-link">
+    <a data-url="http://niusmallnan.com/2016/09/23/rancher-ha-practice" data-id="f8cfca60966387dc04a9c16b138b098c" class="article-share-link">
         <i class="fa fa-share"></i>
         分享
     </a>
     
-    <a href="http://niusmallnan.com/2016/11/07/docker-on-rpi/#disqus_thread" class="article-comment-link">
+    <a href="http://niusmallnan.com/2016/09/23/rancher-ha-practice/#disqus_thread" class="article-comment-link">
         评论
     </a>
     
@@ -586,20 +495,20 @@ $ docker service ps app
         
 <nav id="article-nav">
     
-    <a href="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking" id="article-nav-older" class="article-nav-link-wrap">
+    <a href="http://niusmallnan.com/2016/09/19/docker-cnm-practice" id="article-nav-older" class="article-nav-link-wrap">
       <strong class="article-nav-caption">
           老的
       </strong>
-      <div class="article-nav-title">如何hack一下rancher k8s</div>
+      <div class="article-nav-title">CNM macvlan实践</div>
     </a>
     
 
     
-    <a href="http://niusmallnan.com/2016/11/22/rpi-noip-with-docker" id="article-nav-newer" class="article-nav-link-wrap">
+    <a href="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking" id="article-nav-newer" class="article-nav-link-wrap">
       <strong class="article-nav-caption">
           新的
       </strong>
-      <div class="article-nav-title">基于容器实现树莓派的动态域名绑定</div>
+      <div class="article-nav-title">如何hack一下rancher k8s</div>
     </a>
     
 </nav>
@@ -613,9 +522,9 @@ $ docker service ps app
             <div id="disqus_thread"></div>
 <script type="text/javascript">
     var disqus_shortname = 'niusmallnan';
-    var disqus_identifier = 'http:\/\/niusmallnan.com\/2016\/11\/07\/docker-on-rpi';
-    var disqus_title = '树莓派上的Docker集群管理';
-    var disqus_url = 'http:\/\/niusmallnan.com\/2016\/11\/07\/docker-on-rpi';
+    var disqus_identifier = 'http:\/\/niusmallnan.com\/2016\/09\/23\/rancher-ha-practice';
+    var disqus_title = 'Rancher HA部署实践';
+    var disqus_url = 'http:\/\/niusmallnan.com\/2016\/09\/23\/rancher-ha-practice';
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

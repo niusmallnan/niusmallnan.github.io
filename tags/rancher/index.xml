@@ -70,6 +70,83 @@ k8s引擎的compose文件放在&lt;a href=&#34;https://github.com/rancher/ranche
     </item>
     
     <item>
+      <title>Rancher HA部署实践</title>
+      <link>http://niusmallnan.com/2016/09/23/rancher-ha-practice</link>
+      <pubDate>Fri, 23 Sep 2016 17:12:27 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2016/09/23/rancher-ha-practice</guid>
+      <description>&lt;p&gt;Rancher1.1版本HA结构部署实践记录
+&lt;/p&gt;
+
+&lt;h3 id=&#34;过程记录&#34;&gt;过程记录&lt;/h3&gt;
+
+&lt;p&gt;以三节点为例，节点信息：
+ubuntu(aufs)+docker1.11.2+rancher1.1.x
+Haproxy+Mysql 放在同一节点 使用VM
+Rancher HA Node 三个节点 使用baremetal（也可以使用VM，建议使用4核8G以上flavor）&lt;/p&gt;
+
+&lt;p&gt;先部署Haproxy：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;docker run -d --name rancher-haproxy \
+           -v /opt/conf/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro \
+           -p 80:80 \
+           haproxy
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;文件 /opt/conf/haproxy.cfg参考：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;global
+        log 127.0.0.1 local0
+        log 127.0.0.1 local1 notice
+        maxconn 4096
+        maxpipes 1024
+        daemon
+
+defaults
+        log     global
+        mode    tcp
+        option  tcplog
+        option  dontlognull
+        option  redispatch
+        option http-server-close
+        option forwardfor
+        retries 3
+        timeout connect 5000
+        timeout client 50000
+        timeout server 50000
+
+frontend default_frontend
+        bind *:80
+        mode http
+
+        default_backend rancher-ha-node
+
+backend rancher-ha-node
+        mode http
+        server r-ha-1 xx.xx.xx.xx
+        server r-ha-2 xx.xx.xx.xx
+        server r-ha-3 xx.xx.xx.xx
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;创建容器化的mysql：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;docker run --name rancher-mysql \
+    -v /opt/data/mysql:/var/lib/mysql \
+    -e MYSQL_ROOT_PASSWORD=root \
+    -p 3306:3306 \
+    -d mysql:5.5
+
+mysql -uroot -proot
+CREATE DATABASE IF NOT EXISTS cattle COLLATE = &#39;utf8_general_ci&#39; CHARACTER SET = &#39;utf8&#39;;
+GRANT ALL ON cattle.* TO &#39;cattle&#39;@&#39;%&#39; IDENTIFIED BY &#39;cattle&#39;;
+GRANT ALL ON cattle.* TO &#39;cattle&#39;@&#39;localhost&#39; IDENTIFIED BY &#39;cattle&#39;;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;正常运行rancher，配置并下载HA脚本，如果不想用HTTPS，
+记得把&lt;strong&gt;CATTLE_HA_HOST_REGISTRATION_URL&lt;/strong&gt;的值换成HTTP的，再执行脚本。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
       <title>Rancher event机制及其实践指南</title>
       <link>http://niusmallnan.com/2016/08/25/rancher-envent</link>
       <pubDate>Thu, 25 Aug 2016 13:44:04 +0800</pubDate>
