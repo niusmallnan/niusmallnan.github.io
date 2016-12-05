@@ -10,6 +10,58 @@
     <atom:link href="http://niusmallnan.com/tags/rancher/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
+      <title>go-machine-service访问Rancher API的授权机制分析</title>
+      <link>http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key</link>
+      <pubDate>Mon, 05 Dec 2016 11:14:19 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key</guid>
+      <description>&lt;p&gt;一段分析调用机制的旅程。
+&lt;/p&gt;
+
+&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
+
+&lt;p&gt;深更半夜一位道上的朋友突然微信问我，Rancher Server内Cattle之外的服务如何调用Rancher API。
+调用API本身没问题，但是Rancher API是需要授权访问的，
+也就是说Rancher Server内其他服务如何授权访问API，这个机制是什么样的？
+Rancher Server内有很多服务，如catalog、go-machine-service、websocket-proxy等等，
+本文就以go-machine-service为例说明其授权机制。&lt;/p&gt;
+
+&lt;h3 id=&#34;以go-machine-service为例&#34;&gt;以go-machine-service为例&lt;/h3&gt;
+
+&lt;p&gt;首先我们要了解go-machine-service在做什么事，官方文档里很清楚的描述到，
+它实现了physicalhost相关事件的handler，主要包括：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;physicalhost.create - Calls machine create &amp;hellip;.&lt;/li&gt;
+&lt;li&gt;physicalhost.activate - Runs docker run rancher/agent &amp;hellip;&lt;/li&gt;
+&lt;li&gt;physicalhost.delete|purge - Calls machine delete &amp;hellip;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;而若实现这些handler，需要和rancher events打交道，
+我们认为rancher events也是rancher api的一部分，
+所以访问rancher events也需要和API服务一样的鉴权信息。
+go-machine-service在启动之时，很明确的读取了CATTLE相关变量：&lt;br /&gt;
+&lt;img src=&#34;http://ww3.sinaimg.cn/large/006y8lVajw1fafqwxo6pyj30ir0ccdhx.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;而且rancher还给go-machine-service专门创建了相应的API Key，查看DB可以得知：&lt;br /&gt;
+&lt;img src=&#34;http://ww3.sinaimg.cn/large/006y8lVajw1fafqxbv1wbj30f90iwgnb.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;进入rancher-server容器内部，查看go-machine-service进程的环境变量，
+可以看到API Key的授权信息就在其中：&lt;br /&gt;
+&lt;img src=&#34;http://ww3.sinaimg.cn/large/006y8lVajw1fafqxofpl1j30m805dmz0.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;那么go-machine-service的环境变量是如何设置的呢？查看Cattle源码，找到MachineLancher，
+它是启动go-machine-service服务的具体实现，我们可以看到设置环境变量这一步：&lt;br /&gt;
+&lt;img src=&#34;http://ww1.sinaimg.cn/large/006y8lVajw1fafqy3ywfbj30gg03tt9w.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;总结&#34;&gt;总结&lt;/h3&gt;
+
+&lt;p&gt;Cattle本身就是一个框架，Rancher Server内的其他服务都是通过Cattle的Proxy机制来转发请求的，
+授权机制则是由Cattle统一提供出来，其他服务自身无需单独实现授权机制。
+如果我们想对Rancher Server扩展，再增加一些其他服务，利用本文所描述的机制，就会非常方便。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
       <title>如何hack一下rancher k8s</title>
       <link>http://niusmallnan.com/2016/10/08/rancher-k8s-hacking</link>
       <pubDate>Sat, 08 Oct 2016 16:09:24 +0800</pubDate>
