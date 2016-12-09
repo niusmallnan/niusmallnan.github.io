@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>Docker &middot; Niusmallnan</title>
+    <title>为什么Rancher v1.2中netstat看不到开放端口 &middot; Niusmallnan</title>
     <meta name="generator" content="Hugo 0.17" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -10,10 +10,7 @@
       <meta name="description" content="Niusmallnan Blog Site">
     
     
-      <link href="http://niusmallnan.com/tags/docker/index.xml" rel="alternate" type="application/rss+xml" title="Niusmallnan" />
-      <link href="http://niusmallnan.com/tags/docker/index.xml" rel="feed" type="application/rss+xml" title="Niusmallnan" />
-    
-    <link rel="canonical" href="http://niusmallnan.com/tags/docker/"/>
+    <link rel="canonical" href="http://niusmallnan.com/2016/12/09/rancher-netstat-miss-port"/>
     <link rel="icon" href="http://niusmallnan.com/favicon.ico">
     <link rel="apple-touch-icon" href="http://niusmallnan.com/apple-touch-icon.png"/>
     <link rel="stylesheet" href="http://niusmallnan.com/css/style.css">
@@ -23,29 +20,50 @@
     
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,400,600' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-    <meta property="og:title" content="Docker" />
-<meta property="og:description" content="" />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="http://niusmallnan.com/tags/docker/" />
+    <meta property="og:title" content="为什么Rancher v1.2中netstat看不到开放端口" />
+<meta property="og:description" content="拯救一脸懵逼。
+" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://niusmallnan.com/2016/12/09/rancher-netstat-miss-port" />
 
 
-<meta property="og:updated_time" content="2016-11-22T13:59:30&#43;08:00"/>
-
-
-
-
+<meta property="og:updated_time" content="2016-12-09T15:07:14&#43;08:00"/>
 
 
 
 
 
-    
-    
-<meta itemprop="name" content="Docker">
-<meta itemprop="description" content="">
+
+
+
 
 
     
+    
+<meta itemprop="name" content="为什么Rancher v1.2中netstat看不到开放端口">
+<meta itemprop="description" content="拯救一脸懵逼。
+">
+
+
+<meta itemprop="dateModified" content="2016-12-09T15:07:14&#43;08:00" />
+<meta itemprop="wordCount" content="809">
+
+
+
+<meta itemprop="keywords" content="coding,docker,kubernetes,rancher,rancheros,raspberry-pi," />
+
+    
+
+  <meta name="twitter:card" content="summary"/>
+
+
+
+<meta name="twitter:title" content="为什么Rancher v1.2中netstat看不到开放端口"/>
+<meta name="twitter:description" content="拯救一脸懵逼。
+"/>
+
+
+
     
 
     
@@ -58,7 +76,7 @@
 
 
 <div id="container">
-    <header id="header">
+	<header id="header">
   <div id="header-main" class="header-inner">
     <div class="outer">
       <a href="http://niusmallnan.com/" id="logo">
@@ -170,8 +188,10 @@
   </div>
 </header>
 
-    <div class="outer">
-        <aside id="profile">
+   	
+   	<div class="outer">
+   		
+	    <aside id="profile">
   <div class="inner profile-inner">
     <div class="base-info profile-block">
       <img id="avatar" src="http://niusmallnan.com/css/images/avatar.jpg">
@@ -257,73 +277,220 @@
 
 
 
-          <td><a href="http://niusmallnan.com/tags/docker/index.xml" target="_blank" title="RSS"><i class="fa fa-rss"></i></a></td>
+          <td><a href="" target="_blank" title="RSS"><i class="fa fa-rss"></i></a></td>
         </tr>
       </table>
     </div>
   </div>
 </aside>
 
-        <section id="main">
-            <section class="archives-wrap">
-                <div class="archive-category-wrap">
-                    <span class="archive-category">Docker</span>
-                </div>
-                <div class="archives">
-                    
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/11/22/rpi-noip-with-docker" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="基于容器实现树莓派的动态域名绑定" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/11/22/rpi-noip-with-docker">基于容器实现树莓派的动态域名绑定</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-11-22 13:59:30 &#43;0800 CST" itemprop="datePublished">2016-11-22</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/09/19/docker-cnm-practice" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="CNM macvlan实践" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/09/19/docker-cnm-practice">CNM macvlan实践</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-09-19 17:22:00 &#43;0800 CST" itemprop="datePublished">2016-09-19</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                </div>
-            </section>
-            <nav id="page-nav">
+	    
 
+	    
+<section id="main">
+
+    <article id="page-undefined" class="article article-type-page" itemscope="" itemprop="blogPost">
+        <div class="article-inner">
+            
+
+            <header class="article-header">
+    <a href="http://niusmallnan.com/2016/12/09/rancher-netstat-miss-port">
+    <h1 class="article-title" itemprop="name">
+        为什么Rancher v1.2中netstat看不到开放端口
+    </h1>
+    </a>
+    <div class="article-meta">
+        <div class="article-date">
+            <i class="fa fa-calendar"></i>
+            <time datetime="2016-12-09 15:07:14 &#43;0800 CST" itemprop="datePublished">2016-12-09</time>
+            &middot;
+            809
+            字数
+            &middot;
+            2
+            分钟阅读
+        </div>
+
+
+        
+            
+            
+        
+
+        
+            
+            
+        
+    </div>
+</header>
+
+            <div class="article-entry" itemprop="articleBody">
+                <p>拯救一脸懵逼。
+</p>
+
+<h3 id="引言">引言</h3>
+
+<p>随着Rancher v1.2的发布，越来越多的伙伴参与到新特性的尝鲜中。有时不免会碰到一些问题，
+比如网络不通之类的，这时通常我们都会下意识的使用netstat命令查看端口是否正确开启，
+可是出现的结果却让伙伴们一脸疑问。比如我们使用了ipsec网络，
+netstat命令却看不到UDP 500和4500端口的开放，这是为什么呢？本文将释疑这个问题。</p>
+
+<h3 id="问题现象">问题现象</h3>
+
+<p>启动之前的Rancher v1.1版本并对比v1.2版本，可以看到如下现象，
+ipsec网络正常，但在新版中netstat却看不到端口开放：<br />
+<img src="http://ww2.sinaimg.cn/large/006tKfTcjw1fakk2e84hcj30d509z76g.jpg" alt="" /><br />
+用LB暴露一个服务访问，UI上明明显示了端口，但是在netstat中却看不到：<br />
+<img src="http://ww1.sinaimg.cn/large/006tKfTcjw1fakk3aasx6j30j7075my6.jpg" alt="" /><br />
+这些现象是为什么？</p>
+
+<h3 id="原生docker和k8s可以看到端口">原生docker和k8s可以看到端口</h3>
+
+<p>原先的docker，一般run一个容器加入-p参数，就可以看到端口。
+这其实是由当前tcp/ip栈内的docker-proxy开放的，如图：<br />
+<img src="http://ww2.sinaimg.cn/large/006tKfTcjw1fakk45w280j30ju06t0v2.jpg" alt="" /><br />
+k8s是可以通过netstat看到端口，举个例子，创建一个service暴露NodePort，如下图：<br />
+<img src="http://ww4.sinaimg.cn/large/006tKfTcjw1fakk4l1qplj308z069wer.jpg" alt="" /><br />
+而通过netstat命令却能看到对应的端口，这是因为这个端口是由kube-proxy开放的，
+就是说在这个tcp/ip栈内有应用程序bind了这个端口：<br />
+<img src="http://ww3.sinaimg.cn/large/006tKfTcjw1fakk4z18gzj30j605jtah.jpg" alt="" /></p>
+
+<h3 id="本质原因">本质原因</h3>
+
+<p>端口的本质其实是应用程序，就是说需要有process bind port，
+而netstat要能显示出开放端口，则必须在当前的namespace里有应用程序监听了端口才行。
+Rancher中因为是使用CNI模型，虽然也是使用docker0，但是这个docker0是CNI Bridge，
+并不和docker-proxy有协作，所以端口并没有通过docker-proxy暴露，
+只是通过iptables dnat转发到其他的namespace上。在当前的namespace里使用netstat看不到开放的端口，
+iptables dnat规则如下：<br />
+<img src="http://ww1.sinaimg.cn/large/006tKfTcjw1fakk5qzfr6j30jg03idh7.jpg" alt="" /></p>
+
+<h3 id="总结">总结</h3>
+
+<p>有时候惯性思维让我们忽略了事物的本质，让人匪夷所思的问题往往是很简单的道理。</p>
+            </div>
+            <footer class="article-footer">
+    <a data-url="http://niusmallnan.com/2016/12/09/rancher-netstat-miss-port" data-id="8d8f578e29c4f0bf2d07483c075ddd3f" class="article-share-link">
+        <i class="fa fa-share"></i>
+        分享
+    </a>
+    
+    <a href="http://niusmallnan.com/2016/12/09/rancher-netstat-miss-port/#disqus_thread" class="article-comment-link">
+        评论
+    </a>
+    
+
+    <script>
+    (function ($) {
+        
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+    </script>
+</footer>
+
+        </div>
+
+        
+<nav id="article-nav">
+    
+    <a href="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">
+          老的
+      </strong>
+      <div class="article-nav-title">go-machine-service访问Rancher API的授权机制分析</div>
+    </a>
+    
+
+    
 </nav>
 
-        </section>
-        <aside id="sidebar">
+
+    </article>
+
+    
+    <section id="comments">
+        <div id="disqus_thread">
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'niusmallnan';
+    var disqus_identifier = 'http:\/\/niusmallnan.com\/2016\/12\/09\/rancher-netstat-miss-port';
+    var disqus_title = '为什么Rancher v1.2中netstat看不到开放端口';
+    var disqus_url = 'http:\/\/niusmallnan.com\/2016\/12\/09\/rancher-netstat-miss-port';
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+        </div>
+    </section>
+    
+</section>
+
+
+	    
+	    <aside id="sidebar">
     
 <div class="widget-wrap">
     <h3 class="widget-title">
@@ -574,7 +741,8 @@
     <div id="toTop" class="fa fa-angle-up"></div>
 </aside>
 
-    </div>
+	    
+	</div>
 </div>
 
 <footer id="footer">
