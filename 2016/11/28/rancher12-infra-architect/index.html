@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>go-machine-service访问Rancher API的授权机制分析 &middot; Niusmallnan</title>
+    <title>Rancher v1.2基础设施引擎整体架构 &middot; Niusmallnan</title>
     <meta name="generator" content="Hugo 0.17" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -10,7 +10,7 @@
       <meta name="description" content="Niusmallnan Blog Site">
     
     
-    <link rel="canonical" href="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key"/>
+    <link rel="canonical" href="http://niusmallnan.com/2016/11/28/rancher12-infra-architect"/>
     <link rel="icon" href="http://niusmallnan.com/favicon.ico">
     <link rel="apple-touch-icon" href="http://niusmallnan.com/apple-touch-icon.png"/>
     <link rel="stylesheet" href="http://niusmallnan.com/css/style.css">
@@ -20,14 +20,14 @@
     
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,400,600' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-    <meta property="og:title" content="go-machine-service访问Rancher API的授权机制分析" />
-<meta property="og:description" content="一段分析调用机制的旅程。
+    <meta property="og:title" content="Rancher v1.2基础设施引擎整体架构" />
+<meta property="og:description" content="Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
 " />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key" />
+<meta property="og:url" content="http://niusmallnan.com/2016/11/28/rancher12-infra-architect" />
 
 
-<meta property="og:updated_time" content="2016-12-05T11:14:19&#43;08:00"/>
+<meta property="og:updated_time" content="2016-11-28T20:53:44&#43;08:00"/>
 
 
 
@@ -40,13 +40,13 @@
 
     
     
-<meta itemprop="name" content="go-machine-service访问Rancher API的授权机制分析">
-<meta itemprop="description" content="一段分析调用机制的旅程。
+<meta itemprop="name" content="Rancher v1.2基础设施引擎整体架构">
+<meta itemprop="description" content="Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
 ">
 
 
-<meta itemprop="dateModified" content="2016-12-05T11:14:19&#43;08:00" />
-<meta itemprop="wordCount" content="877">
+<meta itemprop="dateModified" content="2016-11-28T20:53:44&#43;08:00" />
+<meta itemprop="wordCount" content="4044">
 
 
 
@@ -58,8 +58,8 @@
 
 
 
-<meta name="twitter:title" content="go-machine-service访问Rancher API的授权机制分析"/>
-<meta name="twitter:description" content="一段分析调用机制的旅程。
+<meta name="twitter:title" content="Rancher v1.2基础设施引擎整体架构"/>
+<meta name="twitter:description" content="Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
 "/>
 
 
@@ -294,20 +294,20 @@
             
 
             <header class="article-header">
-    <a href="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key">
+    <a href="http://niusmallnan.com/2016/11/28/rancher12-infra-architect">
     <h1 class="article-title" itemprop="name">
-        go-machine-service访问Rancher API的授权机制分析
+        Rancher v1.2基础设施引擎整体架构
     </h1>
     </a>
     <div class="article-meta">
         <div class="article-date">
             <i class="fa fa-calendar"></i>
-            <time datetime="2016-12-05 11:14:19 &#43;0800 CST" itemprop="datePublished">2016-12-05</time>
+            <time datetime="2016-11-28 20:53:44 &#43;0800 CST" itemprop="datePublished">2016-11-28</time>
             &middot;
-            877
+            4044
             字数
             &middot;
-            2
+            9
             分钟阅读
         </div>
 
@@ -334,6 +334,10 @@
                 
                 
                 <a class="article-category-link" href="tags/rancher">Rancher</a>
+                &middot;
+                
+                
+                <a class="article-category-link" href="tags/rancher-v1.2">Rancher v1.2</a>
                 
                 
             </div>
@@ -343,58 +347,139 @@
 </header>
 
             <div class="article-entry" itemprop="articleBody">
-                <p>一段分析调用机制的旅程。
+                <p>Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
 </p>
 
 <h3 id="引言">引言</h3>
 
-<p>深更半夜一位道上的朋友突然微信问我，Rancher Server内Cattle之外的服务如何调用Rancher API。
-调用API本身没问题，但是Rancher API是需要授权访问的，
-也就是说Rancher Server内其他服务如何授权访问API，这个机制是什么样的？
-Rancher Server内有很多服务，如catalog、go-machine-service、websocket-proxy等等，
-本文就以go-machine-service为例说明其授权机制。</p>
+<p>Rancher v1.2可以说是一个里程碑版本，发布时间虽屡次跳票让大家心有不爽，
+但是只要体会其新版功能，会发现这个等待绝对是值得的。从架构角度看，
+用两个字来概括就是“解耦”，基础设施引擎的分离，agent节点的服务粒度更细；
+从产品角度看，给了用户更多定制的空间，Rancher依然秉持着全部OpenSource的理念；
+在开发语言上，之前遗留的通过shell脚本方式的粗糙实现也都基于Golang重写，
+解耦的新服务也几乎使用Golang开发，agent节点全线基于Golang这也为后续便利地支持ARM埋下伏笔。
+在市场选择上，Rancher依然在kubernetes下面投入了大量精力，引入了万众期待的CNI plugin管理机制，
+坚持要做最好用的Kubernetes发行版。本文就带着大家从架构角度总览Rancher v1.2版本的特性。</p>
 
-<h3 id="以go-machine-service为例">以go-machine-service为例</h3>
+<h3 id="总览">总览</h3>
 
-<p>首先我们要了解go-machine-service在做什么事，官方文档里很清楚的描述到，
-它实现了physicalhost相关事件的handler，主要包括：</p>
+<p>在v1.2版本的整体架构图（如下图所示）上，Cattle引擎向下深入演化成了基础设施引擎，
+这一点上在v1.1时代也早有体现。Cattle更多得作为基础设施的管理工具，
+可以用它来部署其他服务和编排引擎，当然它本身编排能力还是可以使用的，
+习惯了stack-service的朋友仍然可以继续使用它，同时rancher scheduler的引入也大大增强了其调度能力。
+Rancher仍然支持Kubernetes、Mesos、Swarm三大编排引擎，Kubernetes可以支持到较新的v1.4.6版本，
+由于所有的部署过程的代码都是开放的，用户依然可以自己定制部署版本。值得一提的是，
+Rancher支持了新版的Swarm Mode也就是Swarmkit引擎，这也意味着Rancher可以在Docker1.12上部署，
+不小心装错Docker版本的朋友这回可以放心了。<br />
+<img src="http://ww1.sinaimg.cn/large/006tKfTcjw1fav8rinilzj30hj09p0ur.jpg" alt="" /><br />
+在存储方面，Rancher引入了Kubernetes社区的flexvol来做存储插件的管理，
+同时也支持Docker原生的volume plugin机制，并实现了对AWS的EFS&amp;EBS以及标准NFS的支持，
+先前的Convoy应该会被抛弃，Rancher最终还是选择参与社区标准。在网络方面，
+除了CNI插件机制的引入，用户还可以使用rancher-net组件提供的vxlan网络替代先前的ipsec网络。
+在可定制性方面，还体现在Rancher提供了用户可以自定义rancher-lb的机制，
+如果特殊场景下默认的Haproxy不是很给力时，用户可以自定义使用nginx、openresty或者traefik等等。
+下面便做一下详细分解。</p>
 
-<ul>
-<li>physicalhost.create - Calls machine create &hellip;.</li>
-<li>physicalhost.activate - Runs docker run rancher/agent &hellip;</li>
-<li>physicalhost.delete|purge - Calls machine delete &hellip;</li>
-</ul>
+<h3 id="基础设施引擎">基础设施引擎</h3>
 
-<p>而若实现这些handler，需要和rancher events打交道，
-我们认为rancher events也是rancher api的一部分，
-所以访问rancher events也需要和API服务一样的鉴权信息。
-go-machine-service在启动之时，很明确的读取了CATTLE相关变量：<br />
-<img src="http://ww3.sinaimg.cn/large/006y8lVajw1fafqwxo6pyj30ir0ccdhx.jpg" alt="" /></p>
+<p>初次安装v1.2版本，会发现多了Infrastructure（如下图所示）的明显标识，
+默认的Cattle引擎需要安装healthcheck、ipsec、network-services、scheduler等服务。
+这个是有rancher-catalog来定义的，<a href="https://github.com/rancher/rancher-catalog">https://github.com/rancher/rancher-catalog</a>，
+新分离出来了infra-templates和project-templates：infra-templates就是Rancher定义的各种基础设施服务，
+包括基础服务和编排引擎；project-templates对应的是Env初始化时默认安装的服务，
+它可以针对不同的编排引擎进行配置。<br />
+<img src="http://ww1.sinaimg.cn/large/006tKfTcjw1fav8t4d321j30dl0b275b.jpg" alt="" /><br />
+以Cattle引擎为例，可以在project-templates的Cattle目录中找到相应的配置文件，
+当ENV创建初始化时会创建这里面定义的服务，这样一个机制就可以让我们可以做更深入的定制，
+让ENV初始化时创建我们需要的服务：</p>
 
-<p>而且rancher还给go-machine-service专门创建了相应的API Key，查看DB可以得知：<br />
-<img src="http://ww3.sinaimg.cn/large/006y8lVajw1fafqxbv1wbj30f90iwgnb.jpg" alt="" /></p>
+<pre><code>name: Cattle
+description: Default Cattle template
+stacks:
+- name: network-services
+templateId: 'library:infra*network-services'
+- name: ipsec
+templateId: 'library:infra*ipsec'
+- name: scheduler
+templateId: 'library:infra*scheduler'
+- name: healthcheck
+templateId: 'library:infra*healthcheck'
+</code></pre>
 
-<p>进入rancher-server容器内部，查看go-machine-service进程的环境变量，
-可以看到API Key的授权信息就在其中：<br />
-<img src="http://ww3.sinaimg.cn/large/006y8lVajw1fafqxofpl1j30m805dmz0.jpg" alt="" /></p>
+<p>在Cattle引擎调度方面，Rancher实现了rancher-scheduler，<a href="https://github.com/rancher/scheduler">https://github.com/rancher/scheduler</a>。
+它实现了允许用户按计算资源调度，目前支持memory、cpu的Reservation。其实现原理是，
+内部有一个resource watcher，通过监听rancher metadata的获取Host的使用资源数据变化，
+进而得到ENV内所有Host资源汇总信息。与此同时，
+监听rancher events的scheduler.prioritize、scheduler.reserve、scheduler.release等各种事件，
+通过排序过滤可用主机后发送回执信息，Rancher Server就有了可以选择的Host列表。如下图所示：<br />
+<img src="http://ww2.sinaimg.cn/large/006tKfTcjw1fav8vafyqaj30h005xwfk.jpg" alt="" /><br />
+需要注意的是，rancher-scheduler并没有和rancher-server部署在一起，
+而是在你添加Host时候部署在agent节点上，当然rancher-scheduler在一个ENV内只会部署一个。</p>
 
-<p>那么go-machine-service的环境变量是如何设置的呢？查看Cattle源码，找到MachineLancher，
-它是启动go-machine-service服务的具体实现，我们可以看到设置环境变量这一步：<br />
-<img src="http://ww1.sinaimg.cn/large/006y8lVajw1fafqy3ywfbj30gg03tt9w.jpg" alt="" /></p>
+<h3 id="agent节点服务解耦">Agent节点服务解耦</h3>
+
+<p>agent节点一个最大的变化就是，agent-instance容器没有了，它被拆分成多个容器服务，
+包括rancher-metadata、network-manager、rancher-net、rancher-dns、healthcheck等。<br />
+<img src="http://ww2.sinaimg.cn/large/006tKfTcjw1fav8w3brm9j30ea06labt.jpg" alt="" /></p>
+
+<p>metadata服务是老朋友了，它在每个agent节点上保存了host、stack、service、container等的信息，
+可以非常方便的在本地调用取得，<a href="https://github.com/rancher/rancher-metadata">https://github.com/rancher/rancher-metadata</a>，
+在新的体系中它扮演了重要角色，几乎所有agent节点上的服务均依赖它。
+在先前的体系中，metadata的answer file的更新是通过事件驱动shell脚本来执行下载，
+比较简单粗暴。v1.2开始使用监听rancher events方式来reload metadata的answer file，
+但是answer file还需要到rancher server端下载，总的来说效率还是有一定提升的。</p>
+
+<p>dns在新的体系中仍然承担着服务发现的功能，<a href="https://github.com/rancher/rancher-dns">https://github.com/rancher/rancher-dns</a>。
+除了拆分成单独容器之外，它也在效率上做了改进，它与rancher-metadata容器共享网络，
+以metadata的结果生成dns的answer file。与之前的架构相比，
+省去了dns answer file下载的过程。需要注意的是，rancher-dns的TTL默认是600秒，
+如果出于各种原因觉得dns作为服务发现不是很可靠，那么可以使用etc-host-updater和rancher-metadata的组合，
+<a href="https://github.com/rancher/etc-host-updater">etc-host-updater</a>
+会根据metadata数据动态生成hosts文件并写入容器内，这样通过服务名访问时，
+其实已经在本地转换成了IP，无需经过dns，如下图所示：<br />
+<img src="http://ww4.sinaimg.cn/large/006tKfTcjw1fav8z58gm6j30bc04mmxg.jpg" alt="" /></p>
+
+<p>rancher-net作出了比较重大的革新，<a href="https://github.com/rancher/rancher-net">https://github.com/rancher/rancher-net</a>，
+除了继续支持原有的ipsec外，还支持了vxlan。这个支持是原生支持，
+只要内核有vxlan的支持模块就可以。vxlan并不是Cattle的默认网络，
+使用时可以在infra-catalog中重新选择它来部署，其实现以及部署方式后续会在专门的文章中进行探讨：<br />
+<img src="http://ww3.sinaimg.cn/large/006tKfTcjw1fav8zxs951j30ds0al753.jpg" alt="" /></p>
+
+<p>network-manager的引入为Rancher v1.2带来了一个重要特性就是CNI插件管理，
+在之前的版本中很多用户都提到rancher-net本身的网络无法满足业务需求。
+容器网络之争，无非就是CNM与CNI，Rancher选择站队CNI，这也是为了更好与Kubernetes融合。
+而CNI的插件很多种，Calico、Weave等之流，每个插件的部署方式都不一样。
+Rancher为了简化管理提出了network-manager，<a href="https://github.com/rancher/plugin-manager">https://github.com/rancher/plugin-manager</a>，
+它可以做到兼容主流的CNI插件，它实际上定义了一个部署框架，让CNI插件在框架内部署。
+network-manager是以容器方式部署，由于每种插件在初始化时可能需要暴露端口或加入一些NAT规则，
+所以network-manager能够动态设置不同插件的初始化规则，
+它的做法是以metadata作为 host port和host nat规则的数据源，
+然后获取数据后生成相应的Iptables规则加入的Host中。而对于真正的CNI插件，
+需要在network-manager容器内/opt/cni目录下部署对应cni插件的执行程序（calico/weave），
+/etc/cni目录下部署cni插件的配置，这两个目录映射了docker卷rancher-cni-driver，
+也就是Host上的/var/lib/docker/volumes/rancher-cni-driver目录下。</p>
+
+<p>关于healthcheck，先前是通过agent-instance镜像实现，里面内置了Haproxy，
+事件驱动shell脚本来下载healchcheck配置并reload。新的架构中，
+Rancher实现了单独的healthcheck，<a href="https://github.com/rancher/healthcheck">https://github.com/rancher/healthcheck</a>，
+采用Golang微服务的方式，数据源是metadata。
+当然healthcheck的最终检查仍然是通过与Haproxy sock通信来查看相应member的健康状态（原理如下图），
+healthcheck的实现主要是为了将其从agent-instance中解耦出来。<br />
+<img src="http://ww1.sinaimg.cn/large/006tKfTcjw1fav928q6bwj30hu06mad4.jpg" alt="" /></p>
 
 <h3 id="总结">总结</h3>
 
-<p>Cattle本身就是一个框架，Rancher Server内的其他服务都是通过Cattle的Proxy机制来转发请求的，
-授权机制则是由Cattle统一提供出来，其他服务自身无需单独实现授权机制。
-如果我们想对Rancher Server扩展，再增加一些其他服务，利用本文所描述的机制，就会非常方便。</p>
+<p>Rancher v1.2的新特性还是非常多的，基础设施引擎的变化时一切特性的基础，
+这篇文章算是开篇之作。后续会持续为大家带来，Kubernetes、Swarmkit的支持，自定义rancher-lb，
+vxlan的支持，各种CNI插件的集成，以及各种存储接入的实践操作指南等等。</p>
             </div>
             <footer class="article-footer">
-    <a data-url="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key" data-id="33bb308a61b43cc4dc762b26fdf407ec" class="article-share-link">
+    <a data-url="http://niusmallnan.com/2016/11/28/rancher12-infra-architect" data-id="2eaad19f8ee8c5110beac4cc9d7082d9" class="article-share-link">
         <i class="fa fa-share"></i>
         分享
     </a>
     
-    <a href="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key/#disqus_thread" class="article-comment-link">
+    <a href="http://niusmallnan.com/2016/11/28/rancher12-infra-architect/#disqus_thread" class="article-comment-link">
         评论
     </a>
     
@@ -470,20 +555,20 @@ go-machine-service在启动之时，很明确的读取了CATTLE相关变量：<b
         
 <nav id="article-nav">
     
-    <a href="http://niusmallnan.com/2016/12/02/rancher12-run-on-laptop" id="article-nav-older" class="article-nav-link-wrap">
+    <a href="http://niusmallnan.com/2016/11/22/rpi-noip-with-docker" id="article-nav-older" class="article-nav-link-wrap">
       <strong class="article-nav-caption">
           老的
       </strong>
-      <div class="article-nav-title">实践指南-快速解锁Rancher v1.2</div>
+      <div class="article-nav-title">基于容器实现树莓派的动态域名绑定</div>
     </a>
     
 
     
-    <a href="http://niusmallnan.com/2016/12/09/rancher-netstat-miss-port" id="article-nav-newer" class="article-nav-link-wrap">
+    <a href="http://niusmallnan.com/2016/12/01/rancher12-networking" id="article-nav-newer" class="article-nav-link-wrap">
       <strong class="article-nav-caption">
           新的
       </strong>
-      <div class="article-nav-title">为什么Rancher v1.2中netstat看不到开放端口</div>
+      <div class="article-nav-title">Rancher v1.2网络架构解读</div>
     </a>
     
 </nav>
@@ -497,9 +582,9 @@ go-machine-service在启动之时，很明确的读取了CATTLE相关变量：<b
             <div id="disqus_thread"></div>
 <script type="text/javascript">
     var disqus_shortname = 'niusmallnan';
-    var disqus_identifier = 'http:\/\/niusmallnan.com\/2016\/12\/05\/go-machine-service-access-api-key';
-    var disqus_title = 'go-machine-service访问Rancher API的授权机制分析';
-    var disqus_url = 'http:\/\/niusmallnan.com\/2016\/12\/05\/go-machine-service-access-api-key';
+    var disqus_identifier = 'http:\/\/niusmallnan.com\/2016\/11\/28\/rancher12-infra-architect';
+    var disqus_title = 'Rancher v1.2基础设施引擎整体架构';
+    var disqus_url = 'http:\/\/niusmallnan.com\/2016\/11\/28\/rancher12-infra-architect';
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

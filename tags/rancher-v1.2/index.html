@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>go-machine-service访问Rancher API的授权机制分析 &middot; Niusmallnan</title>
+    <title>Rancher V1.2 &middot; Niusmallnan</title>
     <meta name="generator" content="Hugo 0.17" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -10,7 +10,10 @@
       <meta name="description" content="Niusmallnan Blog Site">
     
     
-    <link rel="canonical" href="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key"/>
+      <link href="http://niusmallnan.com/tags/rancher-v1.2/index.xml" rel="alternate" type="application/rss+xml" title="Niusmallnan" />
+      <link href="http://niusmallnan.com/tags/rancher-v1.2/index.xml" rel="feed" type="application/rss+xml" title="Niusmallnan" />
+    
+    <link rel="canonical" href="http://niusmallnan.com/tags/rancher-v1/index.2/"/>
     <link rel="icon" href="http://niusmallnan.com/favicon.ico">
     <link rel="apple-touch-icon" href="http://niusmallnan.com/apple-touch-icon.png"/>
     <link rel="stylesheet" href="http://niusmallnan.com/css/style.css">
@@ -20,15 +23,13 @@
     
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,400,600' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-    <meta property="og:title" content="go-machine-service访问Rancher API的授权机制分析" />
-<meta property="og:description" content="一段分析调用机制的旅程。
-" />
-<meta property="og:type" content="article" />
-<meta property="og:url" content="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key" />
+    <meta property="og:title" content="Rancher V1.2" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="http://niusmallnan.com/tags/rancher-v1/index.2/" />
 
 
-<meta property="og:updated_time" content="2016-12-05T11:14:19&#43;08:00"/>
-
+<meta property="og:updated_time" content="2016-12-14T21:53:27&#43;08:00"/>
 
 
 
@@ -40,30 +41,11 @@
 
     
     
-<meta itemprop="name" content="go-machine-service访问Rancher API的授权机制分析">
-<meta itemprop="description" content="一段分析调用机制的旅程。
-">
+<meta itemprop="name" content="Rancher V1.2">
+<meta itemprop="description" content="">
 
-
-<meta itemprop="dateModified" content="2016-12-05T11:14:19&#43;08:00" />
-<meta itemprop="wordCount" content="877">
-
-
-
-<meta itemprop="keywords" content="coding,docker,kubernetes,rancher,rancher-v1.2,rancheros,raspberry-pi," />
 
     
-
-  <meta name="twitter:card" content="summary"/>
-
-
-
-<meta name="twitter:title" content="go-machine-service访问Rancher API的授权机制分析"/>
-<meta name="twitter:description" content="一段分析调用机制的旅程。
-"/>
-
-
-
     
 
     
@@ -76,7 +58,7 @@
 
 
 <div id="container">
-	<header id="header">
+    <header id="header">
   <div id="header-main" class="header-inner">
     <div class="outer">
       <a href="http://niusmallnan.com/" id="logo">
@@ -188,10 +170,8 @@
   </div>
 </header>
 
-   	
-   	<div class="outer">
-   		
-	    <aside id="profile">
+    <div class="outer">
+        <aside id="profile">
   <div class="inner profile-inner">
     <div class="base-info profile-block">
       <img id="avatar" src="http://niusmallnan.com/css/images/avatar.jpg">
@@ -277,246 +257,117 @@
 
 
 
-          <td><a href="" target="_blank" title="RSS"><i class="fa fa-rss"></i></a></td>
+          <td><a href="http://niusmallnan.com/tags/rancher-v1.2/index.xml" target="_blank" title="RSS"><i class="fa fa-rss"></i></a></td>
         </tr>
       </table>
     </div>
   </div>
 </aside>
 
-	    
-
-	    
-<section id="main">
-
-    <article id="page-undefined" class="article article-type-page" itemscope="" itemprop="blogPost">
-        <div class="article-inner">
+        <section id="main">
+            <section class="archives-wrap">
+                <div class="archive-category-wrap">
+                    <span class="archive-category">Rancher V1.2</span>
+                </div>
+                <div class="archives">
+                    
+                    
+                        <article class="archive-article archive-type-post">
+    <div class="archive-article-inner">
+        <div class="archive-article-thumbnail">
             
-
-            <header class="article-header">
-    <a href="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key">
-    <h1 class="article-title" itemprop="name">
-        go-machine-service访问Rancher API的授权机制分析
-    </h1>
-    </a>
-    <div class="article-meta">
-        <div class="article-date">
-            <i class="fa fa-calendar"></i>
-            <time datetime="2016-12-05 11:14:19 &#43;0800 CST" itemprop="datePublished">2016-12-05</time>
-            &middot;
-            877
-            字数
-            &middot;
-            2
-            分钟阅读
+            <a href="http://niusmallnan.com/2016/12/14/rancher12-swarmkit-architect" class="thumbnail">
+                <span style="background-image:url(http://niusmallnan.com/)" alt="Rancher v1.2 Swarmkit的实现" class="thumbnail-image"></span>
+            </a>
+            
         </div>
-
-
-        
-            
-            
-            <div class="article-category">
-                <i class="fa fa-folder"></i>
-                
-                
-                <a class="article-category-link" href="categories/coding">coding</a>
-                
-                
+        <header class="archive-article-header">
+            <h1 itemprop="name">
+            <a class="archive-article-title" href="http://niusmallnan.com/2016/12/14/rancher12-swarmkit-architect">Rancher v1.2 Swarmkit的实现</a>
+            </h1>
+            <div class="archive-article-date">
+                <i class="fa fa-calendar"></i>
+                <time datetime="2016-12-14 21:53:27 &#43;0800 CST" itemprop="datePublished">2016-12-14</time>
             </div>
-            
-        
-
-        
-            
-            
-            <div class="article-category">
-                <i class="fa fa-tags"></i>
-                
-                
-                <a class="article-category-link" href="tags/rancher">Rancher</a>
-                
-                
-            </div>
-            
-        
+        </header>
     </div>
-</header>
-
-            <div class="article-entry" itemprop="articleBody">
-                <p>一段分析调用机制的旅程。
-</p>
-
-<h3 id="引言">引言</h3>
-
-<p>深更半夜一位道上的朋友突然微信问我，Rancher Server内Cattle之外的服务如何调用Rancher API。
-调用API本身没问题，但是Rancher API是需要授权访问的，
-也就是说Rancher Server内其他服务如何授权访问API，这个机制是什么样的？
-Rancher Server内有很多服务，如catalog、go-machine-service、websocket-proxy等等，
-本文就以go-machine-service为例说明其授权机制。</p>
-
-<h3 id="以go-machine-service为例">以go-machine-service为例</h3>
-
-<p>首先我们要了解go-machine-service在做什么事，官方文档里很清楚的描述到，
-它实现了physicalhost相关事件的handler，主要包括：</p>
-
-<ul>
-<li>physicalhost.create - Calls machine create &hellip;.</li>
-<li>physicalhost.activate - Runs docker run rancher/agent &hellip;</li>
-<li>physicalhost.delete|purge - Calls machine delete &hellip;</li>
-</ul>
-
-<p>而若实现这些handler，需要和rancher events打交道，
-我们认为rancher events也是rancher api的一部分，
-所以访问rancher events也需要和API服务一样的鉴权信息。
-go-machine-service在启动之时，很明确的读取了CATTLE相关变量：<br />
-<img src="http://ww3.sinaimg.cn/large/006y8lVajw1fafqwxo6pyj30ir0ccdhx.jpg" alt="" /></p>
-
-<p>而且rancher还给go-machine-service专门创建了相应的API Key，查看DB可以得知：<br />
-<img src="http://ww3.sinaimg.cn/large/006y8lVajw1fafqxbv1wbj30f90iwgnb.jpg" alt="" /></p>
-
-<p>进入rancher-server容器内部，查看go-machine-service进程的环境变量，
-可以看到API Key的授权信息就在其中：<br />
-<img src="http://ww3.sinaimg.cn/large/006y8lVajw1fafqxofpl1j30m805dmz0.jpg" alt="" /></p>
-
-<p>那么go-machine-service的环境变量是如何设置的呢？查看Cattle源码，找到MachineLancher，
-它是启动go-machine-service服务的具体实现，我们可以看到设置环境变量这一步：<br />
-<img src="http://ww1.sinaimg.cn/large/006y8lVajw1fafqy3ywfbj30gg03tt9w.jpg" alt="" /></p>
-
-<h3 id="总结">总结</h3>
-
-<p>Cattle本身就是一个框架，Rancher Server内的其他服务都是通过Cattle的Proxy机制来转发请求的，
-授权机制则是由Cattle统一提供出来，其他服务自身无需单独实现授权机制。
-如果我们想对Rancher Server扩展，再增加一些其他服务，利用本文所描述的机制，就会非常方便。</p>
-            </div>
-            <footer class="article-footer">
-    <a data-url="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key" data-id="33bb308a61b43cc4dc762b26fdf407ec" class="article-share-link">
-        <i class="fa fa-share"></i>
-        分享
-    </a>
-    
-    <a href="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key/#disqus_thread" class="article-comment-link">
-        评论
-    </a>
-    
-
-    <script>
-    (function ($) {
-        
-        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
-            __SHARE_BUTTON_BINDED__ = true;
-        } else {
-            return;
-        }
-        $('body').on('click', function() {
-            $('.article-share-box.on').removeClass('on');
-        }).on('click', '.article-share-link', function(e) {
-            e.stopPropagation();
-
-            var $this = $(this),
-                url = $this.attr('data-url'),
-                encodedUrl = encodeURIComponent(url),
-                id = 'article-share-box-' + $this.attr('data-id'),
-                offset = $this.offset(),
-                box;
-
-            if ($('#' + id).length) {
-                box = $('#' + id);
-
-                if (box.hasClass('on')){
-                    box.removeClass('on');
-                    return;
-                }
-            } else {
-                var html = [
-                    '<div id="' + id + '" class="article-share-box">',
-                        '<input class="article-share-input" value="' + url + '">',
-                        '<div class="article-share-links">',
-                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
-                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
-                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
-                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
-                        '</div>',
-                    '</div>'
-                ].join('');
-
-              box = $(html);
-
-              $('body').append(box);
-            }
-
-            $('.article-share-box.on').hide();
-
-            box.css({
-                top: offset.top + 25,
-                left: offset.left
-            }).addClass('on');
-
-        }).on('click', '.article-share-box', function (e) {
-            e.stopPropagation();
-        }).on('click', '.article-share-box-input', function () {
-            $(this).select();
-        }).on('click', '.article-share-box-link', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
-        });
-    })(jQuery);
-    </script>
-</footer>
-
+</article>
+ 
+                    
+                        <article class="archive-article archive-type-post">
+    <div class="archive-article-inner">
+        <div class="archive-article-thumbnail">
+            
+            <a href="http://niusmallnan.com/2016/12/02/rancher12-run-on-laptop" class="thumbnail">
+                <span style="background-image:url(http://niusmallnan.com/)" alt="实践指南-快速解锁Rancher v1.2" class="thumbnail-image"></span>
+            </a>
+            
         </div>
+        <header class="archive-article-header">
+            <h1 itemprop="name">
+            <a class="archive-article-title" href="http://niusmallnan.com/2016/12/02/rancher12-run-on-laptop">实践指南-快速解锁Rancher v1.2</a>
+            </h1>
+            <div class="archive-article-date">
+                <i class="fa fa-calendar"></i>
+                <time datetime="2016-12-02 21:31:53 &#43;0800 CST" itemprop="datePublished">2016-12-02</time>
+            </div>
+        </header>
+    </div>
+</article>
+ 
+                    
+                        <article class="archive-article archive-type-post">
+    <div class="archive-article-inner">
+        <div class="archive-article-thumbnail">
+            
+            <a href="http://niusmallnan.com/2016/12/01/rancher12-networking" class="thumbnail">
+                <span style="background-image:url(http://niusmallnan.com/)" alt="Rancher v1.2网络架构解读" class="thumbnail-image"></span>
+            </a>
+            
+        </div>
+        <header class="archive-article-header">
+            <h1 itemprop="name">
+            <a class="archive-article-title" href="http://niusmallnan.com/2016/12/01/rancher12-networking">Rancher v1.2网络架构解读</a>
+            </h1>
+            <div class="archive-article-date">
+                <i class="fa fa-calendar"></i>
+                <time datetime="2016-12-01 21:18:36 &#43;0800 CST" itemprop="datePublished">2016-12-01</time>
+            </div>
+        </header>
+    </div>
+</article>
+ 
+                    
+                        <article class="archive-article archive-type-post">
+    <div class="archive-article-inner">
+        <div class="archive-article-thumbnail">
+            
+            <a href="http://niusmallnan.com/2016/11/28/rancher12-infra-architect" class="thumbnail">
+                <span style="background-image:url(http://niusmallnan.com/)" alt="Rancher v1.2基础设施引擎整体架构" class="thumbnail-image"></span>
+            </a>
+            
+        </div>
+        <header class="archive-article-header">
+            <h1 itemprop="name">
+            <a class="archive-article-title" href="http://niusmallnan.com/2016/11/28/rancher12-infra-architect">Rancher v1.2基础设施引擎整体架构</a>
+            </h1>
+            <div class="archive-article-date">
+                <i class="fa fa-calendar"></i>
+                <time datetime="2016-11-28 20:53:44 &#43;0800 CST" itemprop="datePublished">2016-11-28</time>
+            </div>
+        </header>
+    </div>
+</article>
+ 
+                    
+                </div>
+            </section>
+            <nav id="page-nav">
 
-        
-<nav id="article-nav">
-    
-    <a href="http://niusmallnan.com/2016/12/02/rancher12-run-on-laptop" id="article-nav-older" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">
-          老的
-      </strong>
-      <div class="article-nav-title">实践指南-快速解锁Rancher v1.2</div>
-    </a>
-    
-
-    
-    <a href="http://niusmallnan.com/2016/12/09/rancher-netstat-miss-port" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">
-          新的
-      </strong>
-      <div class="article-nav-title">为什么Rancher v1.2中netstat看不到开放端口</div>
-    </a>
-    
 </nav>
 
-
-    </article>
-
-    
-    <section id="comments">
-        <div id="disqus_thread">
-            <div id="disqus_thread"></div>
-<script type="text/javascript">
-    var disqus_shortname = 'niusmallnan';
-    var disqus_identifier = 'http:\/\/niusmallnan.com\/2016\/12\/05\/go-machine-service-access-api-key';
-    var disqus_title = 'go-machine-service访问Rancher API的授权机制分析';
-    var disqus_url = 'http:\/\/niusmallnan.com\/2016\/12\/05\/go-machine-service-access-api-key';
-
-    (function() {
-        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    })();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
-        </div>
-    </section>
-    
-</section>
-
-
-	    
-	    <aside id="sidebar">
+        </section>
+        <aside id="sidebar">
     
 <div class="widget-wrap">
     <h3 class="widget-title">
@@ -785,8 +636,7 @@ go-machine-service在启动之时，很明确的读取了CATTLE相关变量：<b
     <div id="toTop" class="fa fa-angle-up"></div>
 </aside>
 
-	    
-	</div>
+    </div>
 </div>
 
 <footer id="footer">

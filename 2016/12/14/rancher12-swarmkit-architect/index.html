@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>go-machine-service访问Rancher API的授权机制分析 &middot; Niusmallnan</title>
+    <title>Rancher v1.2 Swarmkit的实现 &middot; Niusmallnan</title>
     <meta name="generator" content="Hugo 0.17" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -10,7 +10,7 @@
       <meta name="description" content="Niusmallnan Blog Site">
     
     
-    <link rel="canonical" href="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key"/>
+    <link rel="canonical" href="http://niusmallnan.com/2016/12/14/rancher12-swarmkit-architect"/>
     <link rel="icon" href="http://niusmallnan.com/favicon.ico">
     <link rel="apple-touch-icon" href="http://niusmallnan.com/apple-touch-icon.png"/>
     <link rel="stylesheet" href="http://niusmallnan.com/css/style.css">
@@ -20,14 +20,14 @@
     
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,400,600' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-    <meta property="og:title" content="go-machine-service访问Rancher API的授权机制分析" />
-<meta property="og:description" content="一段分析调用机制的旅程。
+    <meta property="og:title" content="Rancher v1.2 Swarmkit的实现" />
+<meta property="og:description" content="Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
 " />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key" />
+<meta property="og:url" content="http://niusmallnan.com/2016/12/14/rancher12-swarmkit-architect" />
 
 
-<meta property="og:updated_time" content="2016-12-05T11:14:19&#43;08:00"/>
+<meta property="og:updated_time" content="2016-12-14T21:53:27&#43;08:00"/>
 
 
 
@@ -40,13 +40,13 @@
 
     
     
-<meta itemprop="name" content="go-machine-service访问Rancher API的授权机制分析">
-<meta itemprop="description" content="一段分析调用机制的旅程。
+<meta itemprop="name" content="Rancher v1.2 Swarmkit的实现">
+<meta itemprop="description" content="Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
 ">
 
 
-<meta itemprop="dateModified" content="2016-12-05T11:14:19&#43;08:00" />
-<meta itemprop="wordCount" content="877">
+<meta itemprop="dateModified" content="2016-12-14T21:53:27&#43;08:00" />
+<meta itemprop="wordCount" content="1683">
 
 
 
@@ -58,8 +58,8 @@
 
 
 
-<meta name="twitter:title" content="go-machine-service访问Rancher API的授权机制分析"/>
-<meta name="twitter:description" content="一段分析调用机制的旅程。
+<meta name="twitter:title" content="Rancher v1.2 Swarmkit的实现"/>
+<meta name="twitter:description" content="Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
 "/>
 
 
@@ -294,20 +294,20 @@
             
 
             <header class="article-header">
-    <a href="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key">
+    <a href="http://niusmallnan.com/2016/12/14/rancher12-swarmkit-architect">
     <h1 class="article-title" itemprop="name">
-        go-machine-service访问Rancher API的授权机制分析
+        Rancher v1.2 Swarmkit的实现
     </h1>
     </a>
     <div class="article-meta">
         <div class="article-date">
             <i class="fa fa-calendar"></i>
-            <time datetime="2016-12-05 11:14:19 &#43;0800 CST" itemprop="datePublished">2016-12-05</time>
+            <time datetime="2016-12-14 21:53:27 &#43;0800 CST" itemprop="datePublished">2016-12-14</time>
             &middot;
-            877
+            1683
             字数
             &middot;
-            2
+            4
             分钟阅读
         </div>
 
@@ -334,6 +334,10 @@
                 
                 
                 <a class="article-category-link" href="tags/rancher">Rancher</a>
+                &middot;
+                
+                
+                <a class="article-category-link" href="tags/rancher-v1.2">Rancher v1.2</a>
                 
                 
             </div>
@@ -343,58 +347,70 @@
 </header>
 
             <div class="article-entry" itemprop="articleBody">
-                <p>一段分析调用机制的旅程。
+                <p>Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
 </p>
 
 <h3 id="引言">引言</h3>
 
-<p>深更半夜一位道上的朋友突然微信问我，Rancher Server内Cattle之外的服务如何调用Rancher API。
-调用API本身没问题，但是Rancher API是需要授权访问的，
-也就是说Rancher Server内其他服务如何授权访问API，这个机制是什么样的？
-Rancher Server内有很多服务，如catalog、go-machine-service、websocket-proxy等等，
-本文就以go-machine-service为例说明其授权机制。</p>
+<p>Rancher v1.2更新了之前对Swarm的支持，与Docker一样抛弃了就有的Swarm，
+选择支持Swarmkit。Swarmkit引擎非常轻量级，由于其内置早Docker Engine中，
+所以部署起来会非常方便。虽然目前Swarmkit引擎还在不断发展，而且bug也很多，
+但是它也有其擅长的使用场景，比如简单的CI/CD场景，它会非常灵活简洁。
+本文将带大家体验一下，Rancher v1.2对Swarmkit的支持。</p>
 
-<h3 id="以go-machine-service为例">以go-machine-service为例</h3>
+<h3 id="部署与使用">部署与使用</h3>
 
-<p>首先我们要了解go-machine-service在做什么事，官方文档里很清楚的描述到，
-它实现了physicalhost相关事件的handler，主要包括：</p>
+<p>部署方面秉承Rancher一贯的原则，非常简单，只需要在创建Env时选择Sawrm即可。<br />
+<img src="http://ww3.sinaimg.cn/large/006tKfTcjw1favae6x30jj30nn09odgr.jpg" alt="" /><br />
+Env创建完毕后，会看到多个Infra Service需要创建，这时候和其他引擎一样，
+我们需要向Env中添加Host。我们知道Swarm的node有两种：Manager和Worker。
+Rancher创建的Swarm集群默认是3个Manager，多个Manager内有一个是Leader，
+另外两个备用。这样单个Host出问题，新的Leader会很快选举出来，保证集群的稳定性。
+比如我添加了两个Host，默认是先添加Manager角色，
+所以2个Host都会以Manager方式添加，如下图所示：<br />
+<img src="http://ww1.sinaimg.cn/large/006tKfTcjw1favaeq4hrhj30hc074aav.jpg" alt="" /><br />
+进入其中一台Host内，查看swarm集群状态，可以看到一个是Leader，另外一个Reachable做备用。<br />
+<img src="http://ww1.sinaimg.cn/large/006tKfTcjw1favaey8g8qj30fc01wq3g.jpg" alt="" /><br />
+尝试创建一个简单的程序，查看与UI上的联动效果，如图所示：<br />
+<img src="http://ww3.sinaimg.cn/large/006tKfTcjw1favaf8yytqj30eb05vdgv.jpg" alt="" /><br />
+如果使用Swarmkit的自定义网络方式，情况如何？虽然在UI上显示无IP，
+但是进入容器内部可以看到overlay对应的网卡，如图所示：
+<img src="http://ww3.sinaimg.cn/large/006tKfTcjw1favafscwv8j30ii07habk.jpg" alt="" /></p>
 
-<ul>
-<li>physicalhost.create - Calls machine create &hellip;.</li>
-<li>physicalhost.activate - Runs docker run rancher/agent &hellip;</li>
-<li>physicalhost.delete|purge - Calls machine delete &hellip;</li>
-</ul>
+<h3 id="实现原理">实现原理</h3>
 
-<p>而若实现这些handler，需要和rancher events打交道，
-我们认为rancher events也是rancher api的一部分，
-所以访问rancher events也需要和API服务一样的鉴权信息。
-go-machine-service在启动之时，很明确的读取了CATTLE相关变量：<br />
-<img src="http://ww3.sinaimg.cn/large/006y8lVajw1fafqwxo6pyj30ir0ccdhx.jpg" alt="" /></p>
-
-<p>而且rancher还给go-machine-service专门创建了相应的API Key，查看DB可以得知：<br />
-<img src="http://ww3.sinaimg.cn/large/006y8lVajw1fafqxbv1wbj30f90iwgnb.jpg" alt="" /></p>
-
-<p>进入rancher-server容器内部，查看go-machine-service进程的环境变量，
-可以看到API Key的授权信息就在其中：<br />
-<img src="http://ww3.sinaimg.cn/large/006y8lVajw1fafqxofpl1j30m805dmz0.jpg" alt="" /></p>
-
-<p>那么go-machine-service的环境变量是如何设置的呢？查看Cattle源码，找到MachineLancher，
-它是启动go-machine-service服务的具体实现，我们可以看到设置环境变量这一步：<br />
-<img src="http://ww1.sinaimg.cn/large/006y8lVajw1fafqy3ywfbj30gg03tt9w.jpg" alt="" /></p>
+<p>那么Rancher是如何来完成Swarmkit的部署和联动呢？Rancher中Swarmkit也是基于Cattle来部署的，
+根据之前的文章分析，我们可以知道Rancher的基础设施编排的定义都是通过catalog中的infra-templates实现的，
+Swarmkit比较特殊它是在community-catalog中定义的，如果一直在rancher-catalog中寻找肯定找不到。
+compose文件中定义了一个service swarmkit-mon，如图所示：<br />
+<img src="http://ww3.sinaimg.cn/large/006tKfTcjw1favaggy2snj30iz0at40g.jpg" alt="" /><br />
+如果探究原理，我们就需要知道swarmkit-mon对应的镜像是如何定义的。
+rancher/swarmkit这个dockerfile并没有在<a href="https://github.com/rancher">https://github.com/rancher</a>下面的项目中，
+这个需要顺藤摸瓜，找到该Dockerfile的维护者（其实也是Rancher的一名员工），
+最终地址是<a href="https://github.com/LLParse/swarmkit-catalog">https://github.com/LLParse/swarmkit-catalog</a>。如图所示：<br />
+<img src="http://ww1.sinaimg.cn/large/006tKfTcjw1favahpg2pzj30kc0aiq57.jpg" alt="" /><br />
+swarmkit-mon中内置了docker，并映射了Host上的docker.sock，
+这样可以在swarmkit-mon容器中控制docker创建swarmkit集群。swarmkit-mon的实现比较简单，
+主要包括两个shell脚本：run.sh负责swarmkit集群的管理和Rancher的联动，
+agent节点信息需要通过rancher-metadata读取，设置Host Label则直接调用Rancher API；
+health.sh负责监控swarmkit节点的状态（通过与docker.sock通信读取Swarm.LocalNodeState的状态），
+并与giddyup协作暴露健康检查端口，这样可以利用Rancher Cattle的healthcheck来保证swarmkit-mon服务的高可用性，
+每个Host的swarmkit-mon出问题时可以进行自动重建恢复。原理如图：<br />
+<img src="http://ww4.sinaimg.cn/large/006tKfTcjw1favaidbyfgj30bh08qmyh.jpg" alt="" /></p>
 
 <h3 id="总结">总结</h3>
 
-<p>Cattle本身就是一个框架，Rancher Server内的其他服务都是通过Cattle的Proxy机制来转发请求的，
-授权机制则是由Cattle统一提供出来，其他服务自身无需单独实现授权机制。
-如果我们想对Rancher Server扩展，再增加一些其他服务，利用本文所描述的机制，就会非常方便。</p>
+<p>目前来看，由于Kubernetes的发展的确迅猛，所以Rancher的更多精力都放在K8s上。
+针对Swarmkit的支持显得略显单薄，但是Swarmkit本身的问题也很多，目前也难以应对复杂场景，
+所以目前的支持力度应该是足够了。后续对docker1.13版本的Swarmkit支持也在持续迭代中。</p>
             </div>
             <footer class="article-footer">
-    <a data-url="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key" data-id="33bb308a61b43cc4dc762b26fdf407ec" class="article-share-link">
+    <a data-url="http://niusmallnan.com/2016/12/14/rancher12-swarmkit-architect" data-id="a1bf923184ff7d4ca4444bcb2a9a9705" class="article-share-link">
         <i class="fa fa-share"></i>
         分享
     </a>
     
-    <a href="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key/#disqus_thread" class="article-comment-link">
+    <a href="http://niusmallnan.com/2016/12/14/rancher12-swarmkit-architect/#disqus_thread" class="article-comment-link">
         评论
     </a>
     
@@ -470,21 +486,14 @@ go-machine-service在启动之时，很明确的读取了CATTLE相关变量：<b
         
 <nav id="article-nav">
     
-    <a href="http://niusmallnan.com/2016/12/02/rancher12-run-on-laptop" id="article-nav-older" class="article-nav-link-wrap">
+    <a href="http://niusmallnan.com/2016/12/09/rancher-netstat-miss-port" id="article-nav-older" class="article-nav-link-wrap">
       <strong class="article-nav-caption">
           老的
       </strong>
-      <div class="article-nav-title">实践指南-快速解锁Rancher v1.2</div>
+      <div class="article-nav-title">为什么Rancher v1.2中netstat看不到开放端口</div>
     </a>
     
 
-    
-    <a href="http://niusmallnan.com/2016/12/09/rancher-netstat-miss-port" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">
-          新的
-      </strong>
-      <div class="article-nav-title">为什么Rancher v1.2中netstat看不到开放端口</div>
-    </a>
     
 </nav>
 
@@ -497,9 +506,9 @@ go-machine-service在启动之时，很明确的读取了CATTLE相关变量：<b
             <div id="disqus_thread"></div>
 <script type="text/javascript">
     var disqus_shortname = 'niusmallnan';
-    var disqus_identifier = 'http:\/\/niusmallnan.com\/2016\/12\/05\/go-machine-service-access-api-key';
-    var disqus_title = 'go-machine-service访问Rancher API的授权机制分析';
-    var disqus_url = 'http:\/\/niusmallnan.com\/2016\/12\/05\/go-machine-service-access-api-key';
+    var disqus_identifier = 'http:\/\/niusmallnan.com\/2016\/12\/14\/rancher12-swarmkit-architect';
+    var disqus_title = 'Rancher v1.2 Swarmkit的实现';
+    var disqus_url = 'http:\/\/niusmallnan.com\/2016\/12\/14\/rancher12-swarmkit-architect';
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

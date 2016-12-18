@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>go-machine-service访问Rancher API的授权机制分析 &middot; Niusmallnan</title>
+    <title>Rancher v1.2网络架构解读 &middot; Niusmallnan</title>
     <meta name="generator" content="Hugo 0.17" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -10,7 +10,7 @@
       <meta name="description" content="Niusmallnan Blog Site">
     
     
-    <link rel="canonical" href="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key"/>
+    <link rel="canonical" href="http://niusmallnan.com/2016/12/01/rancher12-networking"/>
     <link rel="icon" href="http://niusmallnan.com/favicon.ico">
     <link rel="apple-touch-icon" href="http://niusmallnan.com/apple-touch-icon.png"/>
     <link rel="stylesheet" href="http://niusmallnan.com/css/style.css">
@@ -20,14 +20,14 @@
     
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,400,600' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-    <meta property="og:title" content="go-machine-service访问Rancher API的授权机制分析" />
-<meta property="og:description" content="一段分析调用机制的旅程。
+    <meta property="og:title" content="Rancher v1.2网络架构解读" />
+<meta property="og:description" content="Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
 " />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key" />
+<meta property="og:url" content="http://niusmallnan.com/2016/12/01/rancher12-networking" />
 
 
-<meta property="og:updated_time" content="2016-12-05T11:14:19&#43;08:00"/>
+<meta property="og:updated_time" content="2016-12-01T21:18:36&#43;08:00"/>
 
 
 
@@ -40,13 +40,13 @@
 
     
     
-<meta itemprop="name" content="go-machine-service访问Rancher API的授权机制分析">
-<meta itemprop="description" content="一段分析调用机制的旅程。
+<meta itemprop="name" content="Rancher v1.2网络架构解读">
+<meta itemprop="description" content="Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
 ">
 
 
-<meta itemprop="dateModified" content="2016-12-05T11:14:19&#43;08:00" />
-<meta itemprop="wordCount" content="877">
+<meta itemprop="dateModified" content="2016-12-01T21:18:36&#43;08:00" />
+<meta itemprop="wordCount" content="2455">
 
 
 
@@ -58,8 +58,8 @@
 
 
 
-<meta name="twitter:title" content="go-machine-service访问Rancher API的授权机制分析"/>
-<meta name="twitter:description" content="一段分析调用机制的旅程。
+<meta name="twitter:title" content="Rancher v1.2网络架构解读"/>
+<meta name="twitter:description" content="Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
 "/>
 
 
@@ -294,20 +294,20 @@
             
 
             <header class="article-header">
-    <a href="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key">
+    <a href="http://niusmallnan.com/2016/12/01/rancher12-networking">
     <h1 class="article-title" itemprop="name">
-        go-machine-service访问Rancher API的授权机制分析
+        Rancher v1.2网络架构解读
     </h1>
     </a>
     <div class="article-meta">
         <div class="article-date">
             <i class="fa fa-calendar"></i>
-            <time datetime="2016-12-05 11:14:19 &#43;0800 CST" itemprop="datePublished">2016-12-05</time>
+            <time datetime="2016-12-01 21:18:36 &#43;0800 CST" itemprop="datePublished">2016-12-01</time>
             &middot;
-            877
+            2455
             字数
             &middot;
-            2
+            5
             分钟阅读
         </div>
 
@@ -334,6 +334,10 @@
                 
                 
                 <a class="article-category-link" href="tags/rancher">Rancher</a>
+                &middot;
+                
+                
+                <a class="article-category-link" href="tags/rancher-v1.2">Rancher v1.2</a>
                 
                 
             </div>
@@ -343,58 +347,93 @@
 </header>
 
             <div class="article-entry" itemprop="articleBody">
-                <p>一段分析调用机制的旅程。
+                <p>Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
 </p>
 
 <h3 id="引言">引言</h3>
 
-<p>深更半夜一位道上的朋友突然微信问我，Rancher Server内Cattle之外的服务如何调用Rancher API。
-调用API本身没问题，但是Rancher API是需要授权访问的，
-也就是说Rancher Server内其他服务如何授权访问API，这个机制是什么样的？
-Rancher Server内有很多服务，如catalog、go-machine-service、websocket-proxy等等，
-本文就以go-machine-service为例说明其授权机制。</p>
+<p>在之前的Rancher版本上，用户经常诟病Rancher的网络只有IPsec，没有其他选择。
+而容器社区的发展是十分迅猛的，各种容器网络插件风起云涌，欲在江湖中一争高下。
+Rancher v1.2版本中与时俱进，对之前的网络实现进行了改造，支持了CNI标准，
+除IPsec之外又实现了呼声比较高的VXLAN网络，同时增加了CNI插件管理机制，
+让我们可以hacking接入其他第三方CNI插件。本文将和大家一起解读一下Rancher v1.2中网络的实现。</p>
 
-<h3 id="以go-machine-service为例">以go-machine-service为例</h3>
+<h3 id="rancher-net-cni化">Rancher-net CNI化</h3>
 
-<p>首先我们要了解go-machine-service在做什么事，官方文档里很清楚的描述到，
-它实现了physicalhost相关事件的handler，主要包括：</p>
+<p>以最简单最快速方式部署Rancher并添加Host，以默认的IPsec网络部署一个简单的应用后，
+进入应用容器内部看一看网络情况，对比一下之前的Rancher版本：<br />
+<img src="http://ww2.sinaimg.cn/large/006tKfTcjw1fav9di74b7j30iv06tgoo.jpg" alt="" /><br />
+我们最直观的感受便是，网卡名从eth0到eth0@if8有了变化，原先网卡多IP的实现也去掉了，
+变成了单纯的IPsec网络IP。这其实就引来了我们要探讨的内容，虽然网络实现还是IPsec，
+但是rancher-net组件实际上是已经基于CNI标准了。最直接的证明就是看一下，
+rancher-net镜像的Dockerfile：<br />
+<img src="http://ww4.sinaimg.cn/large/006tKfTcjw1fav9e5komyj30ju06o40i.jpg" alt="" />
+熟悉CNI规范的伙伴都知道/opt/cni/bin目录是CNI的插件目录，bridge和loopback也是CNI的默认插件，
+这里的rancher-bridge实际上和CNI原生的bridge没有太大差别，只是在幂等性健壮性上做了增强。
+而在IPAM也就是IP地址管理上，Rancher实现了一个自己的rancher-cni-ipam，它的实现非常简单，
+就是通过访问rancher-metadata来获取系统给容器分配的IP。
+Rancher实际上Fork了CNI的代码并做了这些修改，<a href="https://github.com/rancher/cni">https://github.com/rancher/cni</a>。
+这样看来实际上，rancher-net的IPsec和Vxlan网络其实就是基于CNI的bridge基础上实现的。</p>
 
-<ul>
-<li>physicalhost.create - Calls machine create &hellip;.</li>
-<li>physicalhost.activate - Runs docker run rancher/agent &hellip;</li>
-<li>physicalhost.delete|purge - Calls machine delete &hellip;</li>
-</ul>
+<p>在解释rancher-net怎么和CNI融合之前，我们需要了解一下CNI bridge模式是怎么工作的。
+举个例子，假设有两个容器nginx和mysql，每个容器都有自己的eth0，
+由于每个容器都是在各自的namespace里面，所以互相之间是无法通信的，
+这就需要在外部构建一个bridge来做二层转发，
+容器内的eth0和外部连接在容器上的虚拟网卡构建成对的veth设备，这样容器之间就可以通信了。
+其实无论是docker的bridge还是cni的bridge，这部分工作原理是差不多的，如图所示：<br />
+<img src="http://ww3.sinaimg.cn/large/006tKfTcjw1fav9ffzi1sj30ch08q750.jpg" alt="" /></p>
 
-<p>而若实现这些handler，需要和rancher events打交道，
-我们认为rancher events也是rancher api的一部分，
-所以访问rancher events也需要和API服务一样的鉴权信息。
-go-machine-service在启动之时，很明确的读取了CATTLE相关变量：<br />
-<img src="http://ww3.sinaimg.cn/large/006y8lVajw1fafqwxo6pyj30ir0ccdhx.jpg" alt="" /></p>
+<p>那么我们都知道CNI网络在创建时需要有一个配置，这个配置用来定义CNI网络模式，
+读取哪个CNI插件。在这个场景下也就是cni bridge的信息，
+这个信息rancher是通过rancher-compose传入metadata来控制的。
+查看ipsec服务的rancher-compose.yml可以看到，type使用rancher-bridge，
+ipam使用rancher-cni-ipam，bridge网桥则复用了docker0，
+有了这个配置我们甚至可以随意定义ipsec网络的CIDR，如下图所示：<br />
+<img src="http://ww2.sinaimg.cn/large/006tKfTcjw1fav9g15ofmj30c80anab3.jpg" alt="" /></p>
 
-<p>而且rancher还给go-machine-service专门创建了相应的API Key，查看DB可以得知：<br />
-<img src="http://ww3.sinaimg.cn/large/006y8lVajw1fafqxbv1wbj30f90iwgnb.jpg" alt="" /></p>
+<p>ipsec服务实际上有两个容器：一个是ipsec主容器，内部包含rancher-net服务和ipsec需要的charon服务；
+另一个sidekick容器是cni-driver，它来控制cni bridge的构建。两端主机通过IPsec隧道网络通信时，
+数据包到达物理网卡时，需要通过Host内的Iptables规则转发到ipsec容器内，
+这个Iptables规则管理则是由network-manager组件来完成的，
+<a href="https://github.com/rancher/plugin-manager">https://github.com/rancher/plugin-manager</a>。其原理如下图所示（以IPsec为例）：<br />
+<img src="http://ww4.sinaimg.cn/large/006tKfTcjw1fav9gp2vkwj30hj06pacf.jpg" alt="" /><br />
+整体上看cni ipsec的实现比之前的ipsec精进了不少，而且也做了大量的解耦工作，
+不单纯是走向社区的标准，之前大量的Iptables规则也有了很大的减少，性能上其实也有了很大提升。</p>
 
-<p>进入rancher-server容器内部，查看go-machine-service进程的环境变量，
-可以看到API Key的授权信息就在其中：<br />
-<img src="http://ww3.sinaimg.cn/large/006y8lVajw1fafqxofpl1j30m805dmz0.jpg" alt="" /></p>
+<h3 id="rancher-net-vxlan的实现">Rancher-net vxlan的实现</h3>
 
-<p>那么go-machine-service的环境变量是如何设置的呢？查看Cattle源码，找到MachineLancher，
-它是启动go-machine-service服务的具体实现，我们可以看到设置环境变量这一步：<br />
-<img src="http://ww1.sinaimg.cn/large/006y8lVajw1fafqy3ywfbj30gg03tt9w.jpg" alt="" /></p>
+<p>那么rancher-net的另外一个backend vxlan又是如何实现的呢？
+我们需要创建一套VXLAN网络环境来一探究竟，默认的Cattle引擎网络是IPsec，
+如果修改成VXLAN有很多种方式，可以参考我下面使用的方式。</p>
+
+<p>首先，创建一个新的Environment Template，把Rancher IPsec禁用，同时开启Rancher VXLAN，如下图所示：<br />
+<img src="http://ww2.sinaimg.cn/large/006tKfTcjw1fav9hpxm04j30ft09wmya.jpg" alt="" /><br />
+然后，我们创建一个新的ENV，并使用刚才创建的模版Cattle-VXLAN，创建完成后，
+添加Host即可使用。如下图所示：<br />
+<img src="http://ww3.sinaimg.cn/large/006tKfTcjw1fav9i7um3fj30d7083js5.jpg" alt="" /><br />
+以分析IPsec网络实现方式来分析VXLAN，基本上会发现其原理大致相同。
+同样是基于CNI bridge，使用rancher提供的rancher-cni-bridge、rancher-cni-ipam，
+网络配置信息以metadata方式注入。区别就在于rancher-net容器内部，
+rancher-net激活的是vxlan driver，它会生成一个vtep1042设备，并开启udp 4789端口，
+这个设备基于udp 4789构建vxlan overlay的两端通信，对于本机的容器通过eth0走bridge通信，对于
+其他Host的容器，则是通过路由规则转发到vtep1042设备上，再通过overlay到对端主机，
+由对端主机的bridge转发到相应的容器上。整个过程如图所示：<br />
+<img src="http://ww3.sinaimg.cn/large/006tKfTcjw1fav9j4nhblj30e607z0um.jpg" alt="" /></p>
 
 <h3 id="总结">总结</h3>
 
-<p>Cattle本身就是一个框架，Rancher Server内的其他服务都是通过Cattle的Proxy机制来转发请求的，
-授权机制则是由Cattle统一提供出来，其他服务自身无需单独实现授权机制。
-如果我们想对Rancher Server扩展，再增加一些其他服务，利用本文所描述的机制，就会非常方便。</p>
+<p>容器网络是容器云平台中很重要的一环，对于不通规模不通的安全要求会有不同的选型。
+Rancher的默认网络改造成了CNI标准，同时也会支持其他第三方CNI插件，
+结合Rancher独有的Environment Template功能，用户可以在一个大集群中的每个隔离环境内，
+创建不同的网络模式，以满足各种业务场景需求，这种管理的灵活性是其他平台没有的。</p>
             </div>
             <footer class="article-footer">
-    <a data-url="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key" data-id="33bb308a61b43cc4dc762b26fdf407ec" class="article-share-link">
+    <a data-url="http://niusmallnan.com/2016/12/01/rancher12-networking" data-id="15e16b8cf002ca0c1e0969f74ba05a38" class="article-share-link">
         <i class="fa fa-share"></i>
         分享
     </a>
     
-    <a href="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key/#disqus_thread" class="article-comment-link">
+    <a href="http://niusmallnan.com/2016/12/01/rancher12-networking/#disqus_thread" class="article-comment-link">
         评论
     </a>
     
@@ -470,20 +509,20 @@ go-machine-service在启动之时，很明确的读取了CATTLE相关变量：<b
         
 <nav id="article-nav">
     
-    <a href="http://niusmallnan.com/2016/12/02/rancher12-run-on-laptop" id="article-nav-older" class="article-nav-link-wrap">
+    <a href="http://niusmallnan.com/2016/11/28/rancher12-infra-architect" id="article-nav-older" class="article-nav-link-wrap">
       <strong class="article-nav-caption">
           老的
       </strong>
-      <div class="article-nav-title">实践指南-快速解锁Rancher v1.2</div>
+      <div class="article-nav-title">Rancher v1.2基础设施引擎整体架构</div>
     </a>
     
 
     
-    <a href="http://niusmallnan.com/2016/12/09/rancher-netstat-miss-port" id="article-nav-newer" class="article-nav-link-wrap">
+    <a href="http://niusmallnan.com/2016/12/02/rancher12-run-on-laptop" id="article-nav-newer" class="article-nav-link-wrap">
       <strong class="article-nav-caption">
           新的
       </strong>
-      <div class="article-nav-title">为什么Rancher v1.2中netstat看不到开放端口</div>
+      <div class="article-nav-title">实践指南-快速解锁Rancher v1.2</div>
     </a>
     
 </nav>
@@ -497,9 +536,9 @@ go-machine-service在启动之时，很明确的读取了CATTLE相关变量：<b
             <div id="disqus_thread"></div>
 <script type="text/javascript">
     var disqus_shortname = 'niusmallnan';
-    var disqus_identifier = 'http:\/\/niusmallnan.com\/2016\/12\/05\/go-machine-service-access-api-key';
-    var disqus_title = 'go-machine-service访问Rancher API的授权机制分析';
-    var disqus_url = 'http:\/\/niusmallnan.com\/2016\/12\/05\/go-machine-service-access-api-key';
+    var disqus_identifier = 'http:\/\/niusmallnan.com\/2016\/12\/01\/rancher12-networking';
+    var disqus_title = 'Rancher v1.2网络架构解读';
+    var disqus_url = 'http:\/\/niusmallnan.com\/2016\/12\/01\/rancher12-networking';
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
