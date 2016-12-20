@@ -46,7 +46,7 @@
 
 
 <meta itemprop="dateModified" content="2016-12-01T21:18:36&#43;08:00" />
-<meta itemprop="wordCount" content="2455">
+<meta itemprop="wordCount" content="2532">
 
 
 
@@ -304,10 +304,10 @@
             <i class="fa fa-calendar"></i>
             <time datetime="2016-12-01 21:18:36 &#43;0800 CST" itemprop="datePublished">2016-12-01</time>
             &middot;
-            2455
+            2532
             字数
             &middot;
-            5
+            6
             分钟阅读
         </div>
 
@@ -418,7 +418,8 @@ rancher-net激活的是vxlan driver，它会生成一个vtep1042设备，并开�
 这个设备基于udp 4789构建vxlan overlay的两端通信，对于本机的容器通过eth0走bridge通信，对于
 其他Host的容器，则是通过路由规则转发到vtep1042设备上，再通过overlay到对端主机，
 由对端主机的bridge转发到相应的容器上。整个过程如图所示：<br />
-<img src="http://ww3.sinaimg.cn/large/006tKfTcjw1fav9j4nhblj30e607z0um.jpg" alt="" /></p>
+<img src="http://ww3.sinaimg.cn/large/006tKfTcjw1fav9j4nhblj30e607z0um.jpg" alt="" /><br />
+vxlan实现的原理可更多参考：<a href="https://www.kernel.org/doc/Documentation/networking/vxlan.txt">https://www.kernel.org/doc/Documentation/networking/vxlan.txt</a></p>
 
 <h3 id="总结">总结</h3>
 
