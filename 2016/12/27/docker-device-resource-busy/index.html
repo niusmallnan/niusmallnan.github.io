@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>Rancheros &middot; Niusmallnan</title>
+    <title>Docker中的device or resource busy问题分析 &middot; Niusmallnan</title>
     <meta name="generator" content="Hugo 0.17" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -10,10 +10,7 @@
       <meta name="description" content="Niusmallnan Blog Site">
     
     
-      <link href="http://niusmallnan.com/tags/rancheros/index.xml" rel="alternate" type="application/rss+xml" title="Niusmallnan" />
-      <link href="http://niusmallnan.com/tags/rancheros/index.xml" rel="feed" type="application/rss+xml" title="Niusmallnan" />
-    
-    <link rel="canonical" href="http://niusmallnan.com/tags/rancheros/"/>
+    <link rel="canonical" href="http://niusmallnan.com/2016/12/27/docker-device-resource-busy"/>
     <link rel="icon" href="http://niusmallnan.com/favicon.ico">
     <link rel="apple-touch-icon" href="http://niusmallnan.com/apple-touch-icon.png"/>
     <link rel="stylesheet" href="http://niusmallnan.com/css/style.css">
@@ -23,29 +20,50 @@
     
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,400,600' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-    <meta property="og:title" content="Rancheros" />
-<meta property="og:description" content="" />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="http://niusmallnan.com/tags/rancheros/" />
+    <meta property="og:title" content="Docker中的device or resource busy问题分析" />
+<meta property="og:description" content="拯救一脸懵逼
+" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://niusmallnan.com/2016/12/27/docker-device-resource-busy" />
 
 
-<meta property="og:updated_time" content="2016-11-07T17:36:37&#43;08:00"/>
-
-
-
-
+<meta property="og:updated_time" content="2016-12-27T07:15:44&#43;08:00"/>
 
 
 
 
 
-    
-    
-<meta itemprop="name" content="Rancheros">
-<meta itemprop="description" content="">
+
+
+
 
 
     
+    
+<meta itemprop="name" content="Docker中的device or resource busy问题分析">
+<meta itemprop="description" content="拯救一脸懵逼
+">
+
+
+<meta itemprop="dateModified" content="2016-12-27T07:15:44&#43;08:00" />
+<meta itemprop="wordCount" content="867">
+
+
+
+<meta itemprop="keywords" content="coding,docker,kubernetes,rancher,rancher-v1.2,rancheros,raspberry-pi," />
+
+    
+
+  <meta name="twitter:card" content="summary"/>
+
+
+
+<meta name="twitter:title" content="Docker中的device or resource busy问题分析"/>
+<meta name="twitter:description" content="拯救一脸懵逼
+"/>
+
+
+
     
 
     
@@ -58,7 +76,7 @@
 
 
 <div id="container">
-    <header id="header">
+	<header id="header">
   <div id="header-main" class="header-inner">
     <div class="outer">
       <a href="http://niusmallnan.com/" id="logo">
@@ -170,8 +188,10 @@
   </div>
 </header>
 
-    <div class="outer">
-        <aside id="profile">
+   	
+   	<div class="outer">
+   		
+	    <aside id="profile">
   <div class="inner profile-inner">
     <div class="base-info profile-block">
       <img id="avatar" src="http://niusmallnan.com/css/images/avatar.jpg">
@@ -257,51 +277,244 @@
 
 
 
-          <td><a href="http://niusmallnan.com/tags/rancheros/index.xml" target="_blank" title="RSS"><i class="fa fa-rss"></i></a></td>
+          <td><a href="" target="_blank" title="RSS"><i class="fa fa-rss"></i></a></td>
         </tr>
       </table>
     </div>
   </div>
 </aside>
 
-        <section id="main">
-            <section class="archives-wrap">
-                <div class="archive-category-wrap">
-                    <span class="archive-category">Rancheros</span>
-                </div>
-                <div class="archives">
-                    
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/11/07/docker-on-rpi" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="树莓派上的Docker集群管理" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/11/07/docker-on-rpi">树莓派上的Docker集群管理</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-11-07 17:36:37 &#43;0800 CST" itemprop="datePublished">2016-11-07</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                </div>
-            </section>
-            <nav id="page-nav">
+	    
 
+	    
+<section id="main">
+
+    <article id="page-undefined" class="article article-type-page" itemscope="" itemprop="blogPost">
+        <div class="article-inner">
+            
+
+            <header class="article-header">
+    <a href="http://niusmallnan.com/2016/12/27/docker-device-resource-busy">
+    <h1 class="article-title" itemprop="name">
+        Docker中的device or resource busy问题分析
+    </h1>
+    </a>
+    <div class="article-meta">
+        <div class="article-date">
+            <i class="fa fa-calendar"></i>
+            <time datetime="2016-12-27 07:15:44 &#43;0800 CST" itemprop="datePublished">2016-12-27</time>
+            &middot;
+            867
+            字数
+            &middot;
+            2
+            分钟阅读
+        </div>
+
+
+        
+            
+            
+            <div class="article-category">
+                <i class="fa fa-folder"></i>
+                
+                
+                <a class="article-category-link" href="categories/coding">coding</a>
+                
+                
+            </div>
+            
+        
+
+        
+            
+            
+            <div class="article-category">
+                <i class="fa fa-tags"></i>
+                
+                
+                <a class="article-category-link" href="tags/docker">Docker</a>
+                
+                
+            </div>
+            
+        
+    </div>
+</header>
+
+            <div class="article-entry" itemprop="articleBody">
+                <p>拯救一脸懵逼
+</p>
+
+<h3 id="现象描述">现象描述</h3>
+
+<p>使用docker的时候，当我们删除某些容器，有时候会报出device or resource busy错误：</p>
+
+<pre><code>Error response from daemon:
+Unable to remove filesystem for
+a9a1c11e8210d60ddba09f95ea93ae21f32327c4e5877c218862c752d1088533: 
+remove /var/lib/docker/containers/a9a1c11e8210d60ddba09f95ea93ae21f32327c4e5877c218862c752d1088533/shm:
+device or resource busy
+</code></pre>
+
+<p>然后可以查看相关容器的状态变成了很少见的Dead状态。</p>
+
+<h3 id="原因分析">原因分析</h3>
+
+<p>通常我们看到device or resource busy首先想到的是，这个设备被其他程序占用导致。
+在容器中，其实理论是一样的，每个容器生成都会有一个containers/<uuid>/shm设备产生，
+恰巧这个设备被其他程序mount了，就会被占用无法卸载，也就是device or resource busy。</p>
+
+<p>那么什么情况下会占用containers/<uuid>/shm设备呢？其最大的可能原因就是容器启动时挂载了/var/lib/docker目录，
+此时恰巧docker出现了bug，顺带mount了containers/<uuid>/shm设备。
+为证实猜想，我们启动一个挂载/var/lib/docker目录的容器，然后到容器中查看/proc/mounts，如下：<br />
+<img src="http://ww3.sinaimg.cn/large/006tKfTcjw1fb4znsftd3j30kh08ntfm.jpg" alt="" /><br />
+其实除了/var/lib/docker做了多余挂载之外，映射/var/run和/run/目录都会有同样的问题：<br />
+<img src="http://ww3.sinaimg.cn/large/006tKfTcjw1fb4zo5bmavj30ex04n0u4.jpg" alt="" /></p>
+
+<h3 id="修复方式">修复方式</h3>
+
+<p>首先这肯定是docker的一个bug，很明显它不应该做多余的mount。这个bug直到docker v1.2.4版本才被修复，
+相关PR<a href="https://github.com/docker/docker/pull/29083">https://github.com/docker/docker/pull/29083</a>，类似的issue<a href="https://github.com/docker/docker/issues/20560">https://github.com/docker/docker/issues/20560</a>，
+都可以在github上找到。所以docker v1.2.4之前也都会比较容器碰到这个问题，
+那么想避免这个问题，升级docker就可以解决。</p>
+
+<p>那么如果因为业务原因无法升级docker，但是还想避免这个问题怎么办？
+比如可以在mount /var/lib/docker（或是你迁移之后的DockerRootDir）的容器中执行以下脚本：</p>
+
+<pre><code>#!/bin/bash
+
+for i in $(curl -s --unix /var/run/docker.sock http://localhost/info | jq -r .DockerRootDir) /var/lib/docker /run /var/run; do
+    for m in $(tac /proc/mounts | awk '{print $2}' | grep ^${i}/); do
+        umount $m || true
+    done
+done
+</code></pre>
+
+<p>主要目的是把多余mount的path卸载掉，这样就不会因为同时挂载导致device or resource busy的问题。</p>
+            </div>
+            <footer class="article-footer">
+    <a data-url="http://niusmallnan.com/2016/12/27/docker-device-resource-busy" data-id="1c4f5c130e25cb4e98ce7714ad95779d" class="article-share-link">
+        <i class="fa fa-share"></i>
+        分享
+    </a>
+    
+    <a href="http://niusmallnan.com/2016/12/27/docker-device-resource-busy/#disqus_thread" class="article-comment-link">
+        评论
+    </a>
+    
+
+    <script>
+    (function ($) {
+        
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+    </script>
+</footer>
+
+        </div>
+
+        
+<nav id="article-nav">
+    
+    <a href="http://niusmallnan.com/2016/12/14/rancher12-swarmkit-architect" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">
+          老的
+      </strong>
+      <div class="article-nav-title">Rancher v1.2 Swarmkit的实现</div>
+    </a>
+    
+
+    
 </nav>
 
-        </section>
-        <aside id="sidebar">
+
+    </article>
+
+    
+    <section id="comments">
+        <div id="disqus_thread">
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'niusmallnan';
+    var disqus_identifier = 'http:\/\/niusmallnan.com\/2016\/12\/27\/docker-device-resource-busy';
+    var disqus_title = 'Docker中的device or resource busy问题分析';
+    var disqus_url = 'http:\/\/niusmallnan.com\/2016\/12\/27\/docker-device-resource-busy';
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+        </div>
+    </section>
+    
+</section>
+
+
+	    
+	    <aside id="sidebar">
     
 <div class="widget-wrap">
     <h3 class="widget-title">
@@ -570,7 +783,8 @@
     <div id="toTop" class="fa fa-angle-up"></div>
 </aside>
 
-    </div>
+	    
+	</div>
 </div>
 
 <footer id="footer">

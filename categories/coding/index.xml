@@ -10,6 +10,63 @@
     <atom:link href="http://niusmallnan.com/categories/coding/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
+      <title>Docker中的device or resource busy问题分析</title>
+      <link>http://niusmallnan.com/2016/12/27/docker-device-resource-busy</link>
+      <pubDate>Tue, 27 Dec 2016 07:15:44 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2016/12/27/docker-device-resource-busy</guid>
+      <description>&lt;p&gt;拯救一脸懵逼
+&lt;/p&gt;
+
+&lt;h3 id=&#34;现象描述&#34;&gt;现象描述&lt;/h3&gt;
+
+&lt;p&gt;使用docker的时候，当我们删除某些容器，有时候会报出device or resource busy错误：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;Error response from daemon:
+Unable to remove filesystem for
+a9a1c11e8210d60ddba09f95ea93ae21f32327c4e5877c218862c752d1088533: 
+remove /var/lib/docker/containers/a9a1c11e8210d60ddba09f95ea93ae21f32327c4e5877c218862c752d1088533/shm:
+device or resource busy
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;然后可以查看相关容器的状态变成了很少见的Dead状态。&lt;/p&gt;
+
+&lt;h3 id=&#34;原因分析&#34;&gt;原因分析&lt;/h3&gt;
+
+&lt;p&gt;通常我们看到device or resource busy首先想到的是，这个设备被其他程序占用导致。
+在容器中，其实理论是一样的，每个容器生成都会有一个containers/&lt;uuid&gt;/shm设备产生，
+恰巧这个设备被其他程序mount了，就会被占用无法卸载，也就是device or resource busy。&lt;/p&gt;
+
+&lt;p&gt;那么什么情况下会占用containers/&lt;uuid&gt;/shm设备呢？其最大的可能原因就是容器启动时挂载了/var/lib/docker目录，
+此时恰巧docker出现了bug，顺带mount了containers/&lt;uuid&gt;/shm设备。
+为证实猜想，我们启动一个挂载/var/lib/docker目录的容器，然后到容器中查看/proc/mounts，如下：&lt;br /&gt;
+&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tKfTcjw1fb4znsftd3j30kh08ntfm.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
+其实除了/var/lib/docker做了多余挂载之外，映射/var/run和/run/目录都会有同样的问题：&lt;br /&gt;
+&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tKfTcjw1fb4zo5bmavj30ex04n0u4.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;修复方式&#34;&gt;修复方式&lt;/h3&gt;
+
+&lt;p&gt;首先这肯定是docker的一个bug，很明显它不应该做多余的mount。这个bug直到docker v1.2.4版本才被修复，
+相关PR&lt;a href=&#34;https://github.com/docker/docker/pull/29083&#34;&gt;https://github.com/docker/docker/pull/29083&lt;/a&gt;，类似的issue&lt;a href=&#34;https://github.com/docker/docker/issues/20560&#34;&gt;https://github.com/docker/docker/issues/20560&lt;/a&gt;，
+都可以在github上找到。所以docker v1.2.4之前也都会比较容器碰到这个问题，
+那么想避免这个问题，升级docker就可以解决。&lt;/p&gt;
+
+&lt;p&gt;那么如果因为业务原因无法升级docker，但是还想避免这个问题怎么办？
+比如可以在mount /var/lib/docker（或是你迁移之后的DockerRootDir）的容器中执行以下脚本：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;#!/bin/bash
+
+for i in $(curl -s --unix /var/run/docker.sock http://localhost/info | jq -r .DockerRootDir) /var/lib/docker /run /var/run; do
+    for m in $(tac /proc/mounts | awk &#39;{print $2}&#39; | grep ^${i}/); do
+        umount $m || true
+    done
+done
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;主要目的是把多余mount的path卸载掉，这样就不会因为同时挂载导致device or resource busy的问题。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
       <title>Rancher v1.2 Swarmkit的实现</title>
       <link>http://niusmallnan.com/2016/12/14/rancher12-swarmkit-architect</link>
       <pubDate>Wed, 14 Dec 2016 21:53:27 +0800</pubDate>

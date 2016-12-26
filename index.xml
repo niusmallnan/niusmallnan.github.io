@@ -7,8 +7,65 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-CN</language>
     <copyright>Niusmallnan</copyright>
-    <lastBuildDate>Wed, 14 Dec 2016 21:53:27 +0800</lastBuildDate>
+    <lastBuildDate>Tue, 27 Dec 2016 07:15:44 +0800</lastBuildDate>
     <atom:link href="http://niusmallnan.com/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Docker中的device or resource busy问题分析</title>
+      <link>http://niusmallnan.com/2016/12/27/docker-device-resource-busy</link>
+      <pubDate>Tue, 27 Dec 2016 07:15:44 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2016/12/27/docker-device-resource-busy</guid>
+      <description>&lt;p&gt;拯救一脸懵逼
+&lt;/p&gt;
+
+&lt;h3 id=&#34;现象描述&#34;&gt;现象描述&lt;/h3&gt;
+
+&lt;p&gt;使用docker的时候，当我们删除某些容器，有时候会报出device or resource busy错误：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;Error response from daemon:
+Unable to remove filesystem for
+a9a1c11e8210d60ddba09f95ea93ae21f32327c4e5877c218862c752d1088533: 
+remove /var/lib/docker/containers/a9a1c11e8210d60ddba09f95ea93ae21f32327c4e5877c218862c752d1088533/shm:
+device or resource busy
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;然后可以查看相关容器的状态变成了很少见的Dead状态。&lt;/p&gt;
+
+&lt;h3 id=&#34;原因分析&#34;&gt;原因分析&lt;/h3&gt;
+
+&lt;p&gt;通常我们看到device or resource busy首先想到的是，这个设备被其他程序占用导致。
+在容器中，其实理论是一样的，每个容器生成都会有一个containers/&lt;uuid&gt;/shm设备产生，
+恰巧这个设备被其他程序mount了，就会被占用无法卸载，也就是device or resource busy。&lt;/p&gt;
+
+&lt;p&gt;那么什么情况下会占用containers/&lt;uuid&gt;/shm设备呢？其最大的可能原因就是容器启动时挂载了/var/lib/docker目录，
+此时恰巧docker出现了bug，顺带mount了containers/&lt;uuid&gt;/shm设备。
+为证实猜想，我们启动一个挂载/var/lib/docker目录的容器，然后到容器中查看/proc/mounts，如下：&lt;br /&gt;
+&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tKfTcjw1fb4znsftd3j30kh08ntfm.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
+其实除了/var/lib/docker做了多余挂载之外，映射/var/run和/run/目录都会有同样的问题：&lt;br /&gt;
+&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tKfTcjw1fb4zo5bmavj30ex04n0u4.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;修复方式&#34;&gt;修复方式&lt;/h3&gt;
+
+&lt;p&gt;首先这肯定是docker的一个bug，很明显它不应该做多余的mount。这个bug直到docker v1.2.4版本才被修复，
+相关PR&lt;a href=&#34;https://github.com/docker/docker/pull/29083&#34;&gt;https://github.com/docker/docker/pull/29083&lt;/a&gt;，类似的issue&lt;a href=&#34;https://github.com/docker/docker/issues/20560&#34;&gt;https://github.com/docker/docker/issues/20560&lt;/a&gt;，
+都可以在github上找到。所以docker v1.2.4之前也都会比较容器碰到这个问题，
+那么想避免这个问题，升级docker就可以解决。&lt;/p&gt;
+
+&lt;p&gt;那么如果因为业务原因无法升级docker，但是还想避免这个问题怎么办？
+比如可以在mount /var/lib/docker（或是你迁移之后的DockerRootDir）的容器中执行以下脚本：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;#!/bin/bash
+
+for i in $(curl -s --unix /var/run/docker.sock http://localhost/info | jq -r .DockerRootDir) /var/lib/docker /run /var/run; do
+    for m in $(tac /proc/mounts | awk &#39;{print $2}&#39; | grep ^${i}/); do
+        umount $m || true
+    done
+done
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;主要目的是把多余mount的path卸载掉，这样就不会因为同时挂载导致device or resource busy的问题。&lt;/p&gt;</description>
+    </item>
     
     <item>
       <title>Rancher v1.2 Swarmkit的实现</title>
@@ -1268,99 +1325,6 @@ service中包含两个容器分别为主容器main和sidekick容器conf，他们
 就是不计项目KPI利用个人业余时间为团队做贡献的和谐氛围。
 其实国内很多互联网公司都是有专门设立工具开发工程师的岗位，
 对工具带来的生产效率提升，其重视程度不言而喻！&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>Kubernetes in Rancher1.0 架构分析</title>
-      <link>http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0</link>
-      <pubDate>Thu, 28 Jul 2016 14:49:47 +0800</pubDate>
-      
-      <guid>http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0</guid>
-      <description>&lt;p&gt;该主题是本人于Rancher k8s 北京meetup进行的一次线下分享，应Rancher China官方之邀，
-重新梳理成文字版本，便于大家阅读传播，如有问题纰漏或任何不妥之处随时联系牛小腩（niusmallnan），
-我会以最快速度更正。
-&lt;/p&gt;
-
-&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
-
-&lt;p&gt;在Rancher 1.0版本开始，Rancher逐步增加了Kubernetes、Swarm、Mesos等多编排引擎的支持，
-很多朋友就此产生了疑惑，诸如Cattle引擎和这几个之间到底什么关系？
-每种引擎是如何支持的？自家的业务环境如何选型？我们将逐步揭开这些神秘面纱，
-了解基础架构才能在遇到问题时进行有效的分析，进而准确的定位问题并解决问题，
-因为没有一种生产环境是完全可靠的。基于这个背景下，这次我们首先向大家介绍kubernetes in Rancher的架构。&lt;/p&gt;
-
-&lt;h3 id=&#34;分析&#34;&gt;分析&lt;/h3&gt;
-
-&lt;p&gt;从现在Rancher的发展节奏来看，Cattle引擎已经被定义成Rancher的基础设施引擎，
-而Rancher的基础设施服务都包括哪些呢？如下：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;Networking，rancher的统一网络服务，由rancher-net组件提供&lt;/li&gt;
-&lt;li&gt;Load Balancer，rancher的负载均衡服务，目前来看套路基本上是基于Haproxy来构建&lt;/li&gt;
-&lt;li&gt;DNS Service，rancher的dns服务，主要是为了提供服务发现能力，由rancher-dns组件来提供&lt;/li&gt;
-&lt;li&gt;Metadata Service，rancher的元数据服务，metadata是我们通过compose编排应用时的利器，
-可以很灵活的像service中注入特定信息&lt;/li&gt;
-&lt;li&gt;Persistent Storage Service，持久化存储服务目前是由convoy来提供，
-而对于真正的后端存储的实现rancher还有longhorn没有完全放出&lt;/li&gt;
-&lt;li&gt;Audit Logging，审计日志服务是企业场景中比较重要的一个属性，
-目前是集成在cattle内部没有被完全分离出来&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;所以Rancher在接入任何一种编排引擎，最终都会把基础设施服务整合到该引擎中，
-Kubernetes in Rancher的做法正是如此。&lt;/p&gt;
-
-&lt;p&gt;Kubernetes各个组件的角色可以归为三类即Master、Minion、Etcd，
-Master主要是kube-apiserver、kube-scheduler、kube-controller-manager，
-Minion主要是kubelet和kube-proxy。Rancher为了融合k8s的管控功能，
-又在Master中添加了kuberctrld、ingress-controller、kubernetes-agent三个服务来打通Rancher和K8s，
-同时每个node上都会依赖Rancher提供的rancher-dns、rancher-metadata、rancher-net这些基础设施服务。&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/7853084cjw1fa21xnsfbrj20p40c0wgm.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;由于K8s是基于Cattle引擎来部署，所以在K8s在部署完成之后，
-我们可以通过Link Graph来很清晰的看到整体的部署情况。&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/7853084cjw1fa21y87258j20mi07tdh0.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-整个服务基于Cattle引擎的rancher-compose构建，新增节点后自动添加kubelet和kube-proxy服务
-（此处利用了Global Label的特性），各个组件都添加了health-check机制，
-保证一定程度的高可用。考虑到Etcd最低1个最多3个节点，
-单台agent host就可以部署K8s，三节点agent host则更合理些。&lt;/p&gt;
-
-&lt;p&gt;K8s集群完成部署后，我们就可以在其中添加各种应用服务，
-目前Rancher支持管理K8s的service、pod、replication-controller等，
-我们可以用一张图来形象得描述一下应用视图结构。&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/7853084cjw1fa21z5ellcj20qj0cuq5u.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-rancher-net组件会给每个pod分配一个ip，rancher-dns则替代了K8s的Skydns来实现服务发现，
-在pod的容器内部依然可以访问rancher-metadata服务来获取元数据信息。除了这三个基础服务外，
-我们之前提到的kuberctrld、ingress-controller、kubernetes-agent也在其中扮演者重要角色。&lt;/p&gt;
-
-&lt;p&gt;无论是K8s还是Rancher，其中一些抽象对象（如rancher的stack/service，或者K8s的serivice/pod）
-在属性更新时都会有events产生，在任何服务入口来更改这些抽象对象都会有events产生，
-所以要保证Rancher和k8s能够互相感知各自对象的更新，那么kubernetes-agent就应运而生了。&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/7853084cjw1fa22166xnyj20nt0d60ut.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-诸如K8s的namespaces、services、replicationcontrollers、pods等对象的信息变更会及时通知给Rancher，
-而Cattle管理的Host资源出现信息变更（诸如host label的变动）也会通知给K8s。&lt;/p&gt;
-
-&lt;p&gt;简单得说kubernetes-agent是为了维护Rancher和K8s之间的对象一致性，
-而真正要通过Rancher来创建K8s中的service或者pod之类的对象，
-还需要另外一个服务来实现，它就是kubectrld，直观的讲它就是包装了kubectrl，
-实现了其中kubectl create/apply/get 等功能。&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/7853084cjw1fa221z612jj20o80bhq4q.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-所有的K8s对象创建请求都会走cattle引擎，cattle会把请求代理到kubectrld启动的一个api服务。
-除此之外，还会监听rancher events来辅助实现相关对象的CRUD。&lt;/p&gt;
-
-&lt;p&gt;K8s上创建的service如需对外暴露访问，那么必然会用到LoadBalancer Type和Ingress kind，
-注意K8s概念下的LoadBalancer和Ingress略有不同，LoadBalancer的功能主要关注在L4支持http/tcp，
-而Ingrees则是要实现L7的负载均衡且只能支持http。K8s 的LoadBalancer需要在K8s中实现一个Cloud Provider，
-目前只有GCE，而Rancher则维护了自己的K8s版本在其中提供了Rancher Cloud Provider。
-对于Ingress则是提供了Ingress-controller组件，它实现了K8s的ingress框架，
-可以获取ingress的创建信息并执行相应的接口。当然最终这两者都会调用cattle api来创建Rancher的负载均衡，
-且都是通过Haproxy完成负责均衡功能。&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/7853084cjw1fa22370rzfj20hv0b6gn5.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&#34;后语&#34;&gt;后语&lt;/h3&gt;
-
-&lt;p&gt;以目前K8s社区的火热势头，Rancher应该会持续跟进并不断更新功能优化架构，
-待到Rancher1.2发布之后，CNI的支持会是一个里程碑，
-到那时Kubernetes in Rancher也会更加成熟，一起向着最好用Kubernetes发行版大踏步的前进。&lt;/p&gt;</description>
     </item>
     
   </channel>
