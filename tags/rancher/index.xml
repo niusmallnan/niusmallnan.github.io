@@ -10,6 +10,86 @@
     <atom:link href="http://niusmallnan.com/tags/rancher/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
+      <title>Dead容器导致Rancher Server过载的解决方案</title>
+      <link>http://niusmallnan.com/2017/01/01/rancher-server-overwhelmed-by-dead-containers</link>
+      <pubDate>Sun, 01 Jan 2017 07:42:28 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2017/01/01/rancher-server-overwhelmed-by-dead-containers</guid>
+      <description>&lt;p&gt;接之前的一篇文章&lt;a href=&#34;http://niusmallnan.com/2016/12/27/docker-device-resource-busy/&#34;&gt;device or resource busy&lt;/a&gt;，
+其中描述了Docker的一个bug，这个bug其实会导致Rancher Server出现一个比较严重的问题。
+&lt;/p&gt;
+
+&lt;h3 id=&#34;现象与原因&#34;&gt;现象与原因&lt;/h3&gt;
+
+&lt;p&gt;Rancher Server运行一段时间后，如若发现各种操作卡死，Host添加不上，Stack&amp;amp;Service也无法active，
+且在proceeses列表里发现大量volumestoragepoolmap.remove任务，可以参考本文的解决方案：&lt;br /&gt;
+&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tKfTcjw1fbateimvjnj30iv0a40ug.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;这些无法完成的volumestoragepoolmap.remove任务，背后其实就是那些dead containers，
+分析之后，大致原因如下：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;docker本身的一个bug，导致一些容器删除失败，进入dead状态。&lt;/li&gt;
+&lt;li&gt;Rancher的调度系统在不断重试删除这些dead容器，但是无法删除。&lt;/li&gt;
+&lt;li&gt;无法删除导致，这些删除任务不断加入rancher调度系统中，造成调度系统过载。&lt;/li&gt;
+&lt;li&gt;主机创建或是Stack/Service active请求都在排队，不能被迅速执行。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&#34;临时解决方案&#34;&gt;临时解决方案&lt;/h3&gt;
+
+&lt;p&gt;依据之前的分析，processes里面出现了很多永远无法完成的任务，这些任务在不断的重试，这会压垮Rancher Server。
+所以解决方案的目标就是，介入外部力量删除这些dead容器，升级docker engine是一个选择，
+但是直接在生产环境升级是一个需要勇气的选择。比较温和的做法是定制脚本到每台agent节点上
+强行删除这些dead容器。&lt;/p&gt;
+
+&lt;p&gt;考虑到这里有多台主机批量执行的场景，所以我们可以选择使用ansible工具，
+创建一个工作目录如/opt/agent_upgrade，所有脚本都放到这个目录下。
+首先我们要生成一个agent host的列表，这里可以借用Rancher的CLI工具，
+具体脚本get_hosts.sh如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;#!/bin/bash
+#set -ex
+rm -f all_hosts_ip
+
+RANCHER=&amp;quot;/usr/local/bin/rancher&amp;quot;
+
+for env in `$RANCHER env -a --format {{.ID}}`; do
+    for host in `$RANCHER --env $env hosts --format json| jq .Host.agentIpAddress| sed &#39;s/\&amp;quot;//g&#39;`; do
+        echo &amp;quot;${host}&amp;quot; &amp;gt;&amp;gt; all_hosts_ip
+    done
+done
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;定义一个ansible的配置文件，由于所有agent host都是有运维专有访问秘钥的，
+所以这里直接定义private_key_file比较方便，如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;[defaults]
+hostfile=/opt/agent_upgrade/all_hosts_ip
+host_key_checking = False
+remote_user = ubuntu
+private_key_file=/opt/agent_upgrade/aws-prd.pem
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;然后我们就可以使用ansible来做批量操作了，删除dead容器的脚本非常简单，
+clean_dead_containers.sh脚本如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;#!/bin/bash
+
+#set -ex
+ansible all --sudo -m shell -a &amp;quot;docker ps -aq --filter status=dead &amp;gt; ~/dead&amp;quot; -vvvv
+ansible all --sudo -m shell -a &amp;quot;cat ~/dead | xargs docker rm -f&amp;quot; -vvvv
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;由于Rancher集群在运行时仍然会产生这些dead containers，所以我们可以借用crontab来做定时清理，
+添加一条crontab如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;*/30 * * * * cd /opt/agent_upgrade &amp;amp;&amp;amp; sh get_hosts.sh &amp;amp;&amp;amp; sh clean_dead_containers.sh &amp;gt; /tmp/dead_containers.log 2&amp;gt;&amp;amp;1
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;如此，每隔30分钟定期清理这些dead containers，Rancher Server就不会受其影响。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
       <title>Rancher v1.2 Swarmkit的实现</title>
       <link>http://niusmallnan.com/2016/12/14/rancher12-swarmkit-architect</link>
       <pubDate>Wed, 14 Dec 2016 21:53:27 +0800</pubDate>

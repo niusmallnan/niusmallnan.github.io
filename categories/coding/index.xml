@@ -10,6 +10,86 @@
     <atom:link href="http://niusmallnan.com/categories/coding/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
+      <title>Dead容器导致Rancher Server过载的解决方案</title>
+      <link>http://niusmallnan.com/2017/01/01/rancher-server-overwhelmed-by-dead-containers</link>
+      <pubDate>Sun, 01 Jan 2017 07:42:28 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2017/01/01/rancher-server-overwhelmed-by-dead-containers</guid>
+      <description>&lt;p&gt;接之前的一篇文章&lt;a href=&#34;http://niusmallnan.com/2016/12/27/docker-device-resource-busy/&#34;&gt;device or resource busy&lt;/a&gt;，
+其中描述了Docker的一个bug，这个bug其实会导致Rancher Server出现一个比较严重的问题。
+&lt;/p&gt;
+
+&lt;h3 id=&#34;现象与原因&#34;&gt;现象与原因&lt;/h3&gt;
+
+&lt;p&gt;Rancher Server运行一段时间后，如若发现各种操作卡死，Host添加不上，Stack&amp;amp;Service也无法active，
+且在proceeses列表里发现大量volumestoragepoolmap.remove任务，可以参考本文的解决方案：&lt;br /&gt;
+&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tKfTcjw1fbateimvjnj30iv0a40ug.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;这些无法完成的volumestoragepoolmap.remove任务，背后其实就是那些dead containers，
+分析之后，大致原因如下：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;docker本身的一个bug，导致一些容器删除失败，进入dead状态。&lt;/li&gt;
+&lt;li&gt;Rancher的调度系统在不断重试删除这些dead容器，但是无法删除。&lt;/li&gt;
+&lt;li&gt;无法删除导致，这些删除任务不断加入rancher调度系统中，造成调度系统过载。&lt;/li&gt;
+&lt;li&gt;主机创建或是Stack/Service active请求都在排队，不能被迅速执行。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&#34;临时解决方案&#34;&gt;临时解决方案&lt;/h3&gt;
+
+&lt;p&gt;依据之前的分析，processes里面出现了很多永远无法完成的任务，这些任务在不断的重试，这会压垮Rancher Server。
+所以解决方案的目标就是，介入外部力量删除这些dead容器，升级docker engine是一个选择，
+但是直接在生产环境升级是一个需要勇气的选择。比较温和的做法是定制脚本到每台agent节点上
+强行删除这些dead容器。&lt;/p&gt;
+
+&lt;p&gt;考虑到这里有多台主机批量执行的场景，所以我们可以选择使用ansible工具，
+创建一个工作目录如/opt/agent_upgrade，所有脚本都放到这个目录下。
+首先我们要生成一个agent host的列表，这里可以借用Rancher的CLI工具，
+具体脚本get_hosts.sh如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;#!/bin/bash
+#set -ex
+rm -f all_hosts_ip
+
+RANCHER=&amp;quot;/usr/local/bin/rancher&amp;quot;
+
+for env in `$RANCHER env -a --format {{.ID}}`; do
+    for host in `$RANCHER --env $env hosts --format json| jq .Host.agentIpAddress| sed &#39;s/\&amp;quot;//g&#39;`; do
+        echo &amp;quot;${host}&amp;quot; &amp;gt;&amp;gt; all_hosts_ip
+    done
+done
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;定义一个ansible的配置文件，由于所有agent host都是有运维专有访问秘钥的，
+所以这里直接定义private_key_file比较方便，如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;[defaults]
+hostfile=/opt/agent_upgrade/all_hosts_ip
+host_key_checking = False
+remote_user = ubuntu
+private_key_file=/opt/agent_upgrade/aws-prd.pem
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;然后我们就可以使用ansible来做批量操作了，删除dead容器的脚本非常简单，
+clean_dead_containers.sh脚本如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;#!/bin/bash
+
+#set -ex
+ansible all --sudo -m shell -a &amp;quot;docker ps -aq --filter status=dead &amp;gt; ~/dead&amp;quot; -vvvv
+ansible all --sudo -m shell -a &amp;quot;cat ~/dead | xargs docker rm -f&amp;quot; -vvvv
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;由于Rancher集群在运行时仍然会产生这些dead containers，所以我们可以借用crontab来做定时清理，
+添加一条crontab如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;*/30 * * * * cd /opt/agent_upgrade &amp;amp;&amp;amp; sh get_hosts.sh &amp;amp;&amp;amp; sh clean_dead_containers.sh &amp;gt; /tmp/dead_containers.log 2&amp;gt;&amp;amp;1
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;如此，每隔30分钟定期清理这些dead containers，Rancher Server就不会受其影响。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
       <title>Docker中的device or resource busy问题分析</title>
       <link>http://niusmallnan.com/2016/12/27/docker-device-resource-busy</link>
       <pubDate>Tue, 27 Dec 2016 07:15:44 +0800</pubDate>
@@ -1300,99 +1380,6 @@ service中包含两个容器分别为主容器main和sidekick容器conf，他们
 就是不计项目KPI利用个人业余时间为团队做贡献的和谐氛围。
 其实国内很多互联网公司都是有专门设立工具开发工程师的岗位，
 对工具带来的生产效率提升，其重视程度不言而喻！&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>Kubernetes in Rancher1.0 架构分析</title>
-      <link>http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0</link>
-      <pubDate>Thu, 28 Jul 2016 14:49:47 +0800</pubDate>
-      
-      <guid>http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0</guid>
-      <description>&lt;p&gt;该主题是本人于Rancher k8s 北京meetup进行的一次线下分享，应Rancher China官方之邀，
-重新梳理成文字版本，便于大家阅读传播，如有问题纰漏或任何不妥之处随时联系牛小腩（niusmallnan），
-我会以最快速度更正。
-&lt;/p&gt;
-
-&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
-
-&lt;p&gt;在Rancher 1.0版本开始，Rancher逐步增加了Kubernetes、Swarm、Mesos等多编排引擎的支持，
-很多朋友就此产生了疑惑，诸如Cattle引擎和这几个之间到底什么关系？
-每种引擎是如何支持的？自家的业务环境如何选型？我们将逐步揭开这些神秘面纱，
-了解基础架构才能在遇到问题时进行有效的分析，进而准确的定位问题并解决问题，
-因为没有一种生产环境是完全可靠的。基于这个背景下，这次我们首先向大家介绍kubernetes in Rancher的架构。&lt;/p&gt;
-
-&lt;h3 id=&#34;分析&#34;&gt;分析&lt;/h3&gt;
-
-&lt;p&gt;从现在Rancher的发展节奏来看，Cattle引擎已经被定义成Rancher的基础设施引擎，
-而Rancher的基础设施服务都包括哪些呢？如下：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;Networking，rancher的统一网络服务，由rancher-net组件提供&lt;/li&gt;
-&lt;li&gt;Load Balancer，rancher的负载均衡服务，目前来看套路基本上是基于Haproxy来构建&lt;/li&gt;
-&lt;li&gt;DNS Service，rancher的dns服务，主要是为了提供服务发现能力，由rancher-dns组件来提供&lt;/li&gt;
-&lt;li&gt;Metadata Service，rancher的元数据服务，metadata是我们通过compose编排应用时的利器，
-可以很灵活的像service中注入特定信息&lt;/li&gt;
-&lt;li&gt;Persistent Storage Service，持久化存储服务目前是由convoy来提供，
-而对于真正的后端存储的实现rancher还有longhorn没有完全放出&lt;/li&gt;
-&lt;li&gt;Audit Logging，审计日志服务是企业场景中比较重要的一个属性，
-目前是集成在cattle内部没有被完全分离出来&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;所以Rancher在接入任何一种编排引擎，最终都会把基础设施服务整合到该引擎中，
-Kubernetes in Rancher的做法正是如此。&lt;/p&gt;
-
-&lt;p&gt;Kubernetes各个组件的角色可以归为三类即Master、Minion、Etcd，
-Master主要是kube-apiserver、kube-scheduler、kube-controller-manager，
-Minion主要是kubelet和kube-proxy。Rancher为了融合k8s的管控功能，
-又在Master中添加了kuberctrld、ingress-controller、kubernetes-agent三个服务来打通Rancher和K8s，
-同时每个node上都会依赖Rancher提供的rancher-dns、rancher-metadata、rancher-net这些基础设施服务。&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/7853084cjw1fa21xnsfbrj20p40c0wgm.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;由于K8s是基于Cattle引擎来部署，所以在K8s在部署完成之后，
-我们可以通过Link Graph来很清晰的看到整体的部署情况。&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/7853084cjw1fa21y87258j20mi07tdh0.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-整个服务基于Cattle引擎的rancher-compose构建，新增节点后自动添加kubelet和kube-proxy服务
-（此处利用了Global Label的特性），各个组件都添加了health-check机制，
-保证一定程度的高可用。考虑到Etcd最低1个最多3个节点，
-单台agent host就可以部署K8s，三节点agent host则更合理些。&lt;/p&gt;
-
-&lt;p&gt;K8s集群完成部署后，我们就可以在其中添加各种应用服务，
-目前Rancher支持管理K8s的service、pod、replication-controller等，
-我们可以用一张图来形象得描述一下应用视图结构。&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/7853084cjw1fa21z5ellcj20qj0cuq5u.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-rancher-net组件会给每个pod分配一个ip，rancher-dns则替代了K8s的Skydns来实现服务发现，
-在pod的容器内部依然可以访问rancher-metadata服务来获取元数据信息。除了这三个基础服务外，
-我们之前提到的kuberctrld、ingress-controller、kubernetes-agent也在其中扮演者重要角色。&lt;/p&gt;
-
-&lt;p&gt;无论是K8s还是Rancher，其中一些抽象对象（如rancher的stack/service，或者K8s的serivice/pod）
-在属性更新时都会有events产生，在任何服务入口来更改这些抽象对象都会有events产生，
-所以要保证Rancher和k8s能够互相感知各自对象的更新，那么kubernetes-agent就应运而生了。&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/7853084cjw1fa22166xnyj20nt0d60ut.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-诸如K8s的namespaces、services、replicationcontrollers、pods等对象的信息变更会及时通知给Rancher，
-而Cattle管理的Host资源出现信息变更（诸如host label的变动）也会通知给K8s。&lt;/p&gt;
-
-&lt;p&gt;简单得说kubernetes-agent是为了维护Rancher和K8s之间的对象一致性，
-而真正要通过Rancher来创建K8s中的service或者pod之类的对象，
-还需要另外一个服务来实现，它就是kubectrld，直观的讲它就是包装了kubectrl，
-实现了其中kubectl create/apply/get 等功能。&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/7853084cjw1fa221z612jj20o80bhq4q.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-所有的K8s对象创建请求都会走cattle引擎，cattle会把请求代理到kubectrld启动的一个api服务。
-除此之外，还会监听rancher events来辅助实现相关对象的CRUD。&lt;/p&gt;
-
-&lt;p&gt;K8s上创建的service如需对外暴露访问，那么必然会用到LoadBalancer Type和Ingress kind，
-注意K8s概念下的LoadBalancer和Ingress略有不同，LoadBalancer的功能主要关注在L4支持http/tcp，
-而Ingrees则是要实现L7的负载均衡且只能支持http。K8s 的LoadBalancer需要在K8s中实现一个Cloud Provider，
-目前只有GCE，而Rancher则维护了自己的K8s版本在其中提供了Rancher Cloud Provider。
-对于Ingress则是提供了Ingress-controller组件，它实现了K8s的ingress框架，
-可以获取ingress的创建信息并执行相应的接口。当然最终这两者都会调用cattle api来创建Rancher的负载均衡，
-且都是通过Haproxy完成负责均衡功能。&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/7853084cjw1fa22370rzfj20hv0b6gn5.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&#34;后语&#34;&gt;后语&lt;/h3&gt;
-
-&lt;p&gt;以目前K8s社区的火热势头，Rancher应该会持续跟进并不断更新功能优化架构，
-待到Rancher1.2发布之后，CNI的支持会是一个里程碑，
-到那时Kubernetes in Rancher也会更加成熟，一起向着最好用Kubernetes发行版大踏步的前进。&lt;/p&gt;</description>
     </item>
     
   </channel>
