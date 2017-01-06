@@ -10,6 +10,92 @@
     <atom:link href="http://niusmallnan.com/tags/rancher-v1.2/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
+      <title>Rancher-LB开启访问日志</title>
+      <link>http://niusmallnan.com/2017/01/06/rancher-lb-logs</link>
+      <pubDate>Fri, 06 Jan 2017 15:12:10 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2017/01/06/rancher-lb-logs</guid>
+      <description>&lt;p&gt;拯救一脸懵逼
+&lt;/p&gt;
+
+&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
+
+&lt;p&gt;在Rancher v1.2之前的版本，Rancher LB也就是Haproxy都是放在agent/instance内的，由于这个镜像本身要支持很多功能，
+所以要开启Haproxy的访问日志比较麻烦。因为Harpoxy的日志和其他Nginx之类略有不同，它是通过syslog协议讲日志发送出去的，
+要想展现日志还要开启syslog进行收集。Rancher v1.2版本开始，
+Rancher LB的功能已经解耦成独立的镜像rancher/lb-service-haproxy，如此日志收集的工作就可以做了。&lt;/p&gt;
+
+&lt;h3 id=&#34;开启访问日志&#34;&gt;开启访问日志&lt;/h3&gt;
+
+&lt;p&gt;lb-service-haproxy的实现可以仔细阅读源码&lt;a href=&#34;https://github.com/rancher/lb-controller&#34;&gt;https://github.com/rancher/lb-controller&lt;/a&gt;，
+简单的说，其内置了rsyslog来收集haproxy的日志，在容器内部查看配置文件&lt;strong&gt;/etc/haproxy/rsyslogd.conf&lt;/strong&gt;，
+可以知道其开启了udp 8514端口，不同的级别的日志发送到不同的文件中：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ModLoad imudp.so
+$UDPServerRun 8514
+$template CustomFormat,&amp;quot;%timegenerated% %HOSTNAME% %syslogtag%%msg%\n&amp;quot;
+$ActionFileDefaultTemplate CustomFormat
+
+/* info */
+if $programname contains &#39;haproxy&#39; and $syslogseverity == 6 then (
+    action(type=&amp;quot;omfile&amp;quot; file=&amp;quot;/var/log/haproxy/traffic&amp;quot;)
+)
+if $programname contains &#39;haproxy&#39; and $syslogseverity-text == &#39;err&#39; then (
+    action(type=&amp;quot;omfile&amp;quot; file=&amp;quot;/var/log/haproxy/errors&amp;quot;)
+)
+/* notice */
+if $programname contains &#39;haproxy&#39; and $syslogseverity &amp;lt;= 5 then (
+    action(type=&amp;quot;omfile&amp;quot; file=&amp;quot;/var/log/haproxy/events&amp;quot;)
+)
+
+*.* /var/log/messages
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;关于syslog的Severity level可以参考这里：&lt;a href=&#34;https://en.wikipedia.org/wiki/Syslog&#34;&gt;https://en.wikipedia.org/wiki/Syslog&lt;/a&gt;，
+所以我们要查看的访问日志，应该就是/var/log/haproxy/traffic文件。
+同时还添加了logrotate的配置进行日志分割和压缩，可查看容器内的&lt;strong&gt;/etc/logrotate.d/haproxy&lt;/strong&gt;文件。&lt;/p&gt;
+
+&lt;p&gt;当前lb-service-haproxy版本默认是不开启日志收集的，需要自己手动开启，
+我们都知道Haproxy开启日志需要在其global和defaults配置中添加log的配置。
+Rancher LB是支持custom haproxy.cfg的，所以在Rancher中添加这两块配置就可以这样：&lt;br /&gt;
+&lt;img src=&#34;https://ww2.sinaimg.cn/large/006tKfTcjw1fbgy5m62l3j30i80ecgn1.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
+Rancher会自动合并这几条配置，最终在lb-service-haproxy容器内生成的配置就是这样：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;global
+    log 127.0.0.1:8514 local0
+    log 127.0.0.1:8514 local1 notice
+    chroot /var/lib/haproxy
+    daemon
+    group haproxy
+    maxconn 4096
+.....
+.....
+defaults
+    log global
+    option tcplog
+    errorfile 400 /etc/haproxy/errors/400.http
+    errorfile 403 /etc/haproxy/errors/403.http
+.....
+.....
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;那么查看之前分析的日志目录文件，可以看到响应的访问日志信息：&lt;br /&gt;
+&lt;img src=&#34;https://ww1.sinaimg.cn/large/006tKfTcjw1fbgya5nb4vj30l309vn1r.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;注意事项&#34;&gt;注意事项&lt;/h3&gt;
+
+&lt;p&gt;日志虽然可以这样灵活的开启，但是使用时需要注意：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;日志文件放在容器内会不断增大，虽然有logrotate，但是扛不住日积月累。
+临时测试用本地可以，但是长远看还是发送到外部syslog服务上比较好。&lt;/li&gt;
+&lt;li&gt;lb-service-haproxy的早期版本是默认就开启了访问日志，v0.4.5版本后取消了这个默认配置，
+所以你就得使用我上面所说的方式，早期的lb-service-haproxy会积存很多访问日志，
+所以尽早升级到v0.4.5以上的版本。&lt;/li&gt;
+&lt;/ol&gt;</description>
+    </item>
+    
+    <item>
       <title>Rancher v1.2 Swarmkit的实现</title>
       <link>http://niusmallnan.com/2016/12/14/rancher12-swarmkit-architect</link>
       <pubDate>Wed, 14 Dec 2016 21:53:27 +0800</pubDate>

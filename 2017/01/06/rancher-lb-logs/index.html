@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>go-machine-service访问Rancher API的授权机制分析 &middot; Niusmallnan</title>
+    <title>Rancher-LB开启访问日志 &middot; Niusmallnan</title>
     <meta name="generator" content="Hugo 0.17" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -10,7 +10,7 @@
       <meta name="description" content="Niusmallnan Blog Site">
     
     
-    <link rel="canonical" href="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key"/>
+    <link rel="canonical" href="http://niusmallnan.com/2017/01/06/rancher-lb-logs"/>
     <link rel="icon" href="http://niusmallnan.com/favicon.ico">
     <link rel="apple-touch-icon" href="http://niusmallnan.com/apple-touch-icon.png"/>
     <link rel="stylesheet" href="http://niusmallnan.com/css/style.css">
@@ -20,14 +20,14 @@
     
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,400,600' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-    <meta property="og:title" content="go-machine-service访问Rancher API的授权机制分析" />
-<meta property="og:description" content="一段分析调用机制的旅程。
+    <meta property="og:title" content="Rancher-LB开启访问日志" />
+<meta property="og:description" content="拯救一脸懵逼
 " />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key" />
+<meta property="og:url" content="http://niusmallnan.com/2017/01/06/rancher-lb-logs" />
 
 
-<meta property="og:updated_time" content="2016-12-05T11:14:19&#43;08:00"/>
+<meta property="og:updated_time" content="2017-01-06T15:12:10&#43;08:00"/>
 
 
 
@@ -40,13 +40,13 @@
 
     
     
-<meta itemprop="name" content="go-machine-service访问Rancher API的授权机制分析">
-<meta itemprop="description" content="一段分析调用机制的旅程。
+<meta itemprop="name" content="Rancher-LB开启访问日志">
+<meta itemprop="description" content="拯救一脸懵逼
 ">
 
 
-<meta itemprop="dateModified" content="2016-12-05T11:14:19&#43;08:00" />
-<meta itemprop="wordCount" content="877">
+<meta itemprop="dateModified" content="2017-01-06T15:12:10&#43;08:00" />
+<meta itemprop="wordCount" content="1128">
 
 
 
@@ -58,8 +58,8 @@
 
 
 
-<meta name="twitter:title" content="go-machine-service访问Rancher API的授权机制分析"/>
-<meta name="twitter:description" content="一段分析调用机制的旅程。
+<meta name="twitter:title" content="Rancher-LB开启访问日志"/>
+<meta name="twitter:description" content="拯救一脸懵逼
 "/>
 
 
@@ -294,20 +294,20 @@
             
 
             <header class="article-header">
-    <a href="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key">
+    <a href="http://niusmallnan.com/2017/01/06/rancher-lb-logs">
     <h1 class="article-title" itemprop="name">
-        go-machine-service访问Rancher API的授权机制分析
+        Rancher-LB开启访问日志
     </h1>
     </a>
     <div class="article-meta">
         <div class="article-date">
             <i class="fa fa-calendar"></i>
-            <time datetime="2016-12-05 11:14:19 &#43;0800 CST" itemprop="datePublished">2016-12-05</time>
+            <time datetime="2017-01-06 15:12:10 &#43;0800 CST" itemprop="datePublished">2017-01-06</time>
             &middot;
-            877
+            1128
             字数
             &middot;
-            2
+            3
             分钟阅读
         </div>
 
@@ -334,6 +334,10 @@
                 
                 
                 <a class="article-category-link" href="tags/rancher">Rancher</a>
+                &middot;
+                
+                
+                <a class="article-category-link" href="tags/rancher-v1.2">Rancher v1.2</a>
                 
                 
             </div>
@@ -343,58 +347,92 @@
 </header>
 
             <div class="article-entry" itemprop="articleBody">
-                <p>一段分析调用机制的旅程。
+                <p>拯救一脸懵逼
 </p>
 
 <h3 id="引言">引言</h3>
 
-<p>深更半夜一位道上的朋友突然微信问我，Rancher Server内Cattle之外的服务如何调用Rancher API。
-调用API本身没问题，但是Rancher API是需要授权访问的，
-也就是说Rancher Server内其他服务如何授权访问API，这个机制是什么样的？
-Rancher Server内有很多服务，如catalog、go-machine-service、websocket-proxy等等，
-本文就以go-machine-service为例说明其授权机制。</p>
+<p>在Rancher v1.2之前的版本，Rancher LB也就是Haproxy都是放在agent/instance内的，由于这个镜像本身要支持很多功能，
+所以要开启Haproxy的访问日志比较麻烦。因为Harpoxy的日志和其他Nginx之类略有不同，它是通过syslog协议讲日志发送出去的，
+要想展现日志还要开启syslog进行收集。Rancher v1.2版本开始，
+Rancher LB的功能已经解耦成独立的镜像rancher/lb-service-haproxy，如此日志收集的工作就可以做了。</p>
 
-<h3 id="以go-machine-service为例">以go-machine-service为例</h3>
+<h3 id="开启访问日志">开启访问日志</h3>
 
-<p>首先我们要了解go-machine-service在做什么事，官方文档里很清楚的描述到，
-它实现了physicalhost相关事件的handler，主要包括：</p>
+<p>lb-service-haproxy的实现可以仔细阅读源码<a href="https://github.com/rancher/lb-controller">https://github.com/rancher/lb-controller</a>，
+简单的说，其内置了rsyslog来收集haproxy的日志，在容器内部查看配置文件<strong>/etc/haproxy/rsyslogd.conf</strong>，
+可以知道其开启了udp 8514端口，不同的级别的日志发送到不同的文件中：</p>
 
-<ul>
-<li>physicalhost.create - Calls machine create &hellip;.</li>
-<li>physicalhost.activate - Runs docker run rancher/agent &hellip;</li>
-<li>physicalhost.delete|purge - Calls machine delete &hellip;</li>
-</ul>
+<pre><code>$ModLoad imudp.so
+$UDPServerRun 8514
+$template CustomFormat,&quot;%timegenerated% %HOSTNAME% %syslogtag%%msg%\n&quot;
+$ActionFileDefaultTemplate CustomFormat
 
-<p>而若实现这些handler，需要和rancher events打交道，
-我们认为rancher events也是rancher api的一部分，
-所以访问rancher events也需要和API服务一样的鉴权信息。
-go-machine-service在启动之时，很明确的读取了CATTLE相关变量：<br />
-<img src="http://ww3.sinaimg.cn/large/006y8lVajw1fafqwxo6pyj30ir0ccdhx.jpg" alt="" /></p>
+/* info */
+if $programname contains 'haproxy' and $syslogseverity == 6 then (
+    action(type=&quot;omfile&quot; file=&quot;/var/log/haproxy/traffic&quot;)
+)
+if $programname contains 'haproxy' and $syslogseverity-text == 'err' then (
+    action(type=&quot;omfile&quot; file=&quot;/var/log/haproxy/errors&quot;)
+)
+/* notice */
+if $programname contains 'haproxy' and $syslogseverity &lt;= 5 then (
+    action(type=&quot;omfile&quot; file=&quot;/var/log/haproxy/events&quot;)
+)
 
-<p>而且rancher还给go-machine-service专门创建了相应的API Key，查看DB可以得知：<br />
-<img src="http://ww3.sinaimg.cn/large/006y8lVajw1fafqxbv1wbj30f90iwgnb.jpg" alt="" /></p>
+*.* /var/log/messages
+</code></pre>
 
-<p>进入rancher-server容器内部，查看go-machine-service进程的环境变量，
-可以看到API Key的授权信息就在其中：<br />
-<img src="http://ww3.sinaimg.cn/large/006y8lVajw1fafqxofpl1j30m805dmz0.jpg" alt="" /></p>
+<p>关于syslog的Severity level可以参考这里：<a href="https://en.wikipedia.org/wiki/Syslog">https://en.wikipedia.org/wiki/Syslog</a>，
+所以我们要查看的访问日志，应该就是/var/log/haproxy/traffic文件。
+同时还添加了logrotate的配置进行日志分割和压缩，可查看容器内的<strong>/etc/logrotate.d/haproxy</strong>文件。</p>
 
-<p>那么go-machine-service的环境变量是如何设置的呢？查看Cattle源码，找到MachineLancher，
-它是启动go-machine-service服务的具体实现，我们可以看到设置环境变量这一步：<br />
-<img src="http://ww1.sinaimg.cn/large/006y8lVajw1fafqy3ywfbj30gg03tt9w.jpg" alt="" /></p>
+<p>当前lb-service-haproxy版本默认是不开启日志收集的，需要自己手动开启，
+我们都知道Haproxy开启日志需要在其global和defaults配置中添加log的配置。
+Rancher LB是支持custom haproxy.cfg的，所以在Rancher中添加这两块配置就可以这样：<br />
+<img src="https://ww2.sinaimg.cn/large/006tKfTcjw1fbgy5m62l3j30i80ecgn1.jpg" alt="" /><br />
+Rancher会自动合并这几条配置，最终在lb-service-haproxy容器内生成的配置就是这样：</p>
 
-<h3 id="总结">总结</h3>
+<pre><code>global
+    log 127.0.0.1:8514 local0
+    log 127.0.0.1:8514 local1 notice
+    chroot /var/lib/haproxy
+    daemon
+    group haproxy
+    maxconn 4096
+.....
+.....
+defaults
+    log global
+    option tcplog
+    errorfile 400 /etc/haproxy/errors/400.http
+    errorfile 403 /etc/haproxy/errors/403.http
+.....
+.....
+</code></pre>
 
-<p>Cattle本身就是一个框架，Rancher Server内的其他服务都是通过Cattle的Proxy机制来转发请求的，
-授权机制则是由Cattle统一提供出来，其他服务自身无需单独实现授权机制。
-如果我们想对Rancher Server扩展，再增加一些其他服务，利用本文所描述的机制，就会非常方便。</p>
+<p>那么查看之前分析的日志目录文件，可以看到响应的访问日志信息：<br />
+<img src="https://ww1.sinaimg.cn/large/006tKfTcjw1fbgya5nb4vj30l309vn1r.jpg" alt="" /></p>
+
+<h3 id="注意事项">注意事项</h3>
+
+<p>日志虽然可以这样灵活的开启，但是使用时需要注意：</p>
+
+<ol>
+<li>日志文件放在容器内会不断增大，虽然有logrotate，但是扛不住日积月累。
+临时测试用本地可以，但是长远看还是发送到外部syslog服务上比较好。</li>
+<li>lb-service-haproxy的早期版本是默认就开启了访问日志，v0.4.5版本后取消了这个默认配置，
+所以你就得使用我上面所说的方式，早期的lb-service-haproxy会积存很多访问日志，
+所以尽早升级到v0.4.5以上的版本。</li>
+</ol>
             </div>
             <footer class="article-footer">
-    <a data-url="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key" data-id="33bb308a61b43cc4dc762b26fdf407ec" class="article-share-link">
+    <a data-url="http://niusmallnan.com/2017/01/06/rancher-lb-logs" data-id="f38eb2f8323cb7cf909325a80a46c199" class="article-share-link">
         <i class="fa fa-share"></i>
         分享
     </a>
     
-    <a href="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key/#disqus_thread" class="article-comment-link">
+    <a href="http://niusmallnan.com/2017/01/06/rancher-lb-logs/#disqus_thread" class="article-comment-link">
         评论
     </a>
     
@@ -470,21 +508,14 @@ go-machine-service在启动之时，很明确的读取了CATTLE相关变量：<b
         
 <nav id="article-nav">
     
-    <a href="http://niusmallnan.com/2016/12/02/rancher12-run-on-laptop" id="article-nav-older" class="article-nav-link-wrap">
+    <a href="http://niusmallnan.com/2017/01/01/rancher-server-overwhelmed-by-dead-containers" id="article-nav-older" class="article-nav-link-wrap">
       <strong class="article-nav-caption">
           老的
       </strong>
-      <div class="article-nav-title">实践指南-快速解锁Rancher v1.2</div>
+      <div class="article-nav-title">Dead容器导致Rancher Server过载的解决方案</div>
     </a>
     
 
-    
-    <a href="http://niusmallnan.com/2016/12/09/rancher-netstat-miss-port" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">
-          新的
-      </strong>
-      <div class="article-nav-title">为什么Rancher v1.2中netstat看不到开放端口</div>
-    </a>
     
 </nav>
 
@@ -497,9 +528,9 @@ go-machine-service在启动之时，很明确的读取了CATTLE相关变量：<b
             <div id="disqus_thread"></div>
 <script type="text/javascript">
     var disqus_shortname = 'niusmallnan';
-    var disqus_identifier = 'http:\/\/niusmallnan.com\/2016\/12\/05\/go-machine-service-access-api-key';
-    var disqus_title = 'go-machine-service访问Rancher API的授权机制分析';
-    var disqus_url = 'http:\/\/niusmallnan.com\/2016\/12\/05\/go-machine-service-access-api-key';
+    var disqus_identifier = 'http:\/\/niusmallnan.com\/2017\/01\/06\/rancher-lb-logs';
+    var disqus_title = 'Rancher-LB开启访问日志';
+    var disqus_url = 'http:\/\/niusmallnan.com\/2017\/01\/06\/rancher-lb-logs';
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
