@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>Coding &middot; Niusmallnan</title>
+    <title>Rancher K8s Helm使用体验 &middot; Niusmallnan</title>
     <meta name="generator" content="Hugo 0.17" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -10,10 +10,7 @@
       <meta name="description" content="Niusmallnan Blog Site">
     
     
-      <link href="http://niusmallnan.com/categories/coding/index.xml" rel="alternate" type="application/rss+xml" title="Niusmallnan" />
-      <link href="http://niusmallnan.com/categories/coding/index.xml" rel="feed" type="application/rss+xml" title="Niusmallnan" />
-    
-    <link rel="canonical" href="http://niusmallnan.com/categories/coding/"/>
+    <link rel="canonical" href="http://niusmallnan.com/2017/02/05/rancher-k8s-helm-practice"/>
     <link rel="icon" href="http://niusmallnan.com/favicon.ico">
     <link rel="apple-touch-icon" href="http://niusmallnan.com/apple-touch-icon.png"/>
     <link rel="stylesheet" href="http://niusmallnan.com/css/style.css">
@@ -23,29 +20,50 @@
     
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,400,600' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-    <meta property="og:title" content="Coding" />
-<meta property="og:description" content="" />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="http://niusmallnan.com/categories/coding/" />
+    <meta property="og:title" content="Rancher K8s Helm使用体验" />
+<meta property="og:description" content="潇潇洒洒玩一玩
+" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://niusmallnan.com/2017/02/05/rancher-k8s-helm-practice" />
 
 
-<meta property="og:updated_time" content="2016-11-28T20:53:44&#43;08:00"/>
-
-
-
-
+<meta property="og:updated_time" content="2017-02-05T14:08:38&#43;08:00"/>
 
 
 
 
 
-    
-    
-<meta itemprop="name" content="Coding">
-<meta itemprop="description" content="">
+
+
+
 
 
     
+    
+<meta itemprop="name" content="Rancher K8s Helm使用体验">
+<meta itemprop="description" content="潇潇洒洒玩一玩
+">
+
+
+<meta itemprop="dateModified" content="2017-02-05T14:08:38&#43;08:00" />
+<meta itemprop="wordCount" content="1038">
+
+
+
+<meta itemprop="keywords" content="coding,docker,helm,kubernetes,rancher,rancher-v1.2,rancheros,raspberry-pi," />
+
+    
+
+  <meta name="twitter:card" content="summary"/>
+
+
+
+<meta name="twitter:title" content="Rancher K8s Helm使用体验"/>
+<meta name="twitter:description" content="潇潇洒洒玩一玩
+"/>
+
+
+
     
 
     
@@ -58,7 +76,7 @@
 
 
 <div id="container">
-    <header id="header">
+	<header id="header">
   <div id="header-main" class="header-inner">
     <div class="outer">
       <a href="http://niusmallnan.com/" id="logo">
@@ -170,8 +188,10 @@
   </div>
 </header>
 
-    <div class="outer">
-        <aside id="profile">
+   	
+   	<div class="outer">
+   		
+	    <aside id="profile">
   <div class="inner profile-inner">
     <div class="base-info profile-block">
       <img id="avatar" src="http://niusmallnan.com/css/images/avatar.jpg">
@@ -257,234 +277,283 @@
 
 
 
-          <td><a href="http://niusmallnan.com/categories/coding/index.xml" target="_blank" title="RSS"><i class="fa fa-rss"></i></a></td>
+          <td><a href="" target="_blank" title="RSS"><i class="fa fa-rss"></i></a></td>
         </tr>
       </table>
     </div>
   </div>
 </aside>
 
-        <section id="main">
-            <section class="archives-wrap">
-                <div class="archive-category-wrap">
-                    <span class="archive-category">Coding</span>
-                </div>
-                <div class="archives">
-                    
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/11/28/rancher12-infra-architect" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="Rancher v1.2基础设施引擎整体架构" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/11/28/rancher12-infra-architect">Rancher v1.2基础设施引擎整体架构</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-11-28 20:53:44 &#43;0800 CST" itemprop="datePublished">2016-11-28</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/11/22/rpi-noip-with-docker" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="基于容器实现树莓派的动态域名绑定" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/11/22/rpi-noip-with-docker">基于容器实现树莓派的动态域名绑定</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-11-22 13:59:30 &#43;0800 CST" itemprop="datePublished">2016-11-22</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/11/07/docker-on-rpi" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="树莓派上的Docker集群管理" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/11/07/docker-on-rpi">树莓派上的Docker集群管理</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-11-07 17:36:37 &#43;0800 CST" itemprop="datePublished">2016-11-07</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="如何hack一下rancher k8s" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking">如何hack一下rancher k8s</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-10-08 16:09:24 &#43;0800 CST" itemprop="datePublished">2016-10-08</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/09/23/rancher-ha-practice" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="Rancher HA部署实践" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/09/23/rancher-ha-practice">Rancher HA部署实践</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-09-23 17:12:27 &#43;0800 CST" itemprop="datePublished">2016-09-23</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/09/19/docker-cnm-practice" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="CNM macvlan实践" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/09/19/docker-cnm-practice">CNM macvlan实践</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-09-19 17:22:00 &#43;0800 CST" itemprop="datePublished">2016-09-19</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/08/25/rancher-envent" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="Rancher event机制及其实践指南" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/08/25/rancher-envent">Rancher event机制及其实践指南</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-08-25 13:44:04 &#43;0800 CST" itemprop="datePublished">2016-08-25</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/08/15/rancher-smart-tools" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="扒一扒Rancher社区中的小工具" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/08/15/rancher-smart-tools">扒一扒Rancher社区中的小工具</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-08-15 14:16:42 &#43;0800 CST" itemprop="datePublished">2016-08-15</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="Kubernetes in Rancher1.0 架构分析" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0">Kubernetes in Rancher1.0 架构分析</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-07-28 14:49:47 &#43;0800 CST" itemprop="datePublished">2016-07-28</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                </div>
-            </section>
-            <nav id="page-nav">
+	    
 
+	    
+<section id="main">
+
+    <article id="page-undefined" class="article article-type-page" itemscope="" itemprop="blogPost">
+        <div class="article-inner">
+            
+
+            <header class="article-header">
+    <a href="http://niusmallnan.com/2017/02/05/rancher-k8s-helm-practice">
+    <h1 class="article-title" itemprop="name">
+        Rancher K8s Helm使用体验
+    </h1>
+    </a>
+    <div class="article-meta">
+        <div class="article-date">
+            <i class="fa fa-calendar"></i>
+            <time datetime="2017-02-05 14:08:38 &#43;0800 CST" itemprop="datePublished">2017-02-05</time>
+            &middot;
+            1038
+            字数
+            &middot;
+            3
+            分钟阅读
+        </div>
+
+
+        
+            
+            
+            <div class="article-category">
+                <i class="fa fa-folder"></i>
+                
+                
+                <a class="article-category-link" href="categories/coding">coding</a>
+                
+                
+            </div>
+            
+        
+
+        
+            
+            
+            <div class="article-category">
+                <i class="fa fa-tags"></i>
+                
+                
+                <a class="article-category-link" href="tags/rancher">Rancher</a>
+                &middot;
+                
+                
+                <a class="article-category-link" href="tags/kubernetes">Kubernetes</a>
+                &middot;
+                
+                
+                <a class="article-category-link" href="tags/helm">Helm</a>
+                
+                
+            </div>
+            
+        
+    </div>
+</header>
+
+            <div class="article-entry" itemprop="articleBody">
+                <p>潇潇洒洒玩一玩
+</p>
+
+<h3 id="引言">引言</h3>
+
+<p>之前的文章已经阐述了Rancher K8s中国区的使用优化，
+<a href="http://niusmallnan.com/2017/01/19/optimize-rancher-k8s-in-china/">http://niusmallnan.com/2017/01/19/optimize-rancher-k8s-in-china/</a>，
+本文则是选取一个特殊的组件Helm，深入一些体验使用过程。Helm是K8s中类似管理catalog的组件，
+在较新的Rancher K8s版本中，Helm已经默认集成可直接使用。</p>
+
+<h3 id="初始化cli环境">初始化CLI环境</h3>
+
+<p>如果已经习惯使用Rancher UI上自带的kubectl tab，那么可以跳过此步。
+大部分玩家还是更喜欢在自己的机器上使用kubectl和helm CLI来做管理的。
+在自己的机器上部署kubectl和helm命令行工具，有一个比较偷懒的方法，
+就是直接到kubectld容器拷贝出来，主要过程如下：</p>
+
+<pre><code># kubectrld容器ID为 42291346c064
+$ docker cp 42291346c064:/usr/bin/kubectl /usr/local/bin/kubectl
+$ docker cp 42291346c064:/usr/bin/helm /usr/local/bin/helm
+$ docker cp 42291346c064:/tmp/.helm ~/.helm
+</code></pre>
+
+<p>当然也不要忘记kubectl的配置文件，在Rancher UI上生成，然后拷贝到对应的本地目录上。<br />
+<img src="https://ww1.sinaimg.cn/large/006tNc79ly1fcfkc0a5yjj30dx07edgb.jpg" alt="" /></p>
+
+<h3 id="基于helm部署mysql">基于Helm部署Mysql</h3>
+
+<p>K8s官方的Charts中已经有了mysql这个应用，
+这里<a href="https://github.com/kubernetes/charts/tree/master/stable">https://github.com/kubernetes/charts/tree/master/stable</a>可以找到，
+几乎所有的Chart都需要依赖PersistentVolumeClaim提供卷，所以在一切开始之前，
+我们需要先创建一个PersistentVolume，来提供一个数据卷池。这里可以选择部署比较方便的NFS。</p>
+
+<p>选择一台主机，安装nfs-kernel-server，并做相应配置：</p>
+
+<pre><code>$ apt-get install nfs-kernel-server
+
+# 配置卷
+# 修改 /etc/exports，添加如下内容
+/nfsexports *(rw,async,no_root_squash,no_subtree_check)
+
+# 重启nfs-server
+service nfs-kernel-server restart
+</code></pre>
+
+<p>使用kubectl创建PV，文件内容如下：</p>
+
+<pre><code>apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv0003
+  annotations:
+    volume.beta.kubernetes.io/storage-class: &quot;slow&quot;
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: /nfsexports #NFS mount path
+    server: 172.31.17.169 #NFS Server IP
+</code></pre>
+
+<p>安装mysql之前，需要准备一份mysql chart的配置文件，也就是对应的values.yaml，
+其他内容<a href="https://github.com/kubernetes/charts/blob/master/stable/mysql/values.yaml">https://github.com/kubernetes/charts/blob/master/stable/mysql/values.yaml</a>基本不变，
+主要修改persistence部分，这样所依赖的PVC才能bound到对应的PV上，如下：</p>
+
+<pre><code>persistence:
+  enabled: true
+  storageClass: slow
+  accessMode: ReadWriteMany
+  size: 1Gi
+</code></pre>
+
+<p>一切准备妥当，就可以进行Mysql Chart的安装，执行过程如下：<code>helm install --name ddb -f values.yaml stable/mysql</code>。</p>
+
+<p>安装完毕后，在Rancher UI和K8s Dashboard上都可以看到。<br />
+<img src="https://ww1.sinaimg.cn/large/006tNc79ly1fcfkfju2ayj30k407q750.jpg" alt="" /><br />
+<img src="https://ww3.sinaimg.cn/large/006tNc79ly1fcfkfsuoayj30ed05zaae.jpg" alt="" /></p>
+            </div>
+            <footer class="article-footer">
+    <a data-url="http://niusmallnan.com/2017/02/05/rancher-k8s-helm-practice" data-id="572e329cddc3c879ccb11b80d2866f5d" class="article-share-link">
+        <i class="fa fa-share"></i>
+        分享
+    </a>
     
-        <a class="extend prev" rel="prev" href="http://niusmallnan.com/categories/coding/">
-            « 上一篇
-        </a>
-    
+    <a href="http://niusmallnan.com/2017/02/05/rancher-k8s-helm-practice/#disqus_thread" class="article-comment-link">
+        评论
+    </a>
     
 
+    <script>
+    (function ($) {
+        
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+    </script>
+</footer>
+
+        </div>
+
+        
+<nav id="article-nav">
+    
+    <a href="http://niusmallnan.com/2017/01/19/optimize-rancher-k8s-in-china" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">
+          老的
+      </strong>
+      <div class="article-nav-title">优化Rancher k8s中国区的使用体验</div>
+    </a>
+    
+
+    
 </nav>
 
-        </section>
-        <aside id="sidebar">
+
+    </article>
+
+    
+    <section id="comments">
+        <div id="disqus_thread">
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'niusmallnan';
+    var disqus_identifier = 'http:\/\/niusmallnan.com\/2017\/02\/05\/rancher-k8s-helm-practice';
+    var disqus_title = 'Rancher K8s Helm使用体验';
+    var disqus_url = 'http:\/\/niusmallnan.com\/2017\/02\/05\/rancher-k8s-helm-practice';
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+        </div>
+    </section>
+    
+</section>
+
+
+	    
+	    <aside id="sidebar">
     
 <div class="widget-wrap">
     <h3 class="widget-title">
@@ -764,7 +833,8 @@
     <div id="toTop" class="fa fa-angle-up"></div>
 </aside>
 
-    </div>
+	    
+	</div>
 </div>
 
 <footer id="footer">

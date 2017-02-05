@@ -7,8 +7,96 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-CN</language>
     <copyright>Niusmallnan</copyright>
-    <lastBuildDate>Thu, 19 Jan 2017 17:32:56 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 05 Feb 2017 14:08:38 +0800</lastBuildDate>
     <atom:link href="http://niusmallnan.com/post/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Rancher K8s Helm使用体验</title>
+      <link>http://niusmallnan.com/2017/02/05/rancher-k8s-helm-practice</link>
+      <pubDate>Sun, 05 Feb 2017 14:08:38 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2017/02/05/rancher-k8s-helm-practice</guid>
+      <description>&lt;p&gt;潇潇洒洒玩一玩
+&lt;/p&gt;
+
+&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
+
+&lt;p&gt;之前的文章已经阐述了Rancher K8s中国区的使用优化，
+&lt;a href=&#34;http://niusmallnan.com/2017/01/19/optimize-rancher-k8s-in-china/&#34;&gt;http://niusmallnan.com/2017/01/19/optimize-rancher-k8s-in-china/&lt;/a&gt;，
+本文则是选取一个特殊的组件Helm，深入一些体验使用过程。Helm是K8s中类似管理catalog的组件，
+在较新的Rancher K8s版本中，Helm已经默认集成可直接使用。&lt;/p&gt;
+
+&lt;h3 id=&#34;初始化cli环境&#34;&gt;初始化CLI环境&lt;/h3&gt;
+
+&lt;p&gt;如果已经习惯使用Rancher UI上自带的kubectl tab，那么可以跳过此步。
+大部分玩家还是更喜欢在自己的机器上使用kubectl和helm CLI来做管理的。
+在自己的机器上部署kubectl和helm命令行工具，有一个比较偷懒的方法，
+就是直接到kubectld容器拷贝出来，主要过程如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# kubectrld容器ID为 42291346c064
+$ docker cp 42291346c064:/usr/bin/kubectl /usr/local/bin/kubectl
+$ docker cp 42291346c064:/usr/bin/helm /usr/local/bin/helm
+$ docker cp 42291346c064:/tmp/.helm ~/.helm
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;当然也不要忘记kubectl的配置文件，在Rancher UI上生成，然后拷贝到对应的本地目录上。&lt;br /&gt;
+&lt;img src=&#34;https://ww1.sinaimg.cn/large/006tNc79ly1fcfkc0a5yjj30dx07edgb.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;基于helm部署mysql&#34;&gt;基于Helm部署Mysql&lt;/h3&gt;
+
+&lt;p&gt;K8s官方的Charts中已经有了mysql这个应用，
+这里&lt;a href=&#34;https://github.com/kubernetes/charts/tree/master/stable&#34;&gt;https://github.com/kubernetes/charts/tree/master/stable&lt;/a&gt;可以找到，
+几乎所有的Chart都需要依赖PersistentVolumeClaim提供卷，所以在一切开始之前，
+我们需要先创建一个PersistentVolume，来提供一个数据卷池。这里可以选择部署比较方便的NFS。&lt;/p&gt;
+
+&lt;p&gt;选择一台主机，安装nfs-kernel-server，并做相应配置：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ apt-get install nfs-kernel-server
+
+# 配置卷
+# 修改 /etc/exports，添加如下内容
+/nfsexports *(rw,async,no_root_squash,no_subtree_check)
+
+# 重启nfs-server
+service nfs-kernel-server restart
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;使用kubectl创建PV，文件内容如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv0003
+  annotations:
+    volume.beta.kubernetes.io/storage-class: &amp;quot;slow&amp;quot;
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: /nfsexports #NFS mount path
+    server: 172.31.17.169 #NFS Server IP
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;安装mysql之前，需要准备一份mysql chart的配置文件，也就是对应的values.yaml，
+其他内容&lt;a href=&#34;https://github.com/kubernetes/charts/blob/master/stable/mysql/values.yaml&#34;&gt;https://github.com/kubernetes/charts/blob/master/stable/mysql/values.yaml&lt;/a&gt;基本不变，
+主要修改persistence部分，这样所依赖的PVC才能bound到对应的PV上，如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;persistence:
+  enabled: true
+  storageClass: slow
+  accessMode: ReadWriteMany
+  size: 1Gi
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;一切准备妥当，就可以进行Mysql Chart的安装，执行过程如下：&lt;code&gt;helm install --name ddb -f values.yaml stable/mysql&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;安装完毕后，在Rancher UI和K8s Dashboard上都可以看到。&lt;br /&gt;
+&lt;img src=&#34;https://ww1.sinaimg.cn/large/006tNc79ly1fcfkfju2ayj30k407q750.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
+&lt;img src=&#34;https://ww3.sinaimg.cn/large/006tNc79ly1fcfkfsuoayj30ed05zaae.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;</description>
+    </item>
     
     <item>
       <title>优化Rancher k8s中国区的使用体验</title>
@@ -1203,76 +1291,6 @@ GRANT ALL ON cattle.* TO &#39;cattle&#39;@&#39;localhost&#39; IDENTIFIED BY &#39
 
 &lt;p&gt;正常运行rancher，配置并下载HA脚本，如果不想用HTTPS，
 记得把&lt;strong&gt;CATTLE_HA_HOST_REGISTRATION_URL&lt;/strong&gt;的值换成HTTP的，再执行脚本。&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>CNM macvlan实践</title>
-      <link>http://niusmallnan.com/2016/09/19/docker-cnm-practice</link>
-      <pubDate>Mon, 19 Sep 2016 17:22:00 +0800</pubDate>
-      
-      <guid>http://niusmallnan.com/2016/09/19/docker-cnm-practice</guid>
-      <description>&lt;p&gt;针对Dcoker原生网络模型CNM的一次实践记录，网络模式macvlan。&lt;/p&gt;
-
-&lt;p&gt;
-首先测试一下系统对bridge和namespace的支持情况：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# add the namespaces
-ip netns add ns1
-ip netns add ns2
-
-# create the macvlan link attaching it to the parent host eno1
-ip link add mv1 link eno1 type macvlan mode bridge
-ip link add mv2 link eno1 type macvlan mode bridge
-
-# move the new interface mv1/mv2 to the new namespace
-ip link set mv1 netns ns1
-ip link set mv2 netns ns2
-
-# bring the two interfaces up
-ip netns exec ns1 ip link set dev mv1 up
-ip netns exec ns2 ip link set dev mv2 up
-
-# set ip addresses
-ip netns exec ns1 ifconfig mv1 192.168.1.50/24 up
-ip netns exec ns2 ifconfig mv2 192.168.1.60/24 up
-
-# show interface detail
-ip netns exec ns1 ip a
-ip netns exec ns2 ip a
-
-# ping from one ns to another
-ip netns exec ns1 ping -c 4 192.168.1.60
-
-# cleanup
-ip netns del ns1
-ip netns del ns2
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;给网卡创建一个vlan设备：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# create a new subinterface tied to dot1q vlan 1045
-ip link add link eno1 name eno1.1045 type vlan id 1045
-
-# assign an IP addr
-ip a add 192.168.120.24/24 dev eno1.1045
-
-# enable the new sub-interface
-ip link set eno1.1045 up
-
-# remove sub-interface
-#ip link del eno1.1045
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;创建docker network：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;docker network create -d macvlan \
-    --subnet=192.168.225.0/24 \
-    --gateway=192.168.225.1 \
-    -o parent=eno1.1045 macvlan1045
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;创建容器，测试网络连通性：
-&lt;code&gt;docker run --net=macvlan1045 --rm --ip=192.168.225.24 -it alpine /bin/sh&lt;/code&gt;&lt;/p&gt;</description>
     </item>
     
   </channel>
