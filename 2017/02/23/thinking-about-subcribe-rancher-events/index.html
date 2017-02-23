@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>关于Subcribe Rancher Events的思考 &middot; Niusmallnan</title>
+    <title>关于Subscribe Rancher Events的思考 &middot; Niusmallnan</title>
     <meta name="generator" content="Hugo 0.17" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -20,7 +20,7 @@
     
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,400,600' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-    <meta property="og:title" content="关于Subcribe Rancher Events的思考" />
+    <meta property="og:title" content="关于Subscribe Rancher Events的思考" />
 <meta property="og:description" content="路漫漫其修远兮，吾将上下而求索
 " />
 <meta property="og:type" content="article" />
@@ -40,13 +40,13 @@
 
     
     
-<meta itemprop="name" content="关于Subcribe Rancher Events的思考">
+<meta itemprop="name" content="关于Subscribe Rancher Events的思考">
 <meta itemprop="description" content="路漫漫其修远兮，吾将上下而求索
 ">
 
 
 <meta itemprop="dateModified" content="2017-02-23T17:33:56&#43;08:00" />
-<meta itemprop="wordCount" content="1492">
+<meta itemprop="wordCount" content="1494">
 
 
 
@@ -58,7 +58,7 @@
 
 
 
-<meta name="twitter:title" content="关于Subcribe Rancher Events的思考"/>
+<meta name="twitter:title" content="关于Subscribe Rancher Events的思考"/>
 <meta name="twitter:description" content="路漫漫其修远兮，吾将上下而求索
 "/>
 
@@ -296,7 +296,7 @@
             <header class="article-header">
     <a href="http://niusmallnan.com/2017/02/23/thinking-about-subcribe-rancher-events">
     <h1 class="article-title" itemprop="name">
-        关于Subcribe Rancher Events的思考
+        关于Subscribe Rancher Events的思考
     </h1>
     </a>
     <div class="article-meta">
@@ -304,7 +304,7 @@
             <i class="fa fa-calendar"></i>
             <time datetime="2017-02-23 17:33:56 &#43;0800 CST" itemprop="datePublished">2017-02-23</time>
             &middot;
-            1492
+            1494
             字数
             &middot;
             3
@@ -373,12 +373,12 @@ Rancher不会依赖任何MQ，基于websocket的实现十分轻量级，
 
 <h3 id="subscribe-rancher-events的架构模式">Subscribe Rancher Events的架构模式</h3>
 
-<p>Rancher的体系内，很多微服务的组件都是基于Subcribe Rancher Events这种架构，举个例子来看，
+<p>Rancher的体系内，很多微服务的组件都是基于Subscribe Rancher Events这种架构，举个例子来看，
 以rancher-metadata组件为例：<br />
 <img src="https://ww4.sinaimg.cn/large/006tNc79ly1fd0kmwbmu4j30iy07wq3n.jpg" alt="" /><br />
 metadata服务可以提供当前host的元数据查询，我们可以很容器的知道env内的stack/service/container的情况，
 这些数据其实由rancher-server也就是cattle引擎生成的，那么生成之后怎么发送给各个agent呢？
-其实就是metadata进行了subcribe rancher events，当然它只监听了config.update事件，
+其实就是metadata进行了subscribe rancher events，当然它只监听了config.update事件，
 只要这个事件有通知，metadata服务便会下载新的元数据，这样就达到了不断更新元数据的目的。</p>
 
 <p>随着深入的使用Rancher，肯定会有一些伙伴需要对Rancher进行扩展，那就需要自行研发了，
@@ -514,7 +514,7 @@ Event Handler要考虑一定failover机制，这样事件收取不会长时间�
 <script type="text/javascript">
     var disqus_shortname = 'niusmallnan';
     var disqus_identifier = 'http:\/\/niusmallnan.com\/2017\/02\/23\/thinking-about-subcribe-rancher-events';
-    var disqus_title = '关于Subcribe Rancher Events的思考';
+    var disqus_title = '关于Subscribe Rancher Events的思考';
     var disqus_url = 'http:\/\/niusmallnan.com\/2017\/02\/23\/thinking-about-subcribe-rancher-events';
 
     (function() {
@@ -586,7 +586,7 @@ Event Handler要考虑一定failover机制，这样事件收取不会长时间�
                     </p>
                     
                     
-                    <p class="item-title"><a href="http://niusmallnan.com/2017/02/23/thinking-about-subcribe-rancher-events" class="title">关于Subcribe Rancher Events的思考</a></p>
+                    <p class="item-title"><a href="http://niusmallnan.com/2017/02/23/thinking-about-subcribe-rancher-events" class="title">关于Subscribe Rancher Events的思考</a></p>
                     <p class="item-date">
                         <time datetime="2017-02-23 17:33:56 &#43;0800 CST" itemprop="datePublished">2017-02-23</time>
                     </p>
