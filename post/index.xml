@@ -7,8 +7,44 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-CN</language>
     <copyright>Niusmallnan</copyright>
-    <lastBuildDate>Thu, 23 Feb 2017 17:33:56 +0800</lastBuildDate>
+    <lastBuildDate>Thu, 23 Feb 2017 18:58:19 +0800</lastBuildDate>
     <atom:link href="http://niusmallnan.com/post/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Rancher如何按计算资源调度</title>
+      <link>http://niusmallnan.com/2017/02/23/rancher-scheduler-based-on-resource</link>
+      <pubDate>Thu, 23 Feb 2017 18:58:19 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2017/02/23/rancher-scheduler-based-on-resource</guid>
+      <description>&lt;p&gt;非常简单的说明一下，Rancher如何做按计算资源调度。
+&lt;/p&gt;
+
+&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
+
+&lt;p&gt;按计算资源调度基本上是各大编排引擎的标配，Rancher在v1.2版本后也推出了这个功能，
+很多朋友并不知道，主要是因为当前的实现还并不是那么智能，故不才欲写下此文以助视听。&lt;/p&gt;
+
+&lt;h3 id=&#34;实现机制&#34;&gt;实现机制&lt;/h3&gt;
+
+&lt;p&gt;Rancher的实现比较简单，其主要是通过Infra services中的scheduler服务来实现，整体的逻辑架构如下：&lt;br /&gt;
+&lt;img src=&#34;https://ww3.sinaimg.cn/large/006tNc79ly1fd0lxplni2j30m90a7q49.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
+scheduler会订阅Rancher Events，主要是scheduler相关事件，当有调度需求时候，scheduler就会收到消息，
+通过计算将合适的调度目标返回给cattle。比如说现在支持memory和cpu为基准，
+那么scheduler会不断根据metadata的数据变化来计算资源的使用量，最后可根据资源剩余量为调度目标排序，
+这样就可以完成按计算资源调度的目标。&lt;/p&gt;
+
+&lt;p&gt;之前有说，Rancher的实现并不智能，这在于在计算资源使用量的时候，Rancher并不是通过一套复杂数据采集机制来计算，
+而是通过用户在创建service的时候标注reservation的方式，这个地方很多朋友并没有注意到：&lt;br /&gt;
+&lt;img src=&#34;https://ww4.sinaimg.cn/large/006tNc79ly1fd0m3wzn0dj30lf08f3ze.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;除此之外，在每个节点的资源总量上也是可配置的，我们完全可以进行一个整体预留的设置，比如：&lt;br /&gt;
+&lt;img src=&#34;https://ww4.sinaimg.cn/large/006tNc79ly1fd0m5p3spuj30f90amaao.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;总结&#34;&gt;总结&lt;/h3&gt;
+
+&lt;p&gt;这个实现看似简单，其实这是提供了一个很好的扩展能力。如果我们有自己的监控采集体系，
+完全可以在scheduler的时候调用我们自身监控接口来计算资源，这样就能达到我们所认可的“智能”了。&lt;/p&gt;</description>
+    </item>
     
     <item>
       <title>关于Subcribe Rancher Events的思考</title>
@@ -1222,66 +1258,6 @@ $ docker service ps app
 &lt;p&gt;最后，我要特别感谢RancherOS的开发者们，他们帮助我解决了很多问题；
 另外还要特别感谢MBH树莓派社区的伙伴，提供了硬件设备，支持我的技术探索，
 并提供了很多帮助。&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>如何hack一下rancher k8s</title>
-      <link>http://niusmallnan.com/2016/10/08/rancher-k8s-hacking</link>
-      <pubDate>Sat, 08 Oct 2016 16:09:24 +0800</pubDate>
-      
-      <guid>http://niusmallnan.com/2016/10/08/rancher-k8s-hacking</guid>
-      <description>&lt;p&gt;Rancher可以轻松实现Kubernetes的部署，尽管默认的部署已经完全可用，
-但是如果我们想修改部署的K8s版本，这时应当如何应对？
-&lt;/p&gt;
-
-&lt;h3 id=&#34;原理分析与执行&#34;&gt;原理分析与执行&lt;/h3&gt;
-
-&lt;p&gt;在Rancher中，由于K8s是基于Cattle引擎来部署，所以在K8s在部署完成之后，
-我们可以通过Link Graph来很清晰的看到整体的部署情况。&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/006tNc79jw1fa0ybyprq4j30mi07tdh0.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;既然基于Cattle引擎部署，也就是说需要两个compose文件，
-k8s引擎的compose文件放在&lt;a href=&#34;https://github.com/rancher/rancher-catalog/tree/master/templates&#34;&gt;https://github.com/rancher/rancher-catalog/tree/master/templates&lt;/a&gt;下面，
-这里面有两个相关目录kubernetes与k8s，k8s是Rancher1.2开始使用的，
-而kubernetes则是Rancher1.2之后开始使用的。&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/006tNc79jw1fa0ydzd1dgj30gt07qmyg.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;为了我们可以自己hack一下rancher k8s的部署，我们可以在github上fork一下rancher-catalog，
-同时还需要修改一下Rancher中默认的catalog的repo地址，
-这个可以在&lt;a href=&#34;http://rancher-server/v1/settings&#34;&gt;http://rancher-server/v1/settings&lt;/a&gt;页面下，
-寻找名为 catalog.url 的配置项，然后进入编辑修改。比如我这里将library库的地址换成了自己的：
-&lt;a href=&#34;https://github.com/niusmallnan/rancher-catalog.git&#34;&gt;https://github.com/niusmallnan/rancher-catalog.git&lt;/a&gt;&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tNc79jw1fa0yff7sbzj30h206imyy.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;此时，我们就可以修改了，找一个比较实用的场景。我们都知道k8s的pod都会依赖一个基础镜像，
-这个镜像默认的地址是被GFW挡在墙外了，一般我们会把kubelet的启动参数调整一下，
-以便重新指定这个镜像地址，比如指定到国内的镜像源上。&lt;br /&gt;
-&lt;strong&gt;&amp;ndash;pod-infra-container-image=index.tenxcloud.com/google_containers/pause:2.0&lt;/strong&gt;。&lt;/p&gt;
-
-&lt;p&gt;如果我们要让rancher k8s部署时自动加上该参数，
-可以直接修改私有rancher-catalog中的k8s compose文件。&lt;br /&gt;
-&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tNc79jw1fa0ygscal6j30gv0asjtp.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;修改之后稍等片刻（主要是为了让rancher-server更新到新的catalog compose文件），
-添加一个k8s env并在其中添加host，k8s引擎就开始自动部署，
-部署完毕后，我们可以看到Kubernetes Stack的compose文件，
-已经有了&amp;ndash;pod-infra-container-image这个启动参数。&lt;br /&gt;
-&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tNc79jw1fa0yhg3alsj30gn09rtav.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-如此我们在添加pod时再也不用手动导入pod基础镜像了。&lt;/p&gt;
-
-&lt;p&gt;在compose file中，部署k8s的基础镜像是rancher/k8s，这个镜像的Dockerfile在rancher维护的k8s分支中，
-如在rancher-k8s 1.2.4分支中可以看到：&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tNc79jw1fa0yi5rmplj30e007ogmr.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;这样如果想对rancher-k8s发行版进行深度定制，就可以重新build相关镜像，通过rancher-compose来部署自己的发行版。&lt;/p&gt;
-
-&lt;h3 id=&#34;总结&#34;&gt;总结&lt;/h3&gt;
-
-&lt;p&gt;本文写于Rancher1.2行将发布之际，1.2版本是非常重大的更新，Rancher会支持部署原生的K8s版本，
-同时CNI网络和Cloud Provider等都会以插件方式，用户可以自己定义，并且在UI上都会有很好的体现。
-只要了解Rancher部署K8s的原理和过程，我们就可以定制非常适合自身使用的k8s，
-通过Rancher来部署自定义的k8s，我们就可以很容易的扩展了k8s不擅长的UI、Catalog、
-用户管理、审计日志维护等功能，这也是本文的目的。&lt;/p&gt;</description>
     </item>
     
   </channel>
