@@ -7,8 +7,76 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-CN</language>
     <copyright>Niusmallnan</copyright>
-    <lastBuildDate>Sun, 05 Feb 2017 14:08:38 +0800</lastBuildDate>
+    <lastBuildDate>Thu, 23 Feb 2017 17:33:56 +0800</lastBuildDate>
     <atom:link href="http://niusmallnan.com/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>关于Subcribe Rancher Events的思考</title>
+      <link>http://niusmallnan.com/2017/02/23/thinking-about-subcribe-rancher-events</link>
+      <pubDate>Thu, 23 Feb 2017 17:33:56 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2017/02/23/thinking-about-subcribe-rancher-events</guid>
+      <description>&lt;p&gt;路漫漫其修远兮，吾将上下而求索
+&lt;/p&gt;
+
+&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
+
+&lt;p&gt;几乎每个大型的分布式的集群软件，都离不开一样东西，就是所谓的message bus（消息总线），
+它就如同人体的血管一样，连通着各个组件，相互协调，一起工作。
+与很多同类软件不同的是，Rancher使用的基于websocket协议实现的消息总线，
+Rancher不会依赖任何MQ，基于websocket的实现十分轻量级，
+同时在各种语言库的支持上，也毫无压力，毕竟websocket是HTTP的标准规范之一。&lt;/p&gt;
+
+&lt;h3 id=&#34;初识rancher-events&#34;&gt;初识Rancher Events&lt;/h3&gt;
+
+&lt;p&gt;基于websocket的消息总线可以很好的与前端兼容，让消息的传递不再是后端的专利。
+在Rancher UI上，很容易就能捕获到rancher events，比如：&lt;br /&gt;
+&lt;img src=&#34;https://ww4.sinaimg.cn/large/006tNc79ly1fd0k5tuin9j30it07at9x.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
+这里面监听的事件名称是resource.change，这个resource.change在前端UI上有很大的用处，
+其实我们都知道，很多POST形式的create请求并不是同步返回结果的，因为调度引擎需要处理，
+这个等待的过程中，当然不能前端一直wait，所以做法都是发起create后直接返回HTTP 202，
+转入后台执行后，Rancher的后端会把创建的执行过程中间状态不断发送给消息总线，
+那么前端通过监听resource.change就会获得这些中间状态，这样在UI上就可以给用户一个很好的反馈体验。&lt;/p&gt;
+
+&lt;p&gt;当然Rancher Events并不是只有resource.change，比如在Iaas Events集合中就有如下这些：&lt;br /&gt;
+&lt;img src=&#34;https://ww1.sinaimg.cn/large/006tNc79ly1fd0kccvpwxj30gk0ac40k.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;除了Events的事件定义，当然还有如何去subscribe 这些events，这部分内容我之前的文章中有所涉猎，
+便不赘言。&lt;a href=&#34;http://niusmallnan.com/2016/08/25/rancher-envent/&#34;&gt;http://niusmallnan.com/2016/08/25/rancher-envent/&lt;/a&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;subscribe-rancher-events的架构模式&#34;&gt;Subscribe Rancher Events的架构模式&lt;/h3&gt;
+
+&lt;p&gt;Rancher的体系内，很多微服务的组件都是基于Subcribe Rancher Events这种架构，举个例子来看，
+以rancher-metadata组件为例：&lt;br /&gt;
+&lt;img src=&#34;https://ww4.sinaimg.cn/large/006tNc79ly1fd0kmwbmu4j30iy07wq3n.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
+metadata服务可以提供当前host的元数据查询，我们可以很容器的知道env内的stack/service/container的情况，
+这些数据其实由rancher-server也就是cattle引擎生成的，那么生成之后怎么发送给各个agent呢？
+其实就是metadata进行了subcribe rancher events，当然它只监听了config.update事件，
+只要这个事件有通知，metadata服务便会下载新的元数据，这样就达到了不断更新元数据的目的。&lt;/p&gt;
+
+&lt;p&gt;随着深入的使用Rancher，肯定会有一些伙伴需要对Rancher进行扩展，那就需要自行研发了，
+毕竟常见的方式就是监听一些事件做一些内部处理逻辑，并在DB中存入一些数据，
+同时暴露API服务，架构如下：&lt;br /&gt;
+&lt;img src=&#34;https://ww3.sinaimg.cn/large/006tNc79ly1fd0kt6rttwj309o072jrn.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;如果需要做HA，可能需要scale多个这样的服务，那么架构就变成这样：&lt;br /&gt;
+&lt;img src=&#34;https://ww2.sinaimg.cn/large/006tNc79ly1fd0ku7zaafj30g30avdgq.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
+这里其实会有一个问题，如果你监听了一些广播事件，那么实际上每个实例都会收到同样的事件，
+那么你的处理逻辑就要注意了，尤其是在处理向DB中写数据时，一定要考虑到这样的情况。&lt;/p&gt;
+
+&lt;p&gt;比如，可以只有其中一个实例来监听广播事件，这样不会导致事件重复收取：&lt;br /&gt;
+&lt;img src=&#34;https://ww4.sinaimg.cn/large/006tNc79ly1fd0kxdd6vmj30g30b1dgm.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
+Event Handler要考虑一定failover机制，这样事件收取不会长时间中断。&lt;/p&gt;
+
+&lt;p&gt;Rancher Events有一些非广播事件，那么就需要在subscribe的时候指定一些特殊参数，
+这样事件就会只发送给注册方，不会发送给每个节点，比如：&lt;br /&gt;
+&lt;img src=&#34;https://ww3.sinaimg.cn/large/006tNc79ly1fd0kztt3k6j30fx0audgr.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;总结&#34;&gt;总结&lt;/h3&gt;
+
+&lt;p&gt;此文算是这段时间做Rancher服务扩展的心得，深度参与一个开源软件最终肯定会希望去改动它扩展它。
+这也是客观需求所致，开源软件可以拿来即用，但是真正可用实用，必须加以改造，适应自身需求。&lt;/p&gt;</description>
+    </item>
     
     <item>
       <title>Rancher K8s Helm使用体验</title>
@@ -1178,66 +1246,6 @@ $ docker service ps app
 &lt;p&gt;最后，我要特别感谢RancherOS的开发者们，他们帮助我解决了很多问题；
 另外还要特别感谢MBH树莓派社区的伙伴，提供了硬件设备，支持我的技术探索，
 并提供了很多帮助。&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>如何hack一下rancher k8s</title>
-      <link>http://niusmallnan.com/2016/10/08/rancher-k8s-hacking</link>
-      <pubDate>Sat, 08 Oct 2016 16:09:24 +0800</pubDate>
-      
-      <guid>http://niusmallnan.com/2016/10/08/rancher-k8s-hacking</guid>
-      <description>&lt;p&gt;Rancher可以轻松实现Kubernetes的部署，尽管默认的部署已经完全可用，
-但是如果我们想修改部署的K8s版本，这时应当如何应对？
-&lt;/p&gt;
-
-&lt;h3 id=&#34;原理分析与执行&#34;&gt;原理分析与执行&lt;/h3&gt;
-
-&lt;p&gt;在Rancher中，由于K8s是基于Cattle引擎来部署，所以在K8s在部署完成之后，
-我们可以通过Link Graph来很清晰的看到整体的部署情况。&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/006tNc79jw1fa0ybyprq4j30mi07tdh0.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;既然基于Cattle引擎部署，也就是说需要两个compose文件，
-k8s引擎的compose文件放在&lt;a href=&#34;https://github.com/rancher/rancher-catalog/tree/master/templates&#34;&gt;https://github.com/rancher/rancher-catalog/tree/master/templates&lt;/a&gt;下面，
-这里面有两个相关目录kubernetes与k8s，k8s是Rancher1.2开始使用的，
-而kubernetes则是Rancher1.2之后开始使用的。&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/006tNc79jw1fa0ydzd1dgj30gt07qmyg.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;为了我们可以自己hack一下rancher k8s的部署，我们可以在github上fork一下rancher-catalog，
-同时还需要修改一下Rancher中默认的catalog的repo地址，
-这个可以在&lt;a href=&#34;http://rancher-server/v1/settings&#34;&gt;http://rancher-server/v1/settings&lt;/a&gt;页面下，
-寻找名为 catalog.url 的配置项，然后进入编辑修改。比如我这里将library库的地址换成了自己的：
-&lt;a href=&#34;https://github.com/niusmallnan/rancher-catalog.git&#34;&gt;https://github.com/niusmallnan/rancher-catalog.git&lt;/a&gt;&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tNc79jw1fa0yff7sbzj30h206imyy.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;此时，我们就可以修改了，找一个比较实用的场景。我们都知道k8s的pod都会依赖一个基础镜像，
-这个镜像默认的地址是被GFW挡在墙外了，一般我们会把kubelet的启动参数调整一下，
-以便重新指定这个镜像地址，比如指定到国内的镜像源上。&lt;br /&gt;
-&lt;strong&gt;&amp;ndash;pod-infra-container-image=index.tenxcloud.com/google_containers/pause:2.0&lt;/strong&gt;。&lt;/p&gt;
-
-&lt;p&gt;如果我们要让rancher k8s部署时自动加上该参数，
-可以直接修改私有rancher-catalog中的k8s compose文件。&lt;br /&gt;
-&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tNc79jw1fa0ygscal6j30gv0asjtp.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;修改之后稍等片刻（主要是为了让rancher-server更新到新的catalog compose文件），
-添加一个k8s env并在其中添加host，k8s引擎就开始自动部署，
-部署完毕后，我们可以看到Kubernetes Stack的compose文件，
-已经有了&amp;ndash;pod-infra-container-image这个启动参数。&lt;br /&gt;
-&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tNc79jw1fa0yhg3alsj30gn09rtav.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-如此我们在添加pod时再也不用手动导入pod基础镜像了。&lt;/p&gt;
-
-&lt;p&gt;在compose file中，部署k8s的基础镜像是rancher/k8s，这个镜像的Dockerfile在rancher维护的k8s分支中，
-如在rancher-k8s 1.2.4分支中可以看到：&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tNc79jw1fa0yi5rmplj30e007ogmr.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;这样如果想对rancher-k8s发行版进行深度定制，就可以重新build相关镜像，通过rancher-compose来部署自己的发行版。&lt;/p&gt;
-
-&lt;h3 id=&#34;总结&#34;&gt;总结&lt;/h3&gt;
-
-&lt;p&gt;本文写于Rancher1.2行将发布之际，1.2版本是非常重大的更新，Rancher会支持部署原生的K8s版本，
-同时CNI网络和Cloud Provider等都会以插件方式，用户可以自己定义，并且在UI上都会有很好的体现。
-只要了解Rancher部署K8s的原理和过程，我们就可以定制非常适合自身使用的k8s，
-通过Rancher来部署自定义的k8s，我们就可以很容易的扩展了k8s不擅长的UI、Catalog、
-用户管理、审计日志维护等功能，这也是本文的目的。&lt;/p&gt;</description>
     </item>
     
   </channel>
