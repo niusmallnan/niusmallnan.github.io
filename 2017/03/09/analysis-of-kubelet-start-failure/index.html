@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>Rancher v1.2 Swarmkit的实现 &middot; Niusmallnan</title>
+    <title>Kubelet无法访问rancher-metadata问题分析 &middot; Niusmallnan</title>
     <meta name="generator" content="Hugo 0.17" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -10,7 +10,7 @@
       <meta name="description" content="Niusmallnan Blog Site">
     
     
-    <link rel="canonical" href="http://niusmallnan.com/2016/12/14/rancher12-swarmkit-architect"/>
+    <link rel="canonical" href="http://niusmallnan.com/2017/03/09/analysis-of-kubelet-start-failure"/>
     <link rel="icon" href="http://niusmallnan.com/favicon.ico">
     <link rel="apple-touch-icon" href="http://niusmallnan.com/apple-touch-icon.png"/>
     <link rel="stylesheet" href="http://niusmallnan.com/css/style.css">
@@ -20,14 +20,14 @@
     
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,400,600' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-    <meta property="og:title" content="Rancher v1.2 Swarmkit的实现" />
-<meta property="og:description" content="Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
+    <meta property="og:title" content="Kubelet无法访问rancher-metadata问题分析" />
+<meta property="og:description" content="拯救一脸懵逼
 " />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="http://niusmallnan.com/2016/12/14/rancher12-swarmkit-architect" />
+<meta property="og:url" content="http://niusmallnan.com/2017/03/09/analysis-of-kubelet-start-failure" />
 
 
-<meta property="og:updated_time" content="2016-12-14T21:53:27&#43;08:00"/>
+<meta property="og:updated_time" content="2017-03-09T15:45:41&#43;08:00"/>
 
 
 
@@ -40,13 +40,13 @@
 
     
     
-<meta itemprop="name" content="Rancher v1.2 Swarmkit的实现">
-<meta itemprop="description" content="Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
+<meta itemprop="name" content="Kubelet无法访问rancher-metadata问题分析">
+<meta itemprop="description" content="拯救一脸懵逼
 ">
 
 
-<meta itemprop="dateModified" content="2016-12-14T21:53:27&#43;08:00" />
-<meta itemprop="wordCount" content="1683">
+<meta itemprop="dateModified" content="2017-03-09T15:45:41&#43;08:00" />
+<meta itemprop="wordCount" content="1687">
 
 
 
@@ -58,8 +58,8 @@
 
 
 
-<meta name="twitter:title" content="Rancher v1.2 Swarmkit的实现"/>
-<meta name="twitter:description" content="Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
+<meta name="twitter:title" content="Kubelet无法访问rancher-metadata问题分析"/>
+<meta name="twitter:description" content="拯救一脸懵逼
 "/>
 
 
@@ -294,17 +294,17 @@
             
 
             <header class="article-header">
-    <a href="http://niusmallnan.com/2016/12/14/rancher12-swarmkit-architect">
+    <a href="http://niusmallnan.com/2017/03/09/analysis-of-kubelet-start-failure">
     <h1 class="article-title" itemprop="name">
-        Rancher v1.2 Swarmkit的实现
+        Kubelet无法访问rancher-metadata问题分析
     </h1>
     </a>
     <div class="article-meta">
         <div class="article-date">
             <i class="fa fa-calendar"></i>
-            <time datetime="2016-12-14 21:53:27 &#43;0800 CST" itemprop="datePublished">2016-12-14</time>
+            <time datetime="2017-03-09 15:45:41 &#43;0800 CST" itemprop="datePublished">2017-03-09</time>
             &middot;
-            1683
+            1687
             字数
             &middot;
             4
@@ -337,7 +337,7 @@
                 &middot;
                 
                 
-                <a class="article-category-link" href="tags/rancher-v1.2">Rancher v1.2</a>
+                <a class="article-category-link" href="tags/kubernetes">Kubernetes</a>
                 
                 
             </div>
@@ -347,70 +347,79 @@
 </header>
 
             <div class="article-entry" itemprop="articleBody">
-                <p>Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
+                <p>拯救一脸懵逼
 </p>
 
 <h3 id="引言">引言</h3>
 
-<p>Rancher v1.2更新了之前对Swarm的支持，与Docker一样抛弃了就有的Swarm，
-选择支持Swarmkit。Swarmkit引擎非常轻量级，由于其内置早Docker Engine中，
-所以部署起来会非常方便。虽然目前Swarmkit引擎还在不断发展，而且bug也很多，
-但是它也有其擅长的使用场景，比如简单的CI/CD场景，它会非常灵活简洁。
-本文将带大家体验一下，Rancher v1.2对Swarmkit的支持。</p>
+<p>Rancher能够支持Kubernetes，可以快速几乎无障碍的拉起一套K8s环境，这对刚入门K8s的小白来说简直是一大利器。
+当然由于系统特性五花八门，系统内置软件也相互影响，所以有时候伙伴们会碰到比较难缠的问题。
+本文就分析一下关于kubelet无法访问rancher-metadata问题，当然这个问题并不是必现，
+这里要感谢一位Rancher社区网友的帮助，他的环境中发现了这个问题，并慷慨得将访问权限共享给了我。</p>
 
-<h3 id="部署与使用">部署与使用</h3>
+<h3 id="问题现象">问题现象</h3>
 
-<p>部署方面秉承Rancher一贯的原则，非常简单，只需要在创建Env时选择Sawrm即可。<br />
-<img src="http://ww3.sinaimg.cn/large/006tKfTcjw1favae6x30jj30nn09odgr.jpg" alt="" /><br />
-Env创建完毕后，会看到多个Infra Service需要创建，这时候和其他引擎一样，
-我们需要向Env中添加Host。我们知道Swarm的node有两种：Manager和Worker。
-Rancher创建的Swarm集群默认是3个Manager，多个Manager内有一个是Leader，
-另外两个备用。这样单个Host出问题，新的Leader会很快选举出来，保证集群的稳定性。
-比如我添加了两个Host，默认是先添加Manager角色，
-所以2个Host都会以Manager方式添加，如下图所示：<br />
-<img src="http://ww1.sinaimg.cn/large/006tKfTcjw1favaeq4hrhj30hc074aav.jpg" alt="" /><br />
-进入其中一台Host内，查看swarm集群状态，可以看到一个是Leader，另外一个Reachable做备用。<br />
-<img src="http://ww1.sinaimg.cn/large/006tKfTcjw1favaey8g8qj30fc01wq3g.jpg" alt="" /><br />
-尝试创建一个简单的程序，查看与UI上的联动效果，如图所示：<br />
-<img src="http://ww3.sinaimg.cn/large/006tKfTcjw1favaf8yytqj30eb05vdgv.jpg" alt="" /><br />
-如果使用Swarmkit的自定义网络方式，情况如何？虽然在UI上显示无IP，
-但是进入容器内部可以看到overlay对应的网卡，如图所示：
-<img src="http://ww3.sinaimg.cn/large/006tKfTcjw1favafscwv8j30ii07habk.jpg" alt="" /></p>
+<p>使用Rancher部署K8s后，发现一切服务状态均正常，这时候打开K8s dashboard却无法访问，
+细心得查看会发现，dashboard服务并没有部署起来，这时下意识的行为是查看kubelet的日志，
+此时会发现一个异常：<br />
+<img src="https://ww1.sinaimg.cn/large/006tNbRwly1fdgnj5h1bjj30g503omxw.jpg" alt="" /><br />
+你会发现kubelet容器内部一直无法访问rancher-metadata，查看rancher-k8s-package源码，
+kubelet服务启动之前需要通过访问rancher-metadata做一些初始化动作，由于访问不了，
+便一直处于sleep状态，也就是出现了上面提到的那些异常日志的现象：<br />
+<img src="https://ww2.sinaimg.cn/large/006tNbRwly1fdgnn1tbzzj30k2071q41.jpg" alt="" /></p>
 
-<h3 id="实现原理">实现原理</h3>
+<p>同样，在github上也能看到类似的issue：<a href="https://github.com/rancher/rancher/issues/7160">https://github.com/rancher/rancher/issues/7160</a></p>
 
-<p>那么Rancher是如何来完成Swarmkit的部署和联动呢？Rancher中Swarmkit也是基于Cattle来部署的，
-根据之前的文章分析，我们可以知道Rancher的基础设施编排的定义都是通过catalog中的infra-templates实现的，
-Swarmkit比较特殊它是在community-catalog中定义的，如果一直在rancher-catalog中寻找肯定找不到。
-compose文件中定义了一个service swarmkit-mon，如图所示：<br />
-<img src="http://ww3.sinaimg.cn/large/006tKfTcjw1favaggy2snj30iz0at40g.jpg" alt="" /><br />
-如果探究原理，我们就需要知道swarmkit-mon对应的镜像是如何定义的。
-rancher/swarmkit这个dockerfile并没有在<a href="https://github.com/rancher">https://github.com/rancher</a>下面的项目中，
-这个需要顺藤摸瓜，找到该Dockerfile的维护者（其实也是Rancher的一名员工），
-最终地址是<a href="https://github.com/LLParse/swarmkit-catalog">https://github.com/LLParse/swarmkit-catalog</a>。如图所示：<br />
-<img src="http://ww1.sinaimg.cn/large/006tKfTcjw1favahpg2pzj30kc0aiq57.jpg" alt="" /><br />
-swarmkit-mon中内置了docker，并映射了Host上的docker.sock，
-这样可以在swarmkit-mon容器中控制docker创建swarmkit集群。swarmkit-mon的实现比较简单，
-主要包括两个shell脚本：run.sh负责swarmkit集群的管理和Rancher的联动，
-agent节点信息需要通过rancher-metadata读取，设置Host Label则直接调用Rancher API；
-health.sh负责监控swarmkit节点的状态（通过与docker.sock通信读取Swarm.LocalNodeState的状态），
-并与giddyup协作暴露健康检查端口，这样可以利用Rancher Cattle的healthcheck来保证swarmkit-mon服务的高可用性，
-每个Host的swarmkit-mon出问题时可以进行自动重建恢复。原理如图：<br />
-<img src="http://ww4.sinaimg.cn/large/006tKfTcjw1favaidbyfgj30bh08qmyh.jpg" alt="" /></p>
+<h3 id="排查分析">排查分析</h3>
+
+<p>进入kubelet容器一探究竟，分别用ping和dig测试对rancher-metadata访问情况如下：<br />
+<img src="https://ww1.sinaimg.cn/large/006tNbRwly1fdgnq66xs1j30ey0abmyh.jpg" alt="" /><br />
+dig明显可以解析，但是ping无法解析，因此基本排除了容器内dns nameserver或者网络链路情况的问题。</p>
+
+<p>既然dig没有问题，ping有问题，那么我们就直接采取使用strace（<code>strace ping rancher-metadata -c 1</code>）来调试，
+这样可以打印系统内部调用的情况，可以更深层次找到问题根源：<br />
+<img src="https://ww1.sinaimg.cn/large/006tNbRwly1fdgnsufow0j30k7090tb2.jpg" alt="" /></p>
+
+<p>之前提到这个问题并不是必现的，所以我们找一个正常的环境，同样用strace调试，如下：<br />
+<img src="https://ww2.sinaimg.cn/large/006tNbRwly1fdgnu63kl2j30m0077dhj.jpg" alt="" /></p>
+
+<p>对这两张图，其实已经能够很明显的看出区别，有问题的kubelet在解析rancher-metadata之前，
+向nscd请求的解析结果，nscd返回了unkown host，所以就没有进行dns解析。
+而正常的kubelet节点并没有找到nscd.socket，而后直接请求dns进行解析rancher-metadata地址。</p>
+
+<p>经过以上的分析，基本上断定问题出在nscd上，那么为什么同样版本的rancher-k8s，
+一个有nscd socket，而另一个却没有，仔细看一下kubelet的compose定义：<br />
+<img src="https://ww4.sinaimg.cn/large/006tNbRwly1fdgny3wpihj30c5087wf5.jpg" alt="" /><br />
+kubelet启动时候映射了主机目录/var/run，那么基本可以得知nscd来自于系统。
+检查一下有问题的kubelet节点的系统，果然会发现安装了nscd服务（服务名为unscd）。</p>
+
+<p>用比较暴力的方案证明一下分析过程，直接删除nscd socket文件，这时候你会发现kubelet服务正常启动了，
+rancher-metadata也可以访问了。</p>
+
+<p>回过头来思考一下原理，为什么ping/curl这种会先去nscd中寻找解析结果呢，而dig/nslookup则不受影响。
+ping/curl这种在解析地址前都会先读取/etc/nsswitch.conf，这是由于其底层均引用了glibc，
+由nsswitch调度，最终指引ping/curl先去找nscd服务。nscd服务是一个name services cache服务，
+很多解析结果他会缓存，而我们知道这个nscd是运行在Host上的，Host上是不能直接访问rancher-metadata这个服务名，
+所以kubelet容器中就无法访问rancher-metadata。</p>
+
+<h3 id="其他解决方案">其他解决方案</h3>
+
+<p>其实我们也未必要如此暴力删除nscd，nscd也有一些配置，我们可以修改一下以避免这种情况，
+可以disable hosts cache，这样nscd中便不会有相应内容的缓存，所以解析rancher-metadata并不会出现unknown host，
+而是继续向dns nameserver申请解析地址，这样也不会有问题。<br />
+<img src="https://ww4.sinaimg.cn/large/006tNbRwly1fdgo48mxf8j30ej06lab0.jpg" alt="" /></p>
 
 <h3 id="总结">总结</h3>
 
-<p>目前来看，由于Kubernetes的发展的确迅猛，所以Rancher的更多精力都放在K8s上。
-针对Swarmkit的支持显得略显单薄，但是Swarmkit本身的问题也很多，目前也难以应对复杂场景，
-所以目前的支持力度应该是足够了。后续对docker1.13版本的Swarmkit支持也在持续迭代中。</p>
+<p>遇到问题不能慌，关键是要沉得住气，很多看似非常复杂的问题，其实往往都是一个小配置引发的血案。</p>
             </div>
             <footer class="article-footer">
-    <a data-url="http://niusmallnan.com/2016/12/14/rancher12-swarmkit-architect" data-id="a1bf923184ff7d4ca4444bcb2a9a9705" class="article-share-link">
+    <a data-url="http://niusmallnan.com/2017/03/09/analysis-of-kubelet-start-failure" data-id="eb470a3bb5c916e4f791f24557f8e7dd" class="article-share-link">
         <i class="fa fa-share"></i>
         分享
     </a>
     
-    <a href="http://niusmallnan.com/2016/12/14/rancher12-swarmkit-architect/#disqus_thread" class="article-comment-link">
+    <a href="http://niusmallnan.com/2017/03/09/analysis-of-kubelet-start-failure/#disqus_thread" class="article-comment-link">
         评论
     </a>
     
@@ -486,21 +495,14 @@ health.sh负责监控swarmkit节点的状态（通过与docker.sock通信读取S
         
 <nav id="article-nav">
     
-    <a href="http://niusmallnan.com/2016/12/09/rancher-netstat-miss-port" id="article-nav-older" class="article-nav-link-wrap">
+    <a href="http://niusmallnan.com/2017/02/23/rancher-scheduler-based-on-resource" id="article-nav-older" class="article-nav-link-wrap">
       <strong class="article-nav-caption">
           老的
       </strong>
-      <div class="article-nav-title">为什么Rancher v1.2中netstat看不到开放端口</div>
+      <div class="article-nav-title">Rancher如何按计算资源调度</div>
     </a>
     
 
-    
-    <a href="http://niusmallnan.com/2016/12/27/docker-device-resource-busy" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">
-          新的
-      </strong>
-      <div class="article-nav-title">Docker中的device or resource busy问题分析</div>
-    </a>
     
 </nav>
 
@@ -513,9 +515,9 @@ health.sh负责监控swarmkit节点的状态（通过与docker.sock通信读取S
             <div id="disqus_thread"></div>
 <script type="text/javascript">
     var disqus_shortname = 'niusmallnan';
-    var disqus_identifier = 'http:\/\/niusmallnan.com\/2016\/12\/14\/rancher12-swarmkit-architect';
-    var disqus_title = 'Rancher v1.2 Swarmkit的实现';
-    var disqus_url = 'http:\/\/niusmallnan.com\/2016\/12\/14\/rancher12-swarmkit-architect';
+    var disqus_identifier = 'http:\/\/niusmallnan.com\/2017\/03\/09\/analysis-of-kubelet-start-failure';
+    var disqus_title = 'Kubelet无法访问rancher-metadata问题分析';
+    var disqus_url = 'http:\/\/niusmallnan.com\/2017\/03\/09\/analysis-of-kubelet-start-failure';
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
