@@ -129,7 +129,7 @@
               <input type="search" name="q" class="search-form-input" placeholder="搜索">
               <button type="submit" class="search-form-submit">
               </button>
-              <input type="hidden" name="q" value="site:http://niusmallnan.com/">
+              <input type="hidden" name="sitesearch" value="http://niusmallnan.com/" />
          </form>
         </div>
     </div>
@@ -176,7 +176,7 @@
           <td>
           <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form">
           <input type="search" name="q" class="search-form-input" placeholder="Search">
-          <input type="hidden" name="q" value="site:http://niusmallnan.com/">
+          <input type="hidden" name="sitesearch" value="http://niusmallnan.com/" />
           </form>
         </td>
       </tr>
@@ -274,7 +274,7 @@
 
 
 
-          <td><a href="" target="_blank" title="RSS"><i class="fa fa-rss"></i></a></td>
+          <td><a href="http://niusmallnan.com/index.xml" target="_blank" title="RSS"><i class="fa fa-rss"></i></a></td>
         </tr>
       </table>
     </div>
@@ -297,6 +297,8 @@
     </h1>
     </a>
     <div class="article-meta">
+
+        
         <div class="article-date">
             <i class="fa fa-calendar"></i>
             <time datetime="2016-11-22 12:07:35 &#43;0800 CST" itemprop="datePublished">2016-11-22</time>
@@ -307,8 +309,7 @@
             1
             分钟阅读
         </div>
-
-
+        
         
             
             
@@ -345,7 +346,7 @@
         分享
     </a>
     
-    <a href="http://niusmallnan.com/aboutme//#disqus_thread" class="article-comment-link">
+    <a href="http://niusmallnan.com/aboutme/#disqus_thread" class="article-comment-link">
         评论
     </a>
     
@@ -743,11 +744,12 @@
 
 <script src="http://niusmallnan.com/fancybox/jquery.fancybox.pack.js"></script>
 <script src="http://niusmallnan.com/js/script.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.8.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+
+
 <script>hljs.initHighlightingOnLoad();</script>
 
 
-<!-- MathJax -->
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
   tex2jax: {

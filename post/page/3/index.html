@@ -114,7 +114,7 @@
               <input type="search" name="q" class="search-form-input" placeholder="搜索">
               <button type="submit" class="search-form-submit">
               </button>
-              <input type="hidden" name="q" value="site:http://niusmallnan.com/">
+              <input type="hidden" name="sitesearch" value="http://niusmallnan.com/" />
          </form>
         </div>
     </div>
@@ -161,7 +161,7 @@
           <td>
           <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form">
           <input type="search" name="q" class="search-form-input" placeholder="Search">
-          <input type="hidden" name="q" value="site:http://niusmallnan.com/">
+          <input type="hidden" name="sitesearch" value="http://niusmallnan.com/" />
           </form>
         </td>
       </tr>
@@ -257,7 +257,7 @@
 
 
 
-          <td><a href="http://niusmallnan.com/post/index.xml" target="_blank" title="RSS"><i class="fa fa-rss"></i></a></td>
+          <td><a href="http://niusmallnan.com/index.xml" target="_blank" title="RSS"><i class="fa fa-rss"></i></a></td>
         </tr>
       </table>
     </div>
@@ -625,11 +625,12 @@
 
 <script src="http://niusmallnan.com/fancybox/jquery.fancybox.pack.js"></script>
 <script src="http://niusmallnan.com/js/script.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.8.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+
+
 <script>hljs.initHighlightingOnLoad();</script>
 
 
-<!-- MathJax -->
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
   tex2jax: {

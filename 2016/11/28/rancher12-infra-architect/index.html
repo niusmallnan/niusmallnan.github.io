@@ -132,7 +132,7 @@
               <input type="search" name="q" class="search-form-input" placeholder="搜索">
               <button type="submit" class="search-form-submit">
               </button>
-              <input type="hidden" name="q" value="site:http://niusmallnan.com/">
+              <input type="hidden" name="sitesearch" value="http://niusmallnan.com/" />
          </form>
         </div>
     </div>
@@ -179,7 +179,7 @@
           <td>
           <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form">
           <input type="search" name="q" class="search-form-input" placeholder="Search">
-          <input type="hidden" name="q" value="site:http://niusmallnan.com/">
+          <input type="hidden" name="sitesearch" value="http://niusmallnan.com/" />
           </form>
         </td>
       </tr>
@@ -277,7 +277,7 @@
 
 
 
-          <td><a href="" target="_blank" title="RSS"><i class="fa fa-rss"></i></a></td>
+          <td><a href="http://niusmallnan.com/index.xml" target="_blank" title="RSS"><i class="fa fa-rss"></i></a></td>
         </tr>
       </table>
     </div>
@@ -300,6 +300,8 @@
     </h1>
     </a>
     <div class="article-meta">
+
+        
         <div class="article-date">
             <i class="fa fa-calendar"></i>
             <time datetime="2016-11-28 20:53:44 &#43;0800 CST" itemprop="datePublished">2016-11-28</time>
@@ -310,8 +312,7 @@
             9
             分钟阅读
         </div>
-
-
+        
         
             
             
@@ -319,7 +320,7 @@
                 <i class="fa fa-folder"></i>
                 
                 
-                <a class="article-category-link" href="categories/coding">coding</a>
+                <a class="article-category-link" href="http://niusmallnan.com/categories/coding">coding</a>
                 
                 
             </div>
@@ -333,11 +334,11 @@
                 <i class="fa fa-tags"></i>
                 
                 
-                <a class="article-category-link" href="tags/rancher">Rancher</a>
+                <a class="article-category-link" href="http://niusmallnan.com/tags/rancher">Rancher</a>
                 &middot;
                 
                 
-                <a class="article-category-link" href="tags/rancher-v1.2">Rancher v1.2</a>
+                <a class="article-category-link" href="http://niusmallnan.com/tags/rancher-v1.2">Rancher v1.2</a>
                 
                 
             </div>
@@ -479,7 +480,7 @@ vxlan的支持，各种CNI插件的集成，以及各种存储接入的实践操
         分享
     </a>
     
-    <a href="http://niusmallnan.com/2016/11/28/rancher12-infra-architect/#disqus_thread" class="article-comment-link">
+    <a href="http://niusmallnan.com/2016/11/28/rancher12-infra-architect#disqus_thread" class="article-comment-link">
         评论
     </a>
     
@@ -897,11 +898,12 @@ vxlan的支持，各种CNI插件的集成，以及各种存储接入的实践操
 
 <script src="http://niusmallnan.com/fancybox/jquery.fancybox.pack.js"></script>
 <script src="http://niusmallnan.com/js/script.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.8.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+
+
 <script>hljs.initHighlightingOnLoad();</script>
 
 
-<!-- MathJax -->
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
   tex2jax: {
