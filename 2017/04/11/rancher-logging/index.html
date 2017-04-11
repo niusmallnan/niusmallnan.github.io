@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>优化Rancher k8s中国区的使用体验 &middot; Niusmallnan</title>
+    <title>Rancher体系下容器日志采集 &middot; Niusmallnan</title>
     <meta name="generator" content="Hugo 0.17" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -10,7 +10,7 @@
       <meta name="description" content="Niusmallnan Blog Site">
     
     
-    <link rel="canonical" href="http://niusmallnan.com/2017/01/19/optimize-rancher-k8s-in-china"/>
+    <link rel="canonical" href="http://niusmallnan.com/2017/04/11/rancher-logging"/>
     <link rel="icon" href="http://niusmallnan.com/favicon.ico">
     <link rel="apple-touch-icon" href="http://niusmallnan.com/apple-touch-icon.png"/>
     <link rel="stylesheet" href="http://niusmallnan.com/css/style.css">
@@ -20,14 +20,14 @@
     
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,400,600' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-    <meta property="og:title" content="优化Rancher k8s中国区的使用体验" />
-<meta property="og:description" content="拯救一脸懵逼
+    <meta property="og:title" content="Rancher体系下容器日志采集" />
+<meta property="og:description" content="在Rancher体系内，实现容器日志采集。
 " />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="http://niusmallnan.com/2017/01/19/optimize-rancher-k8s-in-china" />
+<meta property="og:url" content="http://niusmallnan.com/2017/04/11/rancher-logging" />
 
 
-<meta property="og:updated_time" content="2017-01-19T17:32:56&#43;08:00"/>
+<meta property="og:updated_time" content="2017-04-11T11:56:14&#43;08:00"/>
 
 
 
@@ -40,13 +40,13 @@
 
     
     
-<meta itemprop="name" content="优化Rancher k8s中国区的使用体验">
-<meta itemprop="description" content="拯救一脸懵逼
+<meta itemprop="name" content="Rancher体系下容器日志采集">
+<meta itemprop="description" content="在Rancher体系内，实现容器日志采集。
 ">
 
 
-<meta itemprop="dateModified" content="2017-01-19T17:32:56&#43;08:00" />
-<meta itemprop="wordCount" content="1213">
+<meta itemprop="dateModified" content="2017-04-11T11:56:14&#43;08:00" />
+<meta itemprop="wordCount" content="2117">
 
 
 
@@ -58,8 +58,8 @@
 
 
 
-<meta name="twitter:title" content="优化Rancher k8s中国区的使用体验"/>
-<meta name="twitter:description" content="拯救一脸懵逼
+<meta name="twitter:title" content="Rancher体系下容器日志采集"/>
+<meta name="twitter:description" content="在Rancher体系内，实现容器日志采集。
 "/>
 
 
@@ -294,9 +294,9 @@
             
 
             <header class="article-header">
-    <a href="http://niusmallnan.com/2017/01/19/optimize-rancher-k8s-in-china">
+    <a href="http://niusmallnan.com/2017/04/11/rancher-logging">
     <h1 class="article-title" itemprop="name">
-        优化Rancher k8s中国区的使用体验
+        Rancher体系下容器日志采集
     </h1>
     </a>
     <div class="article-meta">
@@ -304,12 +304,12 @@
         
         <div class="article-date">
             <i class="fa fa-calendar"></i>
-            <time datetime="2017-01-19 17:32:56 &#43;0800 CST" itemprop="datePublished">2017-01-19</time>
+            <time datetime="2017-04-11 11:56:14 &#43;0800 CST" itemprop="datePublished">2017-04-11</time>
             &middot;
-            1213
+            2117
             字数
             &middot;
-            3
+            5
             分钟阅读
         </div>
         
@@ -344,93 +344,91 @@
 </header>
 
             <div class="article-entry" itemprop="articleBody">
-                <p>拯救一脸懵逼
+                <p>在Rancher体系内，实现容器日志采集。
 </p>
 
 <h3 id="引言">引言</h3>
 
-<p>Kubernetes（以下简称K8s）是Rancher平台重点支持的一个编排引擎，Rancher K8s具有部署灵活使用方便的特点，
-而且Rancher基本是同步更新支持K8s的新版本新组件，用户也可以选择部署指定的K8s版本。
-但是这一切的便利，身在中国的我们这些贱民无法深刻体验，万恶的GFW把很多部署的依赖挡在之外，
-而服务全球开发者的Rancher平台亦不可能为中国用户单独定制，所以我只好自己动手丰衣足食。</p>
+<p>一个完整的容器平台，容器日志都是很重要的一环。尤其在微服务架构大行其道状况下，程序的访问监控健康状态很多都依赖日志信息的收集，
+由于Docker的存在，让容器平台中的日志收集和传统方式很多不一样，日志的输出和采集点收集和以前大有不同。
+本文就探讨一下，Rancher平台内如何做容器日志收集。</p>
 
-<h3 id="部署要点">部署要点</h3>
+<h3 id="当前现状">当前现状</h3>
 
-<p>部署之前的操作系统选型上，相对来说我比较推荐ubuntu+docker的组合，
-毕竟这个组合在国外使用的用户比较多，相对来说bug fix的速度也是比较快的，
-如果你是一个docker重度用户，应该深知docker本身的bug并不少。</p>
+<p>纵览当前容器日志收集的场景，无非就是两种方式：一是直接采集Docker标准输出，容器内的服务将日志信息写到标准输出，
+这样通过Docker的log driver可以发送到相应的收集程序中；二是延续传统的日志写入方式，容器内的服务将日志直接写到普通文件中，
+通过Docker volume将日志文件映射到Host上，日志采集程序就可以收集它。</p>
 
-<p>如果是部署一个新的Rancher环境，我推荐用下面的脚本来启动，通过设置DEFAULT_CATTLE_CATALOG_URL，
-这样可以直接指定我定制过的Rancher K8s：</p>
-
-<pre><code>docker run -d --restart=unless-stopped \
-     -e DEFAULT_CATTLE_CATALOG_URL='{&quot;catalogs&quot;:{&quot;community&quot;:{&quot;url&quot;:&quot;https://github.com/rancher/community-catalog.git&quot;,&quot;branch&quot;:&quot;master&quot;},&quot;library&quot;:{&quot;url&quot;:&quot;https://github.com/niusmallnan/rancher-catalog.git&quot;,&quot;branch&quot;:&quot;k8s-cn&quot;}}}' \
-     --name rancher-server \
-     -p 8082:8080 rancher/server:stable
-</code></pre>
-
-<p>当然如果是已经部署的Rancher环境，那就需要在Rancher UI上，做一下简单的修改，
-Disable已有的library catalog repo，指向我定制过的即可，注意branch的设置，网络状况不好的需要耐心等待重新拉取repo内容：
-<img src="https://ww3.sinaimg.cn/large/006y8lValy1fbw2toyl38j30s30a50u6.jpg" alt="" /></p>
-
-<p>在部署agent节点前，如果是一个干净的环境最好，但是如果是曾经做过agent节点，
-尤其是之前部署过rancher k8s的，我强烈建议你执行一次大扫除，否则会出现各种意想不到的状况，
-大扫除的脚本可以参考执行我的这个，具体都做了什么事可自行阅读：</p>
-
-<pre><code>#!/bin/bash
-
-docker rm -f $(docker ps -qa)
-
-rm -rf /var/etcd/
-
-for m in $(tac /proc/mounts | awk '{print $2}' | grep /var/lib/kubelet); do
-    umount $m || true
-done
-rm -rf /var/lib/kubelet/
-
-for m in $(tac /proc/mounts | awk '{print $2}' | grep /var/lib/rancher); do
-    umount $m || true
-done
-rm -rf /var/lib/rancher/
-
-rm -rf /run/kubernetes/
-
-docker volume rm $(docker volume ls -q)
-
-docker ps -a
-docker volume ls
-</code></pre>
-
-<h3 id="一切opensource">一切OpenSource</h3>
-
-<p>如果你对我在其中的改动颇有疑虑，亦大可放心。我主要是改动两个地方：
-fork了rancher-catalog建立了k8s-cn的分支，只要将Rancher的library catalog repo指向我的工程分支即可；
-fork了kubernetes-package，每次Rancher K8s发布新版本，
-我都会基于该版本建立一个CN分支（如：v1.5.1-rancher1-7-cn），
-一切对于中国区的优化修改都会在这个分支上。最终我会更新出中国区的使用镜像，并push到镜像仓库上，
-目前使用的是阿里云的镜像仓库（招牌比较大短时间内不会倒。。。）。</p>
-
-<p>参考链接：</p>
+<p>第一种方式足够简单，直接配置相关的Log Driver就可以，但是这种方式也有些劣势：</p>
 
 <ol>
-<li><a href="https://github.com/niusmallnan/rancher-catalog">https://github.com/niusmallnan/rancher-catalog</a></li>
-<li><a href="https://github.com/niusmallnan/kubernetes-package">https://github.com/niusmallnan/kubernetes-package</a></li>
+<li>当主机的容器密度比较高的时候，对Docker Engine的压力比较大，毕竟容器标准输出都要通过Docker Engine来处理。</li>
+<li>尽管原则上，我们希望遵循一容器部署一个服务的原则，但是有时候特殊情况不可避免容器内有多个业务服务，
+这时候很难做到所有服务都向标准输出写日志，这就需要用到前面所说的第二种场景模式。</li>
+<li>虽然我们可以先选择很多种Log Driver，但是有些Log Driver会破坏Docker原生的体验，比如docker logs无法直接看到容器日志。</li>
 </ol>
 
-<h3 id="后续支持计划">后续支持计划</h3>
+<p>基于以上考虑，一个完整的日志方案必须要同时满足标准输出和日志卷两种模式才可以。当然完整的日志体系中，并不仅仅是采集，
+还需要有日志存储和UI展现。日志存储有很多种开源的实现，这个一般用户都会有自己钟情的选择，而UI展现更是各家有各家的需求，
+很难形成比较好的标准，一般都是通过定制化方式解决。所以此文主要展现的方案是日志采集方案，当然在存储和UI展现上会对接开源实现，
+没有特殊需求的情况下，也可以拥有一个完整的体验。<br />
+<img src="http://ww1.sinaimg.cn/large/006tNc79ly1feiptl1cx3j31js0v6401.jpg" alt="" /></p>
 
-<p>截止到本文写作之时，我刚开始支持rancher-k8s v1.5.1-rancher1-7版本，并在Rancher v1.3.1版本上做了测试。
-后续Rancher官方发布新版本，我会进行同步更新，并做一些简单的测试。
-后续考虑加入离线安装，可以指定本地镜像仓库，依赖镜像一键导入等方便的功能。
-当然如果在使用中发现各种疑难杂症，可以发邮件给我niusmallnan@gmail.com。</p>
+<h3 id="rancher下的解决方案">Rancher下的解决方案</h3>
+
+<p>如上面图中所示，日志存储和UI展现可以直接使用ElasticSearch &amp; Kibana，日志采集方面如之前所分析，需要对接两种采集模式，
+所以这部分采用Fluentd &amp; Logging Helper的组合，Fluentd是很通用的日志采集程序，拥有优异的性能，相对Logstash来说同等压力下，
+其内存消耗要少很多。Logging Helper是可以理解微Fluentd的助手，它可以识别容器内的日志卷文件，通知Fluentd进行采集。
+此外，由于要保证Dokcer和Rancher体验的完整性，在Docker Log Driver的选型上支持json-file和journald，其原因：
+一是json-file和journald相对来说比较常用；二是这两种驱动下，docker logs依然可以有内容输出，保证了体验的完整性。</p>
+
+<p>下面开始说明，整个方案的部署过程。先用一张图来描述整体的部署结构，如下：<br />
+<img src="http://ww3.sinaimg.cn/large/006tNc79ly1feirbhlr0ij31700j4aaj.jpg" alt="" /><br />
+总共划分三个ENV，其中一个ENV部署ES &amp; Kibana，另外两个ENV分别添加json-file驱动的主机和journald驱动的主机。
+详细部署过程如下：</p>
+
+<p>创建三个ENV，使用Cattle引擎。设置Logging Catalog方便部署，
+在Admin&ndash;Settings页面中添加Catalog，地址为：<a href="https://github.com/niusmallnan/rancher-logging-catalog.git">https://github.com/niusmallnan/rancher-logging-catalog.git</a><br />
+<img src="http://ww1.sinaimg.cn/large/006tNc79ly1feirqbal91j31du0b2q3d.jpg" alt="" /></p>
+
+<p>进入ES-Kibana ENV中，部署ElasticSearch &amp; Kibana，这两个应用在Community Catalog中均可以找到，部署非常简单，
+需要注意的是，建议选择Elasticsearch 2.x，Kibana中的Elasicsearch Source选择elasticseach-clients：<br />
+<img src="http://ww2.sinaimg.cn/large/006tNc79ly1feirvmhq6qj30sc0mimxt.jpg" alt="" /></p>
+
+<p>分配两台主机并安装Docker，其中Log Driver分别选择json-file和journald，并将主机添加到各自的ENV中。
+在这两个ENV中添加External Link指向之前部署的Elasticsearch地址：<br />
+<img src="http://ww1.sinaimg.cn/large/006tNc79ly1feis5geevwj319e0gmaas.jpg" alt="" /><br />
+然后在Jsonfile &amp; Journald ENV中添加Rancher Logging应用，打开对应的catalog，ES link指向刚才设定的External link，
+其中Volume Pattern是日志卷的匹配模式，File Pattern是日志卷内的日志文件匹配模式：<br />
+<img src="http://ww2.sinaimg.cn/large/006tNc79ly1feis130yinj31ke0scwfk.jpg" alt="" /></p>
+
+<p>以上部署完成之后，部署一些应用并产生一些访问日志，就可以在Kibana的界面中看到：<br />
+<img src="http://ww4.sinaimg.cn/large/006tNc79ly1feistxqn3ej31a60x0jto.jpg" alt="" /></p>
+
+<p>若要使用日志卷方式，则需要在service启动的时候配置volume，volume name需要匹配之前设定的Volume Pattern：<br />
+<img src="http://ww3.sinaimg.cn/large/006tNc79ly1feisvr5tlkj317m0ju3zd.jpg" alt="" /></p>
+
+<p>秉承一切开源的原则，相关实现可以查看一下链接：</p>
+
+<ol>
+<li><a href="https://github.com/niusmallnan/rancher-fluentd-package">https://github.com/niusmallnan/rancher-fluentd-package</a></li>
+<li><a href="https://github.com/niusmallnan/logging-helper">https://github.com/niusmallnan/logging-helper</a></li>
+<li><a href="https://github.com/niusmallnan/rancher-logging-catalog">https://github.com/niusmallnan/rancher-logging-catalog</a></li>
+</ol>
+
+<h3 id="总结">总结</h3>
+
+<p>通过Fluentd我们可以对接很多第三方日志存储体系，但是Fluentd自身并不能完成日志采集的所有场景，所以非常需要Logging Helper的帮助。
+通过Logging Helper可以定制出一些额外采集规则，比如可以过滤某些容器日志等等。当然真正大规模生产环境日志平台，其实是对整个运维体系的考验，
+单纯靠开源程序的组合并不能真正解决问题。</p>
             </div>
             <footer class="article-footer">
-    <a data-url="http://niusmallnan.com/2017/01/19/optimize-rancher-k8s-in-china" data-id="d4613f0fd420ae714b41e8837611db7b" class="article-share-link">
+    <a data-url="http://niusmallnan.com/2017/04/11/rancher-logging" data-id="88f62dc16a351f9110916fd9cc102e6e" class="article-share-link">
         <i class="fa fa-share"></i>
         分享
     </a>
     
-    <a href="http://niusmallnan.com/2017/01/19/optimize-rancher-k8s-in-china#disqus_thread" class="article-comment-link">
+    <a href="http://niusmallnan.com/2017/04/11/rancher-logging#disqus_thread" class="article-comment-link">
         评论
     </a>
     
@@ -506,21 +504,14 @@ fork了kubernetes-package，每次Rancher K8s发布新版本，
         
 <nav id="article-nav">
     
-    <a href="http://niusmallnan.com/2017/01/06/rancher-lb-logs" id="article-nav-older" class="article-nav-link-wrap">
+    <a href="http://niusmallnan.com/2017/03/09/analysis-of-kubelet-start-failure" id="article-nav-older" class="article-nav-link-wrap">
       <strong class="article-nav-caption">
           老的
       </strong>
-      <div class="article-nav-title">Rancher-LB开启访问日志</div>
+      <div class="article-nav-title">Kubelet无法访问rancher-metadata问题分析</div>
     </a>
     
 
-    
-    <a href="http://niusmallnan.com/2017/02/05/rancher-k8s-helm-practice" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">
-          新的
-      </strong>
-      <div class="article-nav-title">Rancher K8s Helm使用体验</div>
-    </a>
     
 </nav>
 
@@ -533,9 +524,9 @@ fork了kubernetes-package，每次Rancher K8s发布新版本，
             <div id="disqus_thread"></div>
 <script type="text/javascript">
     var disqus_shortname = 'niusmallnan';
-    var disqus_identifier = 'http:\/\/niusmallnan.com\/2017\/01\/19\/optimize-rancher-k8s-in-china';
-    var disqus_title = '优化Rancher k8s中国区的使用体验';
-    var disqus_url = 'http:\/\/niusmallnan.com\/2017\/01\/19\/optimize-rancher-k8s-in-china';
+    var disqus_identifier = 'http:\/\/niusmallnan.com\/2017\/04\/11\/rancher-logging';
+    var disqus_title = 'Rancher体系下容器日志采集';
+    var disqus_url = 'http:\/\/niusmallnan.com\/2017\/04\/11\/rancher-logging';
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
