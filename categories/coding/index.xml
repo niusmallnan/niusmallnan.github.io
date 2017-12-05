@@ -10,6 +10,81 @@
     <atom:link href="http://niusmallnan.com/categories/coding/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
+      <title>Rancher下实现Calico/Flat/Macvlan网络</title>
+      <link>http://niusmallnan.com/2017/05/16/rancher-extend-network</link>
+      <pubDate>Tue, 16 May 2017 16:31:50 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2017/05/16/rancher-extend-network</guid>
+      <description>&lt;p&gt;Rancher下的高性能网络方案
+&lt;/p&gt;
+
+&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
+
+&lt;p&gt;目前Rancher的开源版本中提供了IPSec和VXLAN两种网络方案：IPSec更多面向的是安全加密的场景，
+但是网络性能就会差很多；Vxlan与IPSec同属Overlay模型，但是内核层面的支持和没有加密环节的损耗，
+相对来说Vxlan的性能要远高于IPSec，在AWS上测试的Vxlan带宽性能是逼近于两台VM之间带宽，
+当然由于AWS本身的网络质量就很好，用户在自己的环境测试时并不会有这么好的性能。
+当面向私有数据中心部署时，Overlay的模型并不一定满足用户的需求，而且当前容器网络发展非常迅猛，
+出现了很多独树一帜的网络插件，所以这里我选择了三种插件Calico、Flat、Macvlan对接Rancher，
+希望可以为更多用户提供帮助。&lt;/p&gt;
+
+&lt;h3 id=&#34;rancher对接第三方网络插件&#34;&gt;Rancher对接第三方网络插件&lt;/h3&gt;
+
+&lt;p&gt;Rancher在v1.2版本重新架构后，实际上已经为第三方网络插件的支持留下了空间。Rancher中的network-manager
+组件是管理网络插件的核心，其管理原理本文不赘述，后面会放一个PPT参考链接，有兴趣可以仔细品味。
+但是当真正对接第三方插件时，还有一些小问题需要解决，这个问题就是多个ENV时，每个ENV都有独立的网络插件，
+那么network-manager如何匹配自己当前ENV的CNI config文件，关于此问题，
+我建了一个issue&lt;a href=&#34;https://github.com/rancher/rancher/issues/8535&#34;&gt;#8535&lt;/a&gt;，并提交了相关PR。
+在Rancher v1.6.0+版本中，已经包含了这些修复。&lt;/p&gt;
+
+&lt;p&gt;此外，还需要注意的是，在Rancher中集成第三方网络插件需要满足以下三个条件，否则兼容性和体验会大打折扣：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;容器可以分配IP，并能互相联通，IP与MAC设定尽量与Rancher同步&lt;/li&gt;
+&lt;li&gt;容器网络可以访问metadata服务，即容器内可以ping rancher-metadata&lt;/li&gt;
+&lt;li&gt;LB与metadata等组件兼容性&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&#34;calico的支持&#34;&gt;Calico的支持&lt;/h3&gt;
+
+&lt;p&gt;Calico本身的设计思路很独到，利用BGP技术学习路由，通过路由构建高性能的网络，但是Calico本身在用户端的落地阻力还是相当大的，
+很多用户纯粹把Calico的支持当作一个Poc的要点，因为如果用户真的决定使用Calico网络，那么来自用户内部网管的阻力是相当大的。
+BGP路由动态学习对于很多行业，这种网络几乎认为是没有管理的状态。&lt;/p&gt;
+
+&lt;p&gt;出于对Poc支持的考虑和一些付费用户的定制需求，大家如有兴趣可以参考一个demo版本的Rancher Calico的实现：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Issue描述&lt;a href=&#34;https://github.com/rancher/rancher/issues/8603&#34;&gt;#rancher-8603&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Demo Catalog &lt;a href=&#34;https://github.com/niusmallnan/test-calico-catalog-item&#34;&gt;#test-calico-catalog-item&lt;/a&gt;，请使用test分支&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&#34;flat的支持&#34;&gt;Flat的支持&lt;/h3&gt;
+
+&lt;p&gt;Flat网络，中国用户喜欢称它为扁平网络，其目的是构建一种不带有任何路由或者overlay技术的网络，基本上容器的网络就是在一张大网中。
+通常容器的Flat网络是在交换机中配置好的，主机和容器其实使用的是同一个网段，这时候需要规划好网络的设置，比如主机的ip范围和容器的ip范围不能冲突。&lt;/p&gt;
+
+&lt;p&gt;Flat网络的实现非常简单，原理上用户也很容易了解，在用户自身的网络部门推广起来几乎没有阻力，很多商业用户依赖这个网络。
+所以Rancher已经开源了Flat网络的实现，用户可以在v1.6.11版本上使用Flat网络，在Catalog中就可以找到。&lt;/p&gt;
+
+&lt;h3 id=&#34;macvlan的支持&#34;&gt;Macvlan的支持&lt;/h3&gt;
+
+&lt;p&gt;Macvlan网络更多是在Docker的CNM下被提及，其实CNI下也有Macvlan的实现，通常我们利用Macvlan可以隔离不同的容器子网。
+但是实际上这个特性Rancher并不是十分需要，Rancher的设计中一个ENV下就是一张网，这样可以很方便用户使用。
+如果不需要Macvlan的隔离特性，实际上这里其实更多就是利用Macvlan构建了一个类似Flat的网络，对于大部分Rancher用户来说Macvlan并没有很大的使用价值。&lt;/p&gt;
+
+&lt;p&gt;出于对Poc支持的考虑和一些付费用户的定制需求，大家如有兴趣可以参考一个demo版本的Rancher Macvlan的实现：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Issue描述&lt;a href=&#34;https://github.com/rancher/rancher/issues/8686&#34;&gt;#8686&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Demo Catalog App &lt;a href=&#34;https://github.com/niusmallnan/flatnet-catalog&#34;&gt;macvlan&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&#34;总结&#34;&gt;总结&lt;/h3&gt;
+
+&lt;p&gt;更多内容可以参考我之前对外分享的PPT，请自行搭梯子，&lt;a href=&#34;https://docs.google.com/presentation/d/1U4YZpsXnFg6l7YNIcaq0SJ5DsUlSr14mtWnxQ-rvFwQ/edit?usp=sharing&#34;&gt;Rancher network management&lt;/a&gt;.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
       <title>Rancher体系下容器日志采集</title>
       <link>http://niusmallnan.com/2017/04/11/rancher-logging</link>
       <pubDate>Tue, 11 Apr 2017 11:56:14 +0800</pubDate>
@@ -1047,139 +1122,6 @@ vxlan实现的原理可更多参考：&lt;a href=&#34;https://www.kernel.org/doc
 Rancher的默认网络改造成了CNI标准，同时也会支持其他第三方CNI插件，
 结合Rancher独有的Environment Template功能，用户可以在一个大集群中的每个隔离环境内，
 创建不同的网络模式，以满足各种业务场景需求，这种管理的灵活性是其他平台没有的。&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>Rancher v1.2基础设施引擎整体架构</title>
-      <link>http://niusmallnan.com/2016/11/28/rancher12-infra-architect</link>
-      <pubDate>Mon, 28 Nov 2016 20:53:44 +0800</pubDate>
-      
-      <guid>http://niusmallnan.com/2016/11/28/rancher12-infra-architect</guid>
-      <description>&lt;p&gt;Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
-&lt;/p&gt;
-
-&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
-
-&lt;p&gt;Rancher v1.2可以说是一个里程碑版本，发布时间虽屡次跳票让大家心有不爽，
-但是只要体会其新版功能，会发现这个等待绝对是值得的。从架构角度看，
-用两个字来概括就是“解耦”，基础设施引擎的分离，agent节点的服务粒度更细；
-从产品角度看，给了用户更多定制的空间，Rancher依然秉持着全部OpenSource的理念；
-在开发语言上，之前遗留的通过shell脚本方式的粗糙实现也都基于Golang重写，
-解耦的新服务也几乎使用Golang开发，agent节点全线基于Golang这也为后续便利地支持ARM埋下伏笔。
-在市场选择上，Rancher依然在kubernetes下面投入了大量精力，引入了万众期待的CNI plugin管理机制，
-坚持要做最好用的Kubernetes发行版。本文就带着大家从架构角度总览Rancher v1.2版本的特性。&lt;/p&gt;
-
-&lt;h3 id=&#34;总览&#34;&gt;总览&lt;/h3&gt;
-
-&lt;p&gt;在v1.2版本的整体架构图（如下图所示）上，Cattle引擎向下深入演化成了基础设施引擎，
-这一点上在v1.1时代也早有体现。Cattle更多得作为基础设施的管理工具，
-可以用它来部署其他服务和编排引擎，当然它本身编排能力还是可以使用的，
-习惯了stack-service的朋友仍然可以继续使用它，同时rancher scheduler的引入也大大增强了其调度能力。
-Rancher仍然支持Kubernetes、Mesos、Swarm三大编排引擎，Kubernetes可以支持到较新的v1.4.6版本，
-由于所有的部署过程的代码都是开放的，用户依然可以自己定制部署版本。值得一提的是，
-Rancher支持了新版的Swarm Mode也就是Swarmkit引擎，这也意味着Rancher可以在Docker1.12上部署，
-不小心装错Docker版本的朋友这回可以放心了。&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/006tKfTcjw1fav8rinilzj30hj09p0ur.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-在存储方面，Rancher引入了Kubernetes社区的flexvol来做存储插件的管理，
-同时也支持Docker原生的volume plugin机制，并实现了对AWS的EFS&amp;amp;EBS以及标准NFS的支持，
-先前的Convoy应该会被抛弃，Rancher最终还是选择参与社区标准。在网络方面，
-除了CNI插件机制的引入，用户还可以使用rancher-net组件提供的vxlan网络替代先前的ipsec网络。
-在可定制性方面，还体现在Rancher提供了用户可以自定义rancher-lb的机制，
-如果特殊场景下默认的Haproxy不是很给力时，用户可以自定义使用nginx、openresty或者traefik等等。
-下面便做一下详细分解。&lt;/p&gt;
-
-&lt;h3 id=&#34;基础设施引擎&#34;&gt;基础设施引擎&lt;/h3&gt;
-
-&lt;p&gt;初次安装v1.2版本，会发现多了Infrastructure（如下图所示）的明显标识，
-默认的Cattle引擎需要安装healthcheck、ipsec、network-services、scheduler等服务。
-这个是有rancher-catalog来定义的，&lt;a href=&#34;https://github.com/rancher/rancher-catalog&#34;&gt;https://github.com/rancher/rancher-catalog&lt;/a&gt;，
-新分离出来了infra-templates和project-templates：infra-templates就是Rancher定义的各种基础设施服务，
-包括基础服务和编排引擎；project-templates对应的是Env初始化时默认安装的服务，
-它可以针对不同的编排引擎进行配置。&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/006tKfTcjw1fav8t4d321j30dl0b275b.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-以Cattle引擎为例，可以在project-templates的Cattle目录中找到相应的配置文件，
-当ENV创建初始化时会创建这里面定义的服务，这样一个机制就可以让我们可以做更深入的定制，
-让ENV初始化时创建我们需要的服务：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;name: Cattle
-description: Default Cattle template
-stacks:
-- name: network-services
-templateId: &#39;library:infra*network-services&#39;
-- name: ipsec
-templateId: &#39;library:infra*ipsec&#39;
-- name: scheduler
-templateId: &#39;library:infra*scheduler&#39;
-- name: healthcheck
-templateId: &#39;library:infra*healthcheck&#39;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;在Cattle引擎调度方面，Rancher实现了rancher-scheduler，&lt;a href=&#34;https://github.com/rancher/scheduler&#34;&gt;https://github.com/rancher/scheduler&lt;/a&gt;。
-它实现了允许用户按计算资源调度，目前支持memory、cpu的Reservation。其实现原理是，
-内部有一个resource watcher，通过监听rancher metadata的获取Host的使用资源数据变化，
-进而得到ENV内所有Host资源汇总信息。与此同时，
-监听rancher events的scheduler.prioritize、scheduler.reserve、scheduler.release等各种事件，
-通过排序过滤可用主机后发送回执信息，Rancher Server就有了可以选择的Host列表。如下图所示：&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tKfTcjw1fav8vafyqaj30h005xwfk.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-需要注意的是，rancher-scheduler并没有和rancher-server部署在一起，
-而是在你添加Host时候部署在agent节点上，当然rancher-scheduler在一个ENV内只会部署一个。&lt;/p&gt;
-
-&lt;h3 id=&#34;agent节点服务解耦&#34;&gt;Agent节点服务解耦&lt;/h3&gt;
-
-&lt;p&gt;agent节点一个最大的变化就是，agent-instance容器没有了，它被拆分成多个容器服务，
-包括rancher-metadata、network-manager、rancher-net、rancher-dns、healthcheck等。&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tKfTcjw1fav8w3brm9j30ea06labt.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;metadata服务是老朋友了，它在每个agent节点上保存了host、stack、service、container等的信息，
-可以非常方便的在本地调用取得，&lt;a href=&#34;https://github.com/rancher/rancher-metadata&#34;&gt;https://github.com/rancher/rancher-metadata&lt;/a&gt;，
-在新的体系中它扮演了重要角色，几乎所有agent节点上的服务均依赖它。
-在先前的体系中，metadata的answer file的更新是通过事件驱动shell脚本来执行下载，
-比较简单粗暴。v1.2开始使用监听rancher events方式来reload metadata的answer file，
-但是answer file还需要到rancher server端下载，总的来说效率还是有一定提升的。&lt;/p&gt;
-
-&lt;p&gt;dns在新的体系中仍然承担着服务发现的功能，&lt;a href=&#34;https://github.com/rancher/rancher-dns&#34;&gt;https://github.com/rancher/rancher-dns&lt;/a&gt;。
-除了拆分成单独容器之外，它也在效率上做了改进，它与rancher-metadata容器共享网络，
-以metadata的结果生成dns的answer file。与之前的架构相比，
-省去了dns answer file下载的过程。需要注意的是，rancher-dns的TTL默认是600秒，
-如果出于各种原因觉得dns作为服务发现不是很可靠，那么可以使用etc-host-updater和rancher-metadata的组合，
-&lt;a href=&#34;https://github.com/rancher/etc-host-updater&#34;&gt;etc-host-updater&lt;/a&gt;
-会根据metadata数据动态生成hosts文件并写入容器内，这样通过服务名访问时，
-其实已经在本地转换成了IP，无需经过dns，如下图所示：&lt;br /&gt;
-&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tKfTcjw1fav8z58gm6j30bc04mmxg.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;rancher-net作出了比较重大的革新，&lt;a href=&#34;https://github.com/rancher/rancher-net&#34;&gt;https://github.com/rancher/rancher-net&lt;/a&gt;，
-除了继续支持原有的ipsec外，还支持了vxlan。这个支持是原生支持，
-只要内核有vxlan的支持模块就可以。vxlan并不是Cattle的默认网络，
-使用时可以在infra-catalog中重新选择它来部署，其实现以及部署方式后续会在专门的文章中进行探讨：&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tKfTcjw1fav8zxs951j30ds0al753.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;network-manager的引入为Rancher v1.2带来了一个重要特性就是CNI插件管理，
-在之前的版本中很多用户都提到rancher-net本身的网络无法满足业务需求。
-容器网络之争，无非就是CNM与CNI，Rancher选择站队CNI，这也是为了更好与Kubernetes融合。
-而CNI的插件很多种，Calico、Weave等之流，每个插件的部署方式都不一样。
-Rancher为了简化管理提出了network-manager，&lt;a href=&#34;https://github.com/rancher/plugin-manager&#34;&gt;https://github.com/rancher/plugin-manager&lt;/a&gt;，
-它可以做到兼容主流的CNI插件，它实际上定义了一个部署框架，让CNI插件在框架内部署。
-network-manager是以容器方式部署，由于每种插件在初始化时可能需要暴露端口或加入一些NAT规则，
-所以network-manager能够动态设置不同插件的初始化规则，
-它的做法是以metadata作为 host port和host nat规则的数据源，
-然后获取数据后生成相应的Iptables规则加入的Host中。而对于真正的CNI插件，
-需要在network-manager容器内/opt/cni目录下部署对应cni插件的执行程序（calico/weave），
-/etc/cni目录下部署cni插件的配置，这两个目录映射了docker卷rancher-cni-driver，
-也就是Host上的/var/lib/docker/volumes/rancher-cni-driver目录下。&lt;/p&gt;
-
-&lt;p&gt;关于healthcheck，先前是通过agent-instance镜像实现，里面内置了Haproxy，
-事件驱动shell脚本来下载healchcheck配置并reload。新的架构中，
-Rancher实现了单独的healthcheck，&lt;a href=&#34;https://github.com/rancher/healthcheck&#34;&gt;https://github.com/rancher/healthcheck&lt;/a&gt;，
-采用Golang微服务的方式，数据源是metadata。
-当然healthcheck的最终检查仍然是通过与Haproxy sock通信来查看相应member的健康状态（原理如下图），
-healthcheck的实现主要是为了将其从agent-instance中解耦出来。&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/006tKfTcjw1fav928q6bwj30hu06mad4.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&#34;总结&#34;&gt;总结&lt;/h3&gt;
-
-&lt;p&gt;Rancher v1.2的新特性还是非常多的，基础设施引擎的变化时一切特性的基础，
-这篇文章算是开篇之作。后续会持续为大家带来，Kubernetes、Swarmkit的支持，自定义rancher-lb，
-vxlan的支持，各种CNI插件的集成，以及各种存储接入的实践操作指南等等。&lt;/p&gt;</description>
     </item>
     
   </channel>

@@ -10,6 +10,81 @@
     <atom:link href="http://niusmallnan.com/tags/rancher/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
+      <title>Rancher下实现Calico/Flat/Macvlan网络</title>
+      <link>http://niusmallnan.com/2017/05/16/rancher-extend-network</link>
+      <pubDate>Tue, 16 May 2017 16:31:50 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2017/05/16/rancher-extend-network</guid>
+      <description>&lt;p&gt;Rancher下的高性能网络方案
+&lt;/p&gt;
+
+&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
+
+&lt;p&gt;目前Rancher的开源版本中提供了IPSec和VXLAN两种网络方案：IPSec更多面向的是安全加密的场景，
+但是网络性能就会差很多；Vxlan与IPSec同属Overlay模型，但是内核层面的支持和没有加密环节的损耗，
+相对来说Vxlan的性能要远高于IPSec，在AWS上测试的Vxlan带宽性能是逼近于两台VM之间带宽，
+当然由于AWS本身的网络质量就很好，用户在自己的环境测试时并不会有这么好的性能。
+当面向私有数据中心部署时，Overlay的模型并不一定满足用户的需求，而且当前容器网络发展非常迅猛，
+出现了很多独树一帜的网络插件，所以这里我选择了三种插件Calico、Flat、Macvlan对接Rancher，
+希望可以为更多用户提供帮助。&lt;/p&gt;
+
+&lt;h3 id=&#34;rancher对接第三方网络插件&#34;&gt;Rancher对接第三方网络插件&lt;/h3&gt;
+
+&lt;p&gt;Rancher在v1.2版本重新架构后，实际上已经为第三方网络插件的支持留下了空间。Rancher中的network-manager
+组件是管理网络插件的核心，其管理原理本文不赘述，后面会放一个PPT参考链接，有兴趣可以仔细品味。
+但是当真正对接第三方插件时，还有一些小问题需要解决，这个问题就是多个ENV时，每个ENV都有独立的网络插件，
+那么network-manager如何匹配自己当前ENV的CNI config文件，关于此问题，
+我建了一个issue&lt;a href=&#34;https://github.com/rancher/rancher/issues/8535&#34;&gt;#8535&lt;/a&gt;，并提交了相关PR。
+在Rancher v1.6.0+版本中，已经包含了这些修复。&lt;/p&gt;
+
+&lt;p&gt;此外，还需要注意的是，在Rancher中集成第三方网络插件需要满足以下三个条件，否则兼容性和体验会大打折扣：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;容器可以分配IP，并能互相联通，IP与MAC设定尽量与Rancher同步&lt;/li&gt;
+&lt;li&gt;容器网络可以访问metadata服务，即容器内可以ping rancher-metadata&lt;/li&gt;
+&lt;li&gt;LB与metadata等组件兼容性&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&#34;calico的支持&#34;&gt;Calico的支持&lt;/h3&gt;
+
+&lt;p&gt;Calico本身的设计思路很独到，利用BGP技术学习路由，通过路由构建高性能的网络，但是Calico本身在用户端的落地阻力还是相当大的，
+很多用户纯粹把Calico的支持当作一个Poc的要点，因为如果用户真的决定使用Calico网络，那么来自用户内部网管的阻力是相当大的。
+BGP路由动态学习对于很多行业，这种网络几乎认为是没有管理的状态。&lt;/p&gt;
+
+&lt;p&gt;出于对Poc支持的考虑和一些付费用户的定制需求，大家如有兴趣可以参考一个demo版本的Rancher Calico的实现：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Issue描述&lt;a href=&#34;https://github.com/rancher/rancher/issues/8603&#34;&gt;#rancher-8603&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Demo Catalog &lt;a href=&#34;https://github.com/niusmallnan/test-calico-catalog-item&#34;&gt;#test-calico-catalog-item&lt;/a&gt;，请使用test分支&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&#34;flat的支持&#34;&gt;Flat的支持&lt;/h3&gt;
+
+&lt;p&gt;Flat网络，中国用户喜欢称它为扁平网络，其目的是构建一种不带有任何路由或者overlay技术的网络，基本上容器的网络就是在一张大网中。
+通常容器的Flat网络是在交换机中配置好的，主机和容器其实使用的是同一个网段，这时候需要规划好网络的设置，比如主机的ip范围和容器的ip范围不能冲突。&lt;/p&gt;
+
+&lt;p&gt;Flat网络的实现非常简单，原理上用户也很容易了解，在用户自身的网络部门推广起来几乎没有阻力，很多商业用户依赖这个网络。
+所以Rancher已经开源了Flat网络的实现，用户可以在v1.6.11版本上使用Flat网络，在Catalog中就可以找到。&lt;/p&gt;
+
+&lt;h3 id=&#34;macvlan的支持&#34;&gt;Macvlan的支持&lt;/h3&gt;
+
+&lt;p&gt;Macvlan网络更多是在Docker的CNM下被提及，其实CNI下也有Macvlan的实现，通常我们利用Macvlan可以隔离不同的容器子网。
+但是实际上这个特性Rancher并不是十分需要，Rancher的设计中一个ENV下就是一张网，这样可以很方便用户使用。
+如果不需要Macvlan的隔离特性，实际上这里其实更多就是利用Macvlan构建了一个类似Flat的网络，对于大部分Rancher用户来说Macvlan并没有很大的使用价值。&lt;/p&gt;
+
+&lt;p&gt;出于对Poc支持的考虑和一些付费用户的定制需求，大家如有兴趣可以参考一个demo版本的Rancher Macvlan的实现：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Issue描述&lt;a href=&#34;https://github.com/rancher/rancher/issues/8686&#34;&gt;#8686&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Demo Catalog App &lt;a href=&#34;https://github.com/niusmallnan/flatnet-catalog&#34;&gt;macvlan&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&#34;总结&#34;&gt;总结&lt;/h3&gt;
+
+&lt;p&gt;更多内容可以参考我之前对外分享的PPT，请自行搭梯子，&lt;a href=&#34;https://docs.google.com/presentation/d/1U4YZpsXnFg6l7YNIcaq0SJ5DsUlSr14mtWnxQ-rvFwQ/edit?usp=sharing&#34;&gt;Rancher network management&lt;/a&gt;.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
       <title>Rancher体系下容器日志采集</title>
       <link>http://niusmallnan.com/2017/04/11/rancher-logging</link>
       <pubDate>Tue, 11 Apr 2017 11:56:14 +0800</pubDate>
@@ -1121,66 +1196,6 @@ healthcheck的实现主要是为了将其从agent-instance中解耦出来。&lt;
 &lt;p&gt;Rancher v1.2的新特性还是非常多的，基础设施引擎的变化时一切特性的基础，
 这篇文章算是开篇之作。后续会持续为大家带来，Kubernetes、Swarmkit的支持，自定义rancher-lb，
 vxlan的支持，各种CNI插件的集成，以及各种存储接入的实践操作指南等等。&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>如何hack一下rancher k8s</title>
-      <link>http://niusmallnan.com/2016/10/08/rancher-k8s-hacking</link>
-      <pubDate>Sat, 08 Oct 2016 16:09:24 +0800</pubDate>
-      
-      <guid>http://niusmallnan.com/2016/10/08/rancher-k8s-hacking</guid>
-      <description>&lt;p&gt;Rancher可以轻松实现Kubernetes的部署，尽管默认的部署已经完全可用，
-但是如果我们想修改部署的K8s版本，这时应当如何应对？
-&lt;/p&gt;
-
-&lt;h3 id=&#34;原理分析与执行&#34;&gt;原理分析与执行&lt;/h3&gt;
-
-&lt;p&gt;在Rancher中，由于K8s是基于Cattle引擎来部署，所以在K8s在部署完成之后，
-我们可以通过Link Graph来很清晰的看到整体的部署情况。&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/006tNc79jw1fa0ybyprq4j30mi07tdh0.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;既然基于Cattle引擎部署，也就是说需要两个compose文件，
-k8s引擎的compose文件放在&lt;a href=&#34;https://github.com/rancher/rancher-catalog/tree/master/templates&#34;&gt;https://github.com/rancher/rancher-catalog/tree/master/templates&lt;/a&gt;下面，
-这里面有两个相关目录kubernetes与k8s，k8s是Rancher1.2开始使用的，
-而kubernetes则是Rancher1.2之后开始使用的。&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/006tNc79jw1fa0ydzd1dgj30gt07qmyg.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;为了我们可以自己hack一下rancher k8s的部署，我们可以在github上fork一下rancher-catalog，
-同时还需要修改一下Rancher中默认的catalog的repo地址，
-这个可以在&lt;a href=&#34;http://rancher-server/v1/settings&#34;&gt;http://rancher-server/v1/settings&lt;/a&gt;页面下，
-寻找名为 catalog.url 的配置项，然后进入编辑修改。比如我这里将library库的地址换成了自己的：
-&lt;a href=&#34;https://github.com/niusmallnan/rancher-catalog.git&#34;&gt;https://github.com/niusmallnan/rancher-catalog.git&lt;/a&gt;&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tNc79jw1fa0yff7sbzj30h206imyy.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;此时，我们就可以修改了，找一个比较实用的场景。我们都知道k8s的pod都会依赖一个基础镜像，
-这个镜像默认的地址是被GFW挡在墙外了，一般我们会把kubelet的启动参数调整一下，
-以便重新指定这个镜像地址，比如指定到国内的镜像源上。&lt;br /&gt;
-&lt;strong&gt;&amp;ndash;pod-infra-container-image=index.tenxcloud.com/google_containers/pause:2.0&lt;/strong&gt;。&lt;/p&gt;
-
-&lt;p&gt;如果我们要让rancher k8s部署时自动加上该参数，
-可以直接修改私有rancher-catalog中的k8s compose文件。&lt;br /&gt;
-&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tNc79jw1fa0ygscal6j30gv0asjtp.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;修改之后稍等片刻（主要是为了让rancher-server更新到新的catalog compose文件），
-添加一个k8s env并在其中添加host，k8s引擎就开始自动部署，
-部署完毕后，我们可以看到Kubernetes Stack的compose文件，
-已经有了&amp;ndash;pod-infra-container-image这个启动参数。&lt;br /&gt;
-&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tNc79jw1fa0yhg3alsj30gn09rtav.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-如此我们在添加pod时再也不用手动导入pod基础镜像了。&lt;/p&gt;
-
-&lt;p&gt;在compose file中，部署k8s的基础镜像是rancher/k8s，这个镜像的Dockerfile在rancher维护的k8s分支中，
-如在rancher-k8s 1.2.4分支中可以看到：&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tNc79jw1fa0yi5rmplj30e007ogmr.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;这样如果想对rancher-k8s发行版进行深度定制，就可以重新build相关镜像，通过rancher-compose来部署自己的发行版。&lt;/p&gt;
-
-&lt;h3 id=&#34;总结&#34;&gt;总结&lt;/h3&gt;
-
-&lt;p&gt;本文写于Rancher1.2行将发布之际，1.2版本是非常重大的更新，Rancher会支持部署原生的K8s版本，
-同时CNI网络和Cloud Provider等都会以插件方式，用户可以自己定义，并且在UI上都会有很好的体现。
-只要了解Rancher部署K8s的原理和过程，我们就可以定制非常适合自身使用的k8s，
-通过Rancher来部署自定义的k8s，我们就可以很容易的扩展了k8s不擅长的UI、Catalog、
-用户管理、审计日志维护等功能，这也是本文的目的。&lt;/p&gt;</description>
     </item>
     
   </channel>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>Rancher &middot; Niusmallnan</title>
+    <title>Rancher下实现Calico/Flat/Macvlan网络 &middot; Niusmallnan</title>
     <meta name="generator" content="Hugo 0.17" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -10,10 +10,7 @@
       <meta name="description" content="Niusmallnan Blog Site">
     
     
-      <link href="http://niusmallnan.com/tags/rancher/index.xml" rel="alternate" type="application/rss+xml" title="Niusmallnan" />
-      <link href="http://niusmallnan.com/tags/rancher/index.xml" rel="feed" type="application/rss+xml" title="Niusmallnan" />
-    
-    <link rel="canonical" href="http://niusmallnan.com/tags/rancher/"/>
+    <link rel="canonical" href="http://niusmallnan.com/2017/05/16/rancher-extend-network"/>
     <link rel="icon" href="http://niusmallnan.com/favicon.ico">
     <link rel="apple-touch-icon" href="http://niusmallnan.com/apple-touch-icon.png"/>
     <link rel="stylesheet" href="http://niusmallnan.com/css/style.css">
@@ -23,29 +20,50 @@
     
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,400,600' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-    <meta property="og:title" content="Rancher" />
-<meta property="og:description" content="" />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="http://niusmallnan.com/tags/rancher/" />
+    <meta property="og:title" content="Rancher下实现Calico/Flat/Macvlan网络" />
+<meta property="og:description" content="Rancher下的高性能网络方案
+" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://niusmallnan.com/2017/05/16/rancher-extend-network" />
 
 
-<meta property="og:updated_time" content="2016-12-09T15:07:14&#43;08:00"/>
-
-
-
-
+<meta property="og:updated_time" content="2017-05-16T16:31:50&#43;08:00"/>
 
 
 
 
 
-    
-    
-<meta itemprop="name" content="Rancher">
-<meta itemprop="description" content="">
+
+
+
 
 
     
+    
+<meta itemprop="name" content="Rancher下实现Calico/Flat/Macvlan网络">
+<meta itemprop="description" content="Rancher下的高性能网络方案
+">
+
+
+<meta itemprop="dateModified" content="2017-05-16T16:31:50&#43;08:00" />
+<meta itemprop="wordCount" content="1672">
+
+
+
+<meta itemprop="keywords" content="coding,docker,helm,kubernetes,networking,rancher,rancher-v1.2,rancheros,raspberry-pi," />
+
+    
+
+  <meta name="twitter:card" content="summary"/>
+
+
+
+<meta name="twitter:title" content="Rancher下实现Calico/Flat/Macvlan网络"/>
+<meta name="twitter:description" content="Rancher下的高性能网络方案
+"/>
+
+
+
     
 
     
@@ -58,7 +76,7 @@
 
 
 <div id="container">
-    <header id="header">
+	<header id="header">
   <div id="header-main" class="header-inner">
     <div class="outer">
       <a href="http://niusmallnan.com/" id="logo">
@@ -170,8 +188,10 @@
   </div>
 </header>
 
-    <div class="outer">
-        <aside id="profile">
+   	
+   	<div class="outer">
+   		
+	    <aside id="profile">
   <div class="inner profile-inner">
     <div class="base-info profile-block">
       <img id="avatar" src="http://niusmallnan.com/css/images/avatar.jpg">
@@ -264,249 +284,260 @@
   </div>
 </aside>
 
-        <section id="main">
-            <section class="archives-wrap">
-                <div class="archive-category-wrap">
-                    <span class="archive-category">Rancher</span>
-                </div>
-                <div class="archives">
-                    
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/12/09/rancher-netstat-miss-port" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="为什么Rancher v1.2中netstat看不到开放端口" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/12/09/rancher-netstat-miss-port">为什么Rancher v1.2中netstat看不到开放端口</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-12-09 15:07:14 &#43;0800 CST" itemprop="datePublished">2016-12-09</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="go-machine-service访问Rancher API的授权机制分析" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key">go-machine-service访问Rancher API的授权机制分析</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-12-05 11:14:19 &#43;0800 CST" itemprop="datePublished">2016-12-05</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/12/02/rancher12-run-on-laptop" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="实践指南-快速解锁Rancher v1.2" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/12/02/rancher12-run-on-laptop">实践指南-快速解锁Rancher v1.2</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-12-02 21:31:53 &#43;0800 CST" itemprop="datePublished">2016-12-02</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/12/01/rancher12-networking" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="Rancher v1.2网络架构解读" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/12/01/rancher12-networking">Rancher v1.2网络架构解读</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-12-01 21:18:36 &#43;0800 CST" itemprop="datePublished">2016-12-01</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/11/28/rancher12-infra-architect" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="Rancher v1.2基础设施引擎整体架构" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/11/28/rancher12-infra-architect">Rancher v1.2基础设施引擎整体架构</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-11-28 20:53:44 &#43;0800 CST" itemprop="datePublished">2016-11-28</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="如何hack一下rancher k8s" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking">如何hack一下rancher k8s</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-10-08 16:09:24 &#43;0800 CST" itemprop="datePublished">2016-10-08</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/09/23/rancher-ha-practice" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="Rancher HA部署实践" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/09/23/rancher-ha-practice">Rancher HA部署实践</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-09-23 17:12:27 &#43;0800 CST" itemprop="datePublished">2016-09-23</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/08/25/rancher-envent" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="Rancher event机制及其实践指南" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/08/25/rancher-envent">Rancher event机制及其实践指南</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-08-25 13:44:04 &#43;0800 CST" itemprop="datePublished">2016-08-25</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/08/15/rancher-smart-tools" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="扒一扒Rancher社区中的小工具" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/08/15/rancher-smart-tools">扒一扒Rancher社区中的小工具</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-08-15 14:16:42 &#43;0800 CST" itemprop="datePublished">2016-08-15</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="Kubernetes in Rancher1.0 架构分析" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0">Kubernetes in Rancher1.0 架构分析</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-07-28 14:49:47 &#43;0800 CST" itemprop="datePublished">2016-07-28</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                </div>
-            </section>
-            <nav id="page-nav">
+	    
 
+	    
+<section id="main">
+
+    <article id="page-undefined" class="article article-type-page" itemscope="" itemprop="blogPost">
+        <div class="article-inner">
+            
+
+            <header class="article-header">
+    <a href="http://niusmallnan.com/2017/05/16/rancher-extend-network">
+    <h1 class="article-title" itemprop="name">
+        Rancher下实现Calico/Flat/Macvlan网络
+    </h1>
+    </a>
+    <div class="article-meta">
+
+        
+        <div class="article-date">
+            <i class="fa fa-calendar"></i>
+            <time datetime="2017-05-16 16:31:50 &#43;0800 CST" itemprop="datePublished">2017-05-16</time>
+            &middot;
+            1672
+            字数
+            &middot;
+            4
+            分钟阅读
+        </div>
+        
+        
+            
+            
+            <div class="article-category">
+                <i class="fa fa-folder"></i>
+                
+                
+                <a class="article-category-link" href="http://niusmallnan.com/categories/coding">coding</a>
+                
+                
+            </div>
+            
+        
+
+        
+            
+            
+            <div class="article-category">
+                <i class="fa fa-tags"></i>
+                
+                
+                <a class="article-category-link" href="http://niusmallnan.com/tags/rancher">Rancher</a>
+                &middot;
+                
+                
+                <a class="article-category-link" href="http://niusmallnan.com/tags/networking">Networking</a>
+                
+                
+            </div>
+            
+        
+    </div>
+</header>
+
+            <div class="article-entry" itemprop="articleBody">
+                <p>Rancher下的高性能网络方案
+</p>
+
+<h3 id="引言">引言</h3>
+
+<p>目前Rancher的开源版本中提供了IPSec和VXLAN两种网络方案：IPSec更多面向的是安全加密的场景，
+但是网络性能就会差很多；Vxlan与IPSec同属Overlay模型，但是内核层面的支持和没有加密环节的损耗，
+相对来说Vxlan的性能要远高于IPSec，在AWS上测试的Vxlan带宽性能是逼近于两台VM之间带宽，
+当然由于AWS本身的网络质量就很好，用户在自己的环境测试时并不会有这么好的性能。
+当面向私有数据中心部署时，Overlay的模型并不一定满足用户的需求，而且当前容器网络发展非常迅猛，
+出现了很多独树一帜的网络插件，所以这里我选择了三种插件Calico、Flat、Macvlan对接Rancher，
+希望可以为更多用户提供帮助。</p>
+
+<h3 id="rancher对接第三方网络插件">Rancher对接第三方网络插件</h3>
+
+<p>Rancher在v1.2版本重新架构后，实际上已经为第三方网络插件的支持留下了空间。Rancher中的network-manager
+组件是管理网络插件的核心，其管理原理本文不赘述，后面会放一个PPT参考链接，有兴趣可以仔细品味。
+但是当真正对接第三方插件时，还有一些小问题需要解决，这个问题就是多个ENV时，每个ENV都有独立的网络插件，
+那么network-manager如何匹配自己当前ENV的CNI config文件，关于此问题，
+我建了一个issue<a href="https://github.com/rancher/rancher/issues/8535">#8535</a>，并提交了相关PR。
+在Rancher v1.6.0+版本中，已经包含了这些修复。</p>
+
+<p>此外，还需要注意的是，在Rancher中集成第三方网络插件需要满足以下三个条件，否则兼容性和体验会大打折扣：</p>
+
+<ol>
+<li>容器可以分配IP，并能互相联通，IP与MAC设定尽量与Rancher同步</li>
+<li>容器网络可以访问metadata服务，即容器内可以ping rancher-metadata</li>
+<li>LB与metadata等组件兼容性</li>
+</ol>
+
+<h3 id="calico的支持">Calico的支持</h3>
+
+<p>Calico本身的设计思路很独到，利用BGP技术学习路由，通过路由构建高性能的网络，但是Calico本身在用户端的落地阻力还是相当大的，
+很多用户纯粹把Calico的支持当作一个Poc的要点，因为如果用户真的决定使用Calico网络，那么来自用户内部网管的阻力是相当大的。
+BGP路由动态学习对于很多行业，这种网络几乎认为是没有管理的状态。</p>
+
+<p>出于对Poc支持的考虑和一些付费用户的定制需求，大家如有兴趣可以参考一个demo版本的Rancher Calico的实现：</p>
+
+<ol>
+<li>Issue描述<a href="https://github.com/rancher/rancher/issues/8603">#rancher-8603</a></li>
+<li>Demo Catalog <a href="https://github.com/niusmallnan/test-calico-catalog-item">#test-calico-catalog-item</a>，请使用test分支</li>
+</ol>
+
+<h3 id="flat的支持">Flat的支持</h3>
+
+<p>Flat网络，中国用户喜欢称它为扁平网络，其目的是构建一种不带有任何路由或者overlay技术的网络，基本上容器的网络就是在一张大网中。
+通常容器的Flat网络是在交换机中配置好的，主机和容器其实使用的是同一个网段，这时候需要规划好网络的设置，比如主机的ip范围和容器的ip范围不能冲突。</p>
+
+<p>Flat网络的实现非常简单，原理上用户也很容易了解，在用户自身的网络部门推广起来几乎没有阻力，很多商业用户依赖这个网络。
+所以Rancher已经开源了Flat网络的实现，用户可以在v1.6.11版本上使用Flat网络，在Catalog中就可以找到。</p>
+
+<h3 id="macvlan的支持">Macvlan的支持</h3>
+
+<p>Macvlan网络更多是在Docker的CNM下被提及，其实CNI下也有Macvlan的实现，通常我们利用Macvlan可以隔离不同的容器子网。
+但是实际上这个特性Rancher并不是十分需要，Rancher的设计中一个ENV下就是一张网，这样可以很方便用户使用。
+如果不需要Macvlan的隔离特性，实际上这里其实更多就是利用Macvlan构建了一个类似Flat的网络，对于大部分Rancher用户来说Macvlan并没有很大的使用价值。</p>
+
+<p>出于对Poc支持的考虑和一些付费用户的定制需求，大家如有兴趣可以参考一个demo版本的Rancher Macvlan的实现：</p>
+
+<ol>
+<li>Issue描述<a href="https://github.com/rancher/rancher/issues/8686">#8686</a></li>
+<li>Demo Catalog App <a href="https://github.com/niusmallnan/flatnet-catalog">macvlan</a></li>
+</ol>
+
+<h3 id="总结">总结</h3>
+
+<p>更多内容可以参考我之前对外分享的PPT，请自行搭梯子，<a href="https://docs.google.com/presentation/d/1U4YZpsXnFg6l7YNIcaq0SJ5DsUlSr14mtWnxQ-rvFwQ/edit?usp=sharing">Rancher network management</a>.</p>
+            </div>
+            <footer class="article-footer">
+    <a data-url="http://niusmallnan.com/2017/05/16/rancher-extend-network" data-id="ea28f5b2348e7f67736677637468b180" class="article-share-link">
+        <i class="fa fa-share"></i>
+        分享
+    </a>
     
-        <a class="extend prev" rel="prev" href="http://niusmallnan.com/tags/rancher/">
-            « 上一篇
-        </a>
-    
+    <a href="http://niusmallnan.com/2017/05/16/rancher-extend-network#disqus_thread" class="article-comment-link">
+        评论
+    </a>
     
 
+    <script>
+    (function ($) {
+        
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+    </script>
+</footer>
+
+        </div>
+
+        
+<nav id="article-nav">
+    
+    <a href="http://niusmallnan.com/2017/04/11/rancher-logging" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">
+          老的
+      </strong>
+      <div class="article-nav-title">Rancher体系下容器日志采集</div>
+    </a>
+    
+
+    
 </nav>
 
-        </section>
-        <aside id="sidebar">
+
+    </article>
+
+    
+    <section id="comments">
+        <div id="disqus_thread">
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'niusmallnan';
+    var disqus_identifier = 'http:\/\/niusmallnan.com\/2017\/05\/16\/rancher-extend-network';
+    var disqus_title = 'Rancher下实现Calico\/Flat\/Macvlan网络';
+    var disqus_url = 'http:\/\/niusmallnan.com\/2017\/05\/16\/rancher-extend-network';
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+        </div>
+    </section>
+    
+</section>
+
+
+	    
+	    <aside id="sidebar">
     
 <div class="widget-wrap">
     <h3 class="widget-title">
@@ -797,7 +828,8 @@
     <div id="toTop" class="fa fa-angle-up"></div>
 </aside>
 
-    </div>
+	    
+	</div>
 </div>
 
 <footer id="footer">
