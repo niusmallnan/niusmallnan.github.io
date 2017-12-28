@@ -10,6 +10,69 @@
     <atom:link href="http://niusmallnan.com/categories/coding/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
+      <title>在阿里云上运行RancherOS</title>
+      <link>http://niusmallnan.com/2017/12/05/rancheros-on-aliyun</link>
+      <pubDate>Tue, 05 Dec 2017 16:32:52 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2017/12/05/rancheros-on-aliyun</guid>
+      <description>&lt;p&gt;阿里云上也可以玩转RancherOS
+&lt;/p&gt;
+
+&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
+
+&lt;p&gt;RancherLabs创立之初就立志于做一家纯粹的云产品公司，秉承一切开源的理念，为用户带来方便快捷的体验。我们推出的Rancher深受全球用户的喜爱，
+为了构建完整的用户体验丰富我们的产品线，我们考虑把传统的操作系统也引入容器的体验，于是我们大概在2015年正式推出了&lt;a href=&#34;https://github.com/rancher/os&#34;&gt;RancherOS&lt;/a&gt;这个项目，
+该项目一经推出凭借其极具创新性的理念，荣登2015年Github10大开源项目，我们致力于打造轻量可靠，一切皆容器的操作系统。今年早些时候Docker发布的Linuxkit其实也从侧面印证了，
+我们选择的这条路是顺应发展趋势的，只不过RancherOS先行了一步。&lt;/p&gt;
+
+&lt;p&gt;现在我们在各个公有云平台上给用户免费使用，国外的厂商DigitalOcean甚至把RancherOS放到了Container distributions的UI选项中，越来越多的用户开始使用RancherOS，
+参与到RancherOS的社区建设中，给我们反馈问题，协助我们不断改善产品。
+而非常遗憾的是，中国用户始终无法在公有云中方便地使用它，其中原因诸多，国内的公有云也是这一两年才真正发展起来，
+最初我们尝试在国内引入RancherOS时，很多平台无法提供有效的途径。&lt;/p&gt;
+
+&lt;p&gt;现在，一切已经开始走向成熟，这次可以很开心得向大家宣布，RancherOS登陆阿里云，欢迎大家使用。
+作为开源软件，不断积累改进是我们的目标，文章最后给大家提供了各种反馈使用问题的渠道。&lt;/p&gt;
+
+&lt;h3 id=&#34;如何使用&#34;&gt;如何使用&lt;/h3&gt;
+
+&lt;p&gt;首先声明一下，作为支持阿里云的首个版本仍然有很多不成熟之处，还有一些使用限制，如下：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;需使用阿里云VPC网络&lt;/li&gt;
+&lt;li&gt;创建VM时，只支持密钥，不支持设置密码&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;首先下载RancherOS专属阿里云镜像，比如：&lt;a href=&#34;https://releases.rancher.com/os/latest/rancheros-aliyun.vhd&#34;&gt;https://releases.rancher.com/os/latest/rancheros-aliyun.vhd&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;将镜像上传到阿里云对象存储中，因为自定义镜像是需要从对象存储中获取。&lt;/p&gt;
+
+&lt;p&gt;创建自定义镜像，按如下方式填写：&lt;br /&gt;
+&lt;img src=&#34;https://ws4.sinaimg.cn/large/006tKfTcly1fmm2l7gfbhj312a0rewfl.jpg&#34; alt=&#34;&#34; /&gt;
+注意事项包括：系统盘大小大于10GB，系统架构为x86_64，系统平台为Others Linux，镜像格式为VHD。&lt;/p&gt;
+
+&lt;p&gt;创建VM时，按以下方式选择镜像：&lt;br /&gt;
+&lt;img src=&#34;https://ws1.sinaimg.cn/large/006tKfTcly1fmwjd489e6j30wi09odg1.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;创建成功后，使用ssh，访问用户是rancher，当然不要忘记指定密钥：&lt;br /&gt;
+&lt;img src=&#34;https://ws2.sinaimg.cn/large/006tKfTcly1fm77ckj7ywj31ek0aq3z5.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
+&lt;img src=&#34;https://ws4.sinaimg.cn/large/006tKfTcly1fm76t2hvs7j316u12641q.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;由于现在ROS镜像还没有发布到阿里云镜像市场中，当你创建完自定义镜像后，你可以按照如下方式共享给你的伙伴使用：&lt;br /&gt;
+&lt;img src=&#34;https://ws1.sinaimg.cn/large/006tKfTcly1fm76xwulxxj30vy0jw74v.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;反馈渠道&#34;&gt;反馈渠道&lt;/h3&gt;
+
+&lt;p&gt;各种问题欢迎随时提交issue:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;这里建议使用英文 &lt;a href=&#34;https://github.com/rancher/os/issues&#34;&gt;https://github.com/rancher/os/issues&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;中文issue可以提交到Maintainer的个人Repo上: &lt;a href=&#34;https://github.com/niusmallnan/os/issues&#34;&gt;https://github.com/niusmallnan/os/issues&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;同时也欢迎大家发送邮件(niusmallnan@gmail.com)给开发者。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
       <title>Rancher下实现Calico/Flat/Macvlan网络</title>
       <link>http://niusmallnan.com/2017/05/16/rancher-extend-network</link>
       <pubDate>Tue, 16 May 2017 16:31:50 +0800</pubDate>
@@ -1034,94 +1097,6 @@ $ sudo system-docker restart docker
 而且Docker graph driver也有很多，再加上很多的LinuxOS，可以说使用Docker而产生组合有很多种，
 这就会带来各种各样的兼容性问题，因此导致的生产环境故障会让人头疼不已。
 当然如果纯粹基于演示和调研新功能，我们可以优先兼容性较好的选择。&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>Rancher v1.2网络架构解读</title>
-      <link>http://niusmallnan.com/2016/12/01/rancher12-networking</link>
-      <pubDate>Thu, 01 Dec 2016 21:18:36 +0800</pubDate>
-      
-      <guid>http://niusmallnan.com/2016/12/01/rancher12-networking</guid>
-      <description>&lt;p&gt;Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
-&lt;/p&gt;
-
-&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
-
-&lt;p&gt;在之前的Rancher版本上，用户经常诟病Rancher的网络只有IPsec，没有其他选择。
-而容器社区的发展是十分迅猛的，各种容器网络插件风起云涌，欲在江湖中一争高下。
-Rancher v1.2版本中与时俱进，对之前的网络实现进行了改造，支持了CNI标准，
-除IPsec之外又实现了呼声比较高的VXLAN网络，同时增加了CNI插件管理机制，
-让我们可以hacking接入其他第三方CNI插件。本文将和大家一起解读一下Rancher v1.2中网络的实现。&lt;/p&gt;
-
-&lt;h3 id=&#34;rancher-net-cni化&#34;&gt;Rancher-net CNI化&lt;/h3&gt;
-
-&lt;p&gt;以最简单最快速方式部署Rancher并添加Host，以默认的IPsec网络部署一个简单的应用后，
-进入应用容器内部看一看网络情况，对比一下之前的Rancher版本：&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tKfTcjw1fav9di74b7j30iv06tgoo.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-我们最直观的感受便是，网卡名从eth0到eth0@if8有了变化，原先网卡多IP的实现也去掉了，
-变成了单纯的IPsec网络IP。这其实就引来了我们要探讨的内容，虽然网络实现还是IPsec，
-但是rancher-net组件实际上是已经基于CNI标准了。最直接的证明就是看一下，
-rancher-net镜像的Dockerfile：&lt;br /&gt;
-&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tKfTcjw1fav9e5komyj30ju06o40i.jpg&#34; alt=&#34;&#34; /&gt;
-熟悉CNI规范的伙伴都知道/opt/cni/bin目录是CNI的插件目录，bridge和loopback也是CNI的默认插件，
-这里的rancher-bridge实际上和CNI原生的bridge没有太大差别，只是在幂等性健壮性上做了增强。
-而在IPAM也就是IP地址管理上，Rancher实现了一个自己的rancher-cni-ipam，它的实现非常简单，
-就是通过访问rancher-metadata来获取系统给容器分配的IP。
-Rancher实际上Fork了CNI的代码并做了这些修改，&lt;a href=&#34;https://github.com/rancher/cni&#34;&gt;https://github.com/rancher/cni&lt;/a&gt;。
-这样看来实际上，rancher-net的IPsec和Vxlan网络其实就是基于CNI的bridge基础上实现的。&lt;/p&gt;
-
-&lt;p&gt;在解释rancher-net怎么和CNI融合之前，我们需要了解一下CNI bridge模式是怎么工作的。
-举个例子，假设有两个容器nginx和mysql，每个容器都有自己的eth0，
-由于每个容器都是在各自的namespace里面，所以互相之间是无法通信的，
-这就需要在外部构建一个bridge来做二层转发，
-容器内的eth0和外部连接在容器上的虚拟网卡构建成对的veth设备，这样容器之间就可以通信了。
-其实无论是docker的bridge还是cni的bridge，这部分工作原理是差不多的，如图所示：&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tKfTcjw1fav9ffzi1sj30ch08q750.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;那么我们都知道CNI网络在创建时需要有一个配置，这个配置用来定义CNI网络模式，
-读取哪个CNI插件。在这个场景下也就是cni bridge的信息，
-这个信息rancher是通过rancher-compose传入metadata来控制的。
-查看ipsec服务的rancher-compose.yml可以看到，type使用rancher-bridge，
-ipam使用rancher-cni-ipam，bridge网桥则复用了docker0，
-有了这个配置我们甚至可以随意定义ipsec网络的CIDR，如下图所示：&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tKfTcjw1fav9g15ofmj30c80anab3.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;ipsec服务实际上有两个容器：一个是ipsec主容器，内部包含rancher-net服务和ipsec需要的charon服务；
-另一个sidekick容器是cni-driver，它来控制cni bridge的构建。两端主机通过IPsec隧道网络通信时，
-数据包到达物理网卡时，需要通过Host内的Iptables规则转发到ipsec容器内，
-这个Iptables规则管理则是由network-manager组件来完成的，
-&lt;a href=&#34;https://github.com/rancher/plugin-manager&#34;&gt;https://github.com/rancher/plugin-manager&lt;/a&gt;。其原理如下图所示（以IPsec为例）：&lt;br /&gt;
-&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tKfTcjw1fav9gp2vkwj30hj06pacf.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-整体上看cni ipsec的实现比之前的ipsec精进了不少，而且也做了大量的解耦工作，
-不单纯是走向社区的标准，之前大量的Iptables规则也有了很大的减少，性能上其实也有了很大提升。&lt;/p&gt;
-
-&lt;h3 id=&#34;rancher-net-vxlan的实现&#34;&gt;Rancher-net vxlan的实现&lt;/h3&gt;
-
-&lt;p&gt;那么rancher-net的另外一个backend vxlan又是如何实现的呢？
-我们需要创建一套VXLAN网络环境来一探究竟，默认的Cattle引擎网络是IPsec，
-如果修改成VXLAN有很多种方式，可以参考我下面使用的方式。&lt;/p&gt;
-
-&lt;p&gt;首先，创建一个新的Environment Template，把Rancher IPsec禁用，同时开启Rancher VXLAN，如下图所示：&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tKfTcjw1fav9hpxm04j30ft09wmya.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-然后，我们创建一个新的ENV，并使用刚才创建的模版Cattle-VXLAN，创建完成后，
-添加Host即可使用。如下图所示：&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tKfTcjw1fav9i7um3fj30d7083js5.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-以分析IPsec网络实现方式来分析VXLAN，基本上会发现其原理大致相同。
-同样是基于CNI bridge，使用rancher提供的rancher-cni-bridge、rancher-cni-ipam，
-网络配置信息以metadata方式注入。区别就在于rancher-net容器内部，
-rancher-net激活的是vxlan driver，它会生成一个vtep1042设备，并开启udp 4789端口，
-这个设备基于udp 4789构建vxlan overlay的两端通信，对于本机的容器通过eth0走bridge通信，对于
-其他Host的容器，则是通过路由规则转发到vtep1042设备上，再通过overlay到对端主机，
-由对端主机的bridge转发到相应的容器上。整个过程如图所示：&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tKfTcjw1fav9j4nhblj30e607z0um.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-vxlan实现的原理可更多参考：&lt;a href=&#34;https://www.kernel.org/doc/Documentation/networking/vxlan.txt&#34;&gt;https://www.kernel.org/doc/Documentation/networking/vxlan.txt&lt;/a&gt;&lt;/p&gt;
-
-&lt;h3 id=&#34;总结&#34;&gt;总结&lt;/h3&gt;
-
-&lt;p&gt;容器网络是容器云平台中很重要的一环，对于不通规模不通的安全要求会有不同的选型。
-Rancher的默认网络改造成了CNI标准，同时也会支持其他第三方CNI插件，
-结合Rancher独有的Environment Template功能，用户可以在一个大集群中的每个隔离环境内，
-创建不同的网络模式，以满足各种业务场景需求，这种管理的灵活性是其他平台没有的。&lt;/p&gt;</description>
     </item>
     
   </channel>

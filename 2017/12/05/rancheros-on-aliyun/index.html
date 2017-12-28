@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>如何hack一下rancher k8s &middot; Niusmallnan</title>
+    <title>在阿里云上运行RancherOS &middot; Niusmallnan</title>
     <meta name="generator" content="Hugo 0.17" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -10,7 +10,7 @@
       <meta name="description" content="Niusmallnan Blog Site">
     
     
-    <link rel="canonical" href="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking"/>
+    <link rel="canonical" href="http://niusmallnan.com/2017/12/05/rancheros-on-aliyun"/>
     <link rel="icon" href="http://niusmallnan.com/favicon.ico">
     <link rel="apple-touch-icon" href="http://niusmallnan.com/apple-touch-icon.png"/>
     <link rel="stylesheet" href="http://niusmallnan.com/css/style.css">
@@ -20,15 +20,14 @@
     
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,400,600' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-    <meta property="og:title" content="如何hack一下rancher k8s" />
-<meta property="og:description" content="Rancher可以轻松实现Kubernetes的部署，尽管默认的部署已经完全可用，
-但是如果我们想修改部署的K8s版本，这时应当如何应对？
+    <meta property="og:title" content="在阿里云上运行RancherOS" />
+<meta property="og:description" content="阿里云上也可以玩转RancherOS
 " />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking" />
+<meta property="og:url" content="http://niusmallnan.com/2017/12/05/rancheros-on-aliyun" />
 
 
-<meta property="og:updated_time" content="2016-10-08T16:09:24&#43;08:00"/>
+<meta property="og:updated_time" content="2017-12-05T16:32:52&#43;08:00"/>
 
 
 
@@ -41,14 +40,13 @@
 
     
     
-<meta itemprop="name" content="如何hack一下rancher k8s">
-<meta itemprop="description" content="Rancher可以轻松实现Kubernetes的部署，尽管默认的部署已经完全可用，
-但是如果我们想修改部署的K8s版本，这时应当如何应对？
+<meta itemprop="name" content="在阿里云上运行RancherOS">
+<meta itemprop="description" content="阿里云上也可以玩转RancherOS
 ">
 
 
-<meta itemprop="dateModified" content="2016-10-08T16:09:24&#43;08:00" />
-<meta itemprop="wordCount" content="1375">
+<meta itemprop="dateModified" content="2017-12-05T16:32:52&#43;08:00" />
+<meta itemprop="wordCount" content="1096">
 
 
 
@@ -60,9 +58,8 @@
 
 
 
-<meta name="twitter:title" content="如何hack一下rancher k8s"/>
-<meta name="twitter:description" content="Rancher可以轻松实现Kubernetes的部署，尽管默认的部署已经完全可用，
-但是如果我们想修改部署的K8s版本，这时应当如何应对？
+<meta name="twitter:title" content="在阿里云上运行RancherOS"/>
+<meta name="twitter:description" content="阿里云上也可以玩转RancherOS
 "/>
 
 
@@ -297,9 +294,9 @@
             
 
             <header class="article-header">
-    <a href="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking">
+    <a href="http://niusmallnan.com/2017/12/05/rancheros-on-aliyun">
     <h1 class="article-title" itemprop="name">
-        如何hack一下rancher k8s
+        在阿里云上运行RancherOS
     </h1>
     </a>
     <div class="article-meta">
@@ -307,9 +304,9 @@
         
         <div class="article-date">
             <i class="fa fa-calendar"></i>
-            <time datetime="2016-10-08 16:09:24 &#43;0800 CST" itemprop="datePublished">2016-10-08</time>
+            <time datetime="2017-12-05 16:32:52 &#43;0800 CST" itemprop="datePublished">2017-12-05</time>
             &middot;
-            1375
+            1096
             字数
             &middot;
             3
@@ -337,11 +334,7 @@
                 <i class="fa fa-tags"></i>
                 
                 
-                <a class="article-category-link" href="http://niusmallnan.com/tags/rancher">Rancher</a>
-                &middot;
-                
-                
-                <a class="article-category-link" href="http://niusmallnan.com/tags/kubernetes">Kubernetes</a>
+                <a class="article-category-link" href="http://niusmallnan.com/tags/rancheros">RancherOS</a>
                 
                 
             </div>
@@ -351,66 +344,69 @@
 </header>
 
             <div class="article-entry" itemprop="articleBody">
-                <p>Rancher可以轻松实现Kubernetes的部署，尽管默认的部署已经完全可用，
-但是如果我们想修改部署的K8s版本，这时应当如何应对？
+                <p>阿里云上也可以玩转RancherOS
 </p>
 
-<h3 id="原理分析与执行">原理分析与执行</h3>
+<h3 id="引言">引言</h3>
 
-<p>在Rancher中，由于K8s是基于Cattle引擎来部署，所以在K8s在部署完成之后，
-我们可以通过Link Graph来很清晰的看到整体的部署情况。<br />
-<img src="http://ww1.sinaimg.cn/large/006tNc79jw1fa0ybyprq4j30mi07tdh0.jpg" alt="" /></p>
+<p>RancherLabs创立之初就立志于做一家纯粹的云产品公司，秉承一切开源的理念，为用户带来方便快捷的体验。我们推出的Rancher深受全球用户的喜爱，
+为了构建完整的用户体验丰富我们的产品线，我们考虑把传统的操作系统也引入容器的体验，于是我们大概在2015年正式推出了<a href="https://github.com/rancher/os">RancherOS</a>这个项目，
+该项目一经推出凭借其极具创新性的理念，荣登2015年Github10大开源项目，我们致力于打造轻量可靠，一切皆容器的操作系统。今年早些时候Docker发布的Linuxkit其实也从侧面印证了，
+我们选择的这条路是顺应发展趋势的，只不过RancherOS先行了一步。</p>
 
-<p>既然基于Cattle引擎部署，也就是说需要两个compose文件，
-k8s引擎的compose文件放在<a href="https://github.com/rancher/rancher-catalog/tree/master/templates">https://github.com/rancher/rancher-catalog/tree/master/templates</a>下面，
-这里面有两个相关目录kubernetes与k8s，k8s是Rancher1.2开始使用的，
-而kubernetes则是Rancher1.2之后开始使用的。<br />
-<img src="http://ww1.sinaimg.cn/large/006tNc79jw1fa0ydzd1dgj30gt07qmyg.jpg" alt="" /></p>
+<p>现在我们在各个公有云平台上给用户免费使用，国外的厂商DigitalOcean甚至把RancherOS放到了Container distributions的UI选项中，越来越多的用户开始使用RancherOS，
+参与到RancherOS的社区建设中，给我们反馈问题，协助我们不断改善产品。
+而非常遗憾的是，中国用户始终无法在公有云中方便地使用它，其中原因诸多，国内的公有云也是这一两年才真正发展起来，
+最初我们尝试在国内引入RancherOS时，很多平台无法提供有效的途径。</p>
 
-<p>为了我们可以自己hack一下rancher k8s的部署，我们可以在github上fork一下rancher-catalog，
-同时还需要修改一下Rancher中默认的catalog的repo地址，
-这个可以在<a href="http://rancher-server/v1/settings">http://rancher-server/v1/settings</a>页面下，
-寻找名为 catalog.url 的配置项，然后进入编辑修改。比如我这里将library库的地址换成了自己的：
-<a href="https://github.com/niusmallnan/rancher-catalog.git">https://github.com/niusmallnan/rancher-catalog.git</a><br />
-<img src="http://ww3.sinaimg.cn/large/006tNc79jw1fa0yff7sbzj30h206imyy.jpg" alt="" /></p>
+<p>现在，一切已经开始走向成熟，这次可以很开心得向大家宣布，RancherOS登陆阿里云，欢迎大家使用。
+作为开源软件，不断积累改进是我们的目标，文章最后给大家提供了各种反馈使用问题的渠道。</p>
 
-<p>此时，我们就可以修改了，找一个比较实用的场景。我们都知道k8s的pod都会依赖一个基础镜像，
-这个镜像默认的地址是被GFW挡在墙外了，一般我们会把kubelet的启动参数调整一下，
-以便重新指定这个镜像地址，比如指定到国内的镜像源上。<br />
-<strong>&ndash;pod-infra-container-image=index.tenxcloud.com/google_containers/pause:2.0</strong>。</p>
+<h3 id="如何使用">如何使用</h3>
 
-<p>如果我们要让rancher k8s部署时自动加上该参数，
-可以直接修改私有rancher-catalog中的k8s compose文件。<br />
-<img src="http://ww4.sinaimg.cn/large/006tNc79jw1fa0ygscal6j30gv0asjtp.jpg" alt="" /></p>
+<p>首先声明一下，作为支持阿里云的首个版本仍然有很多不成熟之处，还有一些使用限制，如下：</p>
 
-<p>修改之后稍等片刻（主要是为了让rancher-server更新到新的catalog compose文件），
-添加一个k8s env并在其中添加host，k8s引擎就开始自动部署，
-部署完毕后，我们可以看到Kubernetes Stack的compose文件，
-已经有了&ndash;pod-infra-container-image这个启动参数。<br />
-<img src="http://ww4.sinaimg.cn/large/006tNc79jw1fa0yhg3alsj30gn09rtav.jpg" alt="" /><br />
-如此我们在添加pod时再也不用手动导入pod基础镜像了。</p>
+<ol>
+<li>需使用阿里云VPC网络</li>
+<li>创建VM时，只支持密钥，不支持设置密码</li>
+</ol>
 
-<p>在compose file中，部署k8s的基础镜像是rancher/k8s，这个镜像的Dockerfile在rancher维护的k8s分支中，
-如在rancher-k8s 1.2.4分支中可以看到：<br />
-<img src="http://ww2.sinaimg.cn/large/006tNc79jw1fa0yi5rmplj30e007ogmr.jpg" alt="" /></p>
+<p>首先下载RancherOS专属阿里云镜像，比如：<a href="https://releases.rancher.com/os/latest/rancheros-aliyun.vhd">https://releases.rancher.com/os/latest/rancheros-aliyun.vhd</a></p>
 
-<p>这样如果想对rancher-k8s发行版进行深度定制，就可以重新build相关镜像，通过rancher-compose来部署自己的发行版。</p>
+<p>将镜像上传到阿里云对象存储中，因为自定义镜像是需要从对象存储中获取。</p>
 
-<h3 id="总结">总结</h3>
+<p>创建自定义镜像，按如下方式填写：<br />
+<img src="https://ws4.sinaimg.cn/large/006tKfTcly1fmm2l7gfbhj312a0rewfl.jpg" alt="" />
+注意事项包括：系统盘大小大于10GB，系统架构为x86_64，系统平台为Others Linux，镜像格式为VHD。</p>
 
-<p>本文写于Rancher1.2行将发布之际，1.2版本是非常重大的更新，Rancher会支持部署原生的K8s版本，
-同时CNI网络和Cloud Provider等都会以插件方式，用户可以自己定义，并且在UI上都会有很好的体现。
-只要了解Rancher部署K8s的原理和过程，我们就可以定制非常适合自身使用的k8s，
-通过Rancher来部署自定义的k8s，我们就可以很容易的扩展了k8s不擅长的UI、Catalog、
-用户管理、审计日志维护等功能，这也是本文的目的。</p>
+<p>创建VM时，按以下方式选择镜像：<br />
+<img src="https://ws1.sinaimg.cn/large/006tKfTcly1fmwjd489e6j30wi09odg1.jpg" alt="" /></p>
+
+<p>创建成功后，使用ssh，访问用户是rancher，当然不要忘记指定密钥：<br />
+<img src="https://ws2.sinaimg.cn/large/006tKfTcly1fm77ckj7ywj31ek0aq3z5.jpg" alt="" /><br />
+<img src="https://ws4.sinaimg.cn/large/006tKfTcly1fm76t2hvs7j316u12641q.jpg" alt="" /></p>
+
+<p>由于现在ROS镜像还没有发布到阿里云镜像市场中，当你创建完自定义镜像后，你可以按照如下方式共享给你的伙伴使用：<br />
+<img src="https://ws1.sinaimg.cn/large/006tKfTcly1fm76xwulxxj30vy0jw74v.jpg" alt="" /></p>
+
+<h3 id="反馈渠道">反馈渠道</h3>
+
+<p>各种问题欢迎随时提交issue:</p>
+
+<ul>
+<li>这里建议使用英文 <a href="https://github.com/rancher/os/issues">https://github.com/rancher/os/issues</a></li>
+<li>中文issue可以提交到Maintainer的个人Repo上: <a href="https://github.com/niusmallnan/os/issues">https://github.com/niusmallnan/os/issues</a></li>
+</ul>
+
+<p>同时也欢迎大家发送邮件(niusmallnan@gmail.com)给开发者。</p>
             </div>
             <footer class="article-footer">
-    <a data-url="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking" data-id="b444c6b23f47cc350c11a4494d466946" class="article-share-link">
+    <a data-url="http://niusmallnan.com/2017/12/05/rancheros-on-aliyun" data-id="709058e4cd5c88dd0462d59a8f7fc4ce" class="article-share-link">
         <i class="fa fa-share"></i>
         分享
     </a>
     
-    <a href="http://niusmallnan.com/2016/10/08/rancher-k8s-hacking#disqus_thread" class="article-comment-link">
+    <a href="http://niusmallnan.com/2017/12/05/rancheros-on-aliyun#disqus_thread" class="article-comment-link">
         评论
     </a>
     
@@ -486,21 +482,14 @@ k8s引擎的compose文件放在<a href="https://github.com/rancher/rancher-catal
         
 <nav id="article-nav">
     
-    <a href="http://niusmallnan.com/2016/09/23/rancher-ha-practice" id="article-nav-older" class="article-nav-link-wrap">
+    <a href="http://niusmallnan.com/2017/05/16/rancher-extend-network" id="article-nav-older" class="article-nav-link-wrap">
       <strong class="article-nav-caption">
           老的
       </strong>
-      <div class="article-nav-title">Rancher HA部署实践</div>
+      <div class="article-nav-title">Rancher下实现Calico/Flat/Macvlan网络</div>
     </a>
     
 
-    
-    <a href="http://niusmallnan.com/2016/11/07/docker-on-rpi" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">
-          新的
-      </strong>
-      <div class="article-nav-title">树莓派上的Docker集群管理</div>
-    </a>
     
 </nav>
 
@@ -513,9 +502,9 @@ k8s引擎的compose文件放在<a href="https://github.com/rancher/rancher-catal
             <div id="disqus_thread"></div>
 <script type="text/javascript">
     var disqus_shortname = 'niusmallnan';
-    var disqus_identifier = 'http:\/\/niusmallnan.com\/2016\/10\/08\/rancher-k8s-hacking';
-    var disqus_title = '如何hack一下rancher k8s';
-    var disqus_url = 'http:\/\/niusmallnan.com\/2016\/10\/08\/rancher-k8s-hacking';
+    var disqus_identifier = 'http:\/\/niusmallnan.com\/2017\/12\/05\/rancheros-on-aliyun';
+    var disqus_title = '在阿里云上运行RancherOS';
+    var disqus_url = 'http:\/\/niusmallnan.com\/2017\/12\/05\/rancheros-on-aliyun';
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
