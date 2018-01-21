@@ -29,7 +29,7 @@
 <meta property="og:url" content="http://niusmallnan.com/" />
 
 
-<meta property="og:updated_time" content="2017-12-05T16:32:52&#43;08:00"/>
+<meta property="og:updated_time" content="2018-01-21T16:23:54&#43;08:00"/>
 
 
 
@@ -187,12 +187,12 @@
     </div>
     <div class="article-info profile-block">
       <div class="article-info-block">
-        25
+        26
         <span>文章</span>
       </div>
       <div class="article-info-block">
         
-          8
+          9
         
         <span>
             标签
@@ -267,6 +267,157 @@
 
     <section id="main">
     
+    
+    <article class="article article-type-post" itemscope="" itemprop="blogPost">
+        <div class="article-inner">
+            
+            </a>
+
+            <header class="article-header">
+    <a href="http://niusmallnan.com/2018/01/21/rke-on-rancheros">
+    <h1 class="article-title" itemprop="name">
+        RancherOS上运行RKE
+    </h1>
+    </a>
+    <div class="article-meta">
+
+        
+        <div class="article-date">
+            <i class="fa fa-calendar"></i>
+            <time datetime="2018-01-21 16:23:54 &#43;0800 CST" itemprop="datePublished">2018-01-21</time>
+            &middot;
+            688
+            字数
+            &middot;
+            2
+            分钟阅读
+        </div>
+        
+        
+            
+            
+            <div class="article-category">
+                <i class="fa fa-folder"></i>
+                
+                
+                <a class="article-category-link" href="http://niusmallnan.com/categories/coding">coding</a>
+                
+                
+            </div>
+            
+        
+
+        
+            
+            
+            <div class="article-category">
+                <i class="fa fa-tags"></i>
+                
+                
+                <a class="article-category-link" href="http://niusmallnan.com/tags/rancheros">RancherOS</a>
+                &middot;
+                
+                
+                <a class="article-category-link" href="http://niusmallnan.com/tags/rke">RKE</a>
+                
+                
+            </div>
+            
+        
+    </div>
+</header>
+
+            <div class="article-entry" itemprop="articleBody">
+                <p>
+                    RancherOS上运行RKE的注意事项
+
+                    <br>
+                </p>
+                <p class="article-more-link">
+                    <a href="http://niusmallnan.com/2018/01/21/rke-on-rancheros">
+                        查看更多
+                    </a>
+                </p>
+            </div>
+            <footer class="article-footer">
+    <a data-url="http://niusmallnan.com/2018/01/21/rke-on-rancheros" data-id="12cee2d3fb4df252bc16ef247431cf07" class="article-share-link">
+        <i class="fa fa-share"></i>
+        分享
+    </a>
+    
+    <a href="http://niusmallnan.com/2018/01/21/rke-on-rancheros#disqus_thread" class="article-comment-link">
+        评论
+    </a>
+    
+
+    <script>
+    (function ($) {
+        
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+    </script>
+</footer>
+
+        </div>
+    </article>
     
     <article class="article article-type-post" itemscope="" itemprop="blogPost">
         <div class="article-inner">
@@ -1611,158 +1762,6 @@
         </div>
     </article>
     
-    <article class="article article-type-post" itemscope="" itemprop="blogPost">
-        <div class="article-inner">
-            
-            </a>
-
-            <header class="article-header">
-    <a href="http://niusmallnan.com/2017/01/01/rancher-server-overwhelmed-by-dead-containers">
-    <h1 class="article-title" itemprop="name">
-        Dead容器导致Rancher Server过载的解决方案
-    </h1>
-    </a>
-    <div class="article-meta">
-
-        
-        <div class="article-date">
-            <i class="fa fa-calendar"></i>
-            <time datetime="2017-01-01 07:42:28 &#43;0800 CST" itemprop="datePublished">2017-01-01</time>
-            &middot;
-            1098
-            字数
-            &middot;
-            3
-            分钟阅读
-        </div>
-        
-        
-            
-            
-            <div class="article-category">
-                <i class="fa fa-folder"></i>
-                
-                
-                <a class="article-category-link" href="http://niusmallnan.com/categories/coding">coding</a>
-                
-                
-            </div>
-            
-        
-
-        
-            
-            
-            <div class="article-category">
-                <i class="fa fa-tags"></i>
-                
-                
-                <a class="article-category-link" href="http://niusmallnan.com/tags/rancher">Rancher</a>
-                &middot;
-                
-                
-                <a class="article-category-link" href="http://niusmallnan.com/tags/docker">Docker</a>
-                
-                
-            </div>
-            
-        
-    </div>
-</header>
-
-            <div class="article-entry" itemprop="articleBody">
-                <p>
-                    接之前的一篇文章<a href="http://niusmallnan.com/2016/12/27/docker-device-resource-busy/">device or resource busy</a>，
-其中描述了Docker的一个bug，这个bug其实会导致Rancher Server出现一个比较严重的问题。
-
-                    <br>
-                </p>
-                <p class="article-more-link">
-                    <a href="http://niusmallnan.com/2017/01/01/rancher-server-overwhelmed-by-dead-containers">
-                        查看更多
-                    </a>
-                </p>
-            </div>
-            <footer class="article-footer">
-    <a data-url="http://niusmallnan.com/2017/01/01/rancher-server-overwhelmed-by-dead-containers" data-id="ce81cc8b41f4b99031bb1f42d98eff1a" class="article-share-link">
-        <i class="fa fa-share"></i>
-        分享
-    </a>
-    
-    <a href="http://niusmallnan.com/2017/01/01/rancher-server-overwhelmed-by-dead-containers#disqus_thread" class="article-comment-link">
-        评论
-    </a>
-    
-
-    <script>
-    (function ($) {
-        
-        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
-            __SHARE_BUTTON_BINDED__ = true;
-        } else {
-            return;
-        }
-        $('body').on('click', function() {
-            $('.article-share-box.on').removeClass('on');
-        }).on('click', '.article-share-link', function(e) {
-            e.stopPropagation();
-
-            var $this = $(this),
-                url = $this.attr('data-url'),
-                encodedUrl = encodeURIComponent(url),
-                id = 'article-share-box-' + $this.attr('data-id'),
-                offset = $this.offset(),
-                box;
-
-            if ($('#' + id).length) {
-                box = $('#' + id);
-
-                if (box.hasClass('on')){
-                    box.removeClass('on');
-                    return;
-                }
-            } else {
-                var html = [
-                    '<div id="' + id + '" class="article-share-box">',
-                        '<input class="article-share-input" value="' + url + '">',
-                        '<div class="article-share-links">',
-                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
-                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
-                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
-                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
-                        '</div>',
-                    '</div>'
-                ].join('');
-
-              box = $(html);
-
-              $('body').append(box);
-            }
-
-            $('.article-share-box.on').hide();
-
-            box.css({
-                top: offset.top + 25,
-                left: offset.left
-            }).addClass('on');
-
-        }).on('click', '.article-share-box', function (e) {
-            e.stopPropagation();
-        }).on('click', '.article-share-box-input', function () {
-            $(this).select();
-        }).on('click', '.article-share-box-link', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
-        });
-    })(jQuery);
-    </script>
-</footer>
-
-        </div>
-    </article>
-    
 
     <nav id="page-nav">
 
@@ -1786,6 +1785,32 @@
     </h3>
     <div class="widget">
         <ul id="recent-post">
+            
+            <li>
+                <div class="item-thumbnail">
+                    <a href="http://niusmallnan.com/2018/01/21/rke-on-rancheros" class="thumbnail">
+                    
+                        <span class="thumbnail-image thumbnail-none"></span>
+                    
+                    </a>
+                </div>
+                <div class="item-inner">
+                    
+                    
+                    <p class="item-category">
+                        
+                        <a class="article-category-link" href="http://niusmallnan.com/categories/coding">
+                        coding
+                        </a>
+                    </p>
+                    
+                    
+                    <p class="item-title"><a href="http://niusmallnan.com/2018/01/21/rke-on-rancheros" class="title">RancherOS上运行RKE</a></p>
+                    <p class="item-date">
+                        <time datetime="2018-01-21 16:23:54 &#43;0800 CST" itemprop="datePublished">2018-01-21</time>
+                    </p>
+                </div>
+            </li>
             
             <li>
                 <div class="item-thumbnail">
@@ -1891,32 +1916,6 @@
                 </div>
             </li>
             
-            <li>
-                <div class="item-thumbnail">
-                    <a href="http://niusmallnan.com/2017/02/23/rancher-scheduler-based-on-resource" class="thumbnail">
-                    
-                        <span class="thumbnail-image thumbnail-none"></span>
-                    
-                    </a>
-                </div>
-                <div class="item-inner">
-                    
-                    
-                    <p class="item-category">
-                        
-                        <a class="article-category-link" href="http://niusmallnan.com/categories/coding">
-                        coding
-                        </a>
-                    </p>
-                    
-                    
-                    <p class="item-title"><a href="http://niusmallnan.com/2017/02/23/rancher-scheduler-based-on-resource" class="title">Rancher如何按计算资源调度</a></p>
-                    <p class="item-date">
-                        <time datetime="2017-02-23 18:58:19 &#43;0800 CST" itemprop="datePublished">2017-02-23</time>
-                    </p>
-                </div>
-            </li>
-            
         </ul>
     </div>
 </div>
@@ -1935,7 +1934,7 @@
                 <a class="category-list-link" href="http://niusmallnan.com/categories/coding">
                     coding
                 </a>
-                <span class="category-list-count">25</span>
+                <span class="category-list-count">26</span>
             </li>
             
         </ul>
@@ -2008,7 +2007,7 @@
                 <a class="category-list-link" href="http://niusmallnan.com/tags/rancheros">
                     rancheros
                 </a>
-                <span class="category-list-count">2</span>
+                <span class="category-list-count">3</span>
             </li>
             
             <li class="category-list-item">
@@ -2017,6 +2016,14 @@
                     raspberry-pi
                 </a>
                 <span class="category-list-count">2</span>
+            </li>
+            
+            <li class="category-list-item">
+                
+                <a class="category-list-link" href="http://niusmallnan.com/tags/rke">
+                    rke
+                </a>
+                <span class="category-list-count">1</span>
             </li>
             
         </ul>
@@ -2059,6 +2066,9 @@
         
         <a href="http://niusmallnan.com/tags/raspberry-pi" style="font-size: 12px;">raspberry-pi</a>
         
+        
+        <a href="http://niusmallnan.com/tags/rke" style="font-size: 12px;">rke</a>
+        
     </div>
 </div>
 
@@ -2075,7 +2085,7 @@
 <footer id="footer">
   <div class="outer">
     <div id="footer-info" class="inner">
-      &copy; 2017
+      &copy; 2018
       Niusmallnan
     </div>
   </div>

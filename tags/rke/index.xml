@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Niusmallnan</title>
+    <link>http://niusmallnan.com/tags/rke/index.xml</link>
+    <description>Recent content on Niusmallnan</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <copyright>Niusmallnan</copyright>
+    <atom:link href="http://niusmallnan.com/tags/rke/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>RancherOS上运行RKE</title>
+      <link>http://niusmallnan.com/2018/01/21/rke-on-rancheros</link>
+      <pubDate>Sun, 21 Jan 2018 16:23:54 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2018/01/21/rke-on-rancheros</guid>
+      <description>&lt;p&gt;RancherOS上运行RKE的注意事项
+&lt;/p&gt;
+
+&lt;h3 id=&#34;注意事项&#34;&gt;注意事项&lt;/h3&gt;
+
+&lt;p&gt;RancherOS是一个非常精简的操作系统，功能上肯定不如Ubuntu/CentOS之流全面，所以在其上面使用RKE部署Kubernetes时候需要注意一些问题。&lt;/p&gt;
+
+&lt;h4 id=&#34;切换到合适的docker-engine上&#34;&gt;切换到合适的docker engine上&lt;/h4&gt;
+
+&lt;p&gt;一般来说K8s并不会适配所有docker engine，但是RancherOS提供docker engine自由切换的功能，可以先列出RancherOS的支持的docker engine版本:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;[root@ip-172-31-5-104 rancher]# ros engine list
+disabled docker-1.12.6
+disabled docker-1.13.1
+disabled docker-17.03.1-ce
+current  docker-17.03.2-ce
+disabled docker-17.04.0-ce
+disabled docker-17.05.0-ce
+disabled docker-17.06.1-ce
+disabled docker-17.06.2-ce
+disabled docker-17.09.1-ce
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;根据RKE的文档，选择合适的docker engine，切换docker engine很简单，使用&lt;code&gt;ros engine switch xxx&lt;/code&gt;即可。&lt;/p&gt;
+
+&lt;h4 id=&#34;持久化相关目录&#34;&gt;持久化相关目录&lt;/h4&gt;
+
+&lt;p&gt;RancherOS的默认console中只有部分目录是持久化的，这意味着你重启主机后，非持久化目录的数据会自动清理。
+K8s会有一些数据需要持久化的磁盘上，所以针对K8s这些持久化目录，我们需要提前给RancherOS配置额外的持久化目录。&lt;/p&gt;
+
+&lt;p&gt;RancherOS中目录的定义，请参考：&lt;a href=&#34;http://rancher.com/docs/os/v1.1/en/system-services/system-docker-volumes/&#34;&gt;http://rancher.com/docs/os/v1.1/en/system-services/system-docker-volumes/&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;RancherOS默认包括三个持久化目录(user-volumes)，&lt;code&gt;/home/&lt;/code&gt; &lt;code&gt;/opt/&lt;/code&gt; &lt;code&gt;/var/lib/kubelet&lt;/code&gt;，如果要添加其他目录，可以使用下面的方式：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# 增加了 /etc/kubernetes 和 /etc/cni
+ros config set rancher.services.user-volumes.volumes  [/home:/home,/opt:/opt,/var/lib/kubelet:/var/lib/kubelet,/etc/kubernetes:/etc/kubernetes,/etc/cni:/etc/cni]
+
+system-docker rm all-volumes
+
+reboot
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;具体那些目录需要持久化，还要看自己的部署需求，相关目录请参考：&lt;a href=&#34;https://github.com/rancher/rke#cluster-remove&#34;&gt;https://github.com/rancher/rke#cluster-remove&lt;/a&gt;&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

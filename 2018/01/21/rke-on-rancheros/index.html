@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>Raspberry Pi &middot; Niusmallnan</title>
+    <title>RancherOS上运行RKE &middot; Niusmallnan</title>
     <meta name="generator" content="Hugo 0.17" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -10,10 +10,7 @@
       <meta name="description" content="Niusmallnan Blog Site">
     
     
-      <link href="http://niusmallnan.com/tags/raspberry-pi/index.xml" rel="alternate" type="application/rss+xml" title="Niusmallnan" />
-      <link href="http://niusmallnan.com/tags/raspberry-pi/index.xml" rel="feed" type="application/rss+xml" title="Niusmallnan" />
-    
-    <link rel="canonical" href="http://niusmallnan.com/tags/raspberry-pi/"/>
+    <link rel="canonical" href="http://niusmallnan.com/2018/01/21/rke-on-rancheros"/>
     <link rel="icon" href="http://niusmallnan.com/favicon.ico">
     <link rel="apple-touch-icon" href="http://niusmallnan.com/apple-touch-icon.png"/>
     <link rel="stylesheet" href="http://niusmallnan.com/css/style.css">
@@ -23,29 +20,50 @@
     
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,400,600' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-    <meta property="og:title" content="Raspberry Pi" />
-<meta property="og:description" content="" />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="http://niusmallnan.com/tags/raspberry-pi/" />
+    <meta property="og:title" content="RancherOS上运行RKE" />
+<meta property="og:description" content="RancherOS上运行RKE的注意事项
+" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://niusmallnan.com/2018/01/21/rke-on-rancheros" />
 
 
-<meta property="og:updated_time" content="2016-11-22T13:59:30&#43;08:00"/>
-
-
-
-
+<meta property="og:updated_time" content="2018-01-21T16:23:54&#43;08:00"/>
 
 
 
 
 
-    
-    
-<meta itemprop="name" content="Raspberry Pi">
-<meta itemprop="description" content="">
+
+
+
 
 
     
+    
+<meta itemprop="name" content="RancherOS上运行RKE">
+<meta itemprop="description" content="RancherOS上运行RKE的注意事项
+">
+
+
+<meta itemprop="dateModified" content="2018-01-21T16:23:54&#43;08:00" />
+<meta itemprop="wordCount" content="688">
+
+
+
+<meta itemprop="keywords" content="coding,docker,helm,kubernetes,networking,rancher,rancher-v1.2,rancheros,raspberry-pi,rke," />
+
+    
+
+  <meta name="twitter:card" content="summary"/>
+
+
+
+<meta name="twitter:title" content="RancherOS上运行RKE"/>
+<meta name="twitter:description" content="RancherOS上运行RKE的注意事项
+"/>
+
+
+
     
 
     
@@ -58,7 +76,7 @@
 
 
 <div id="container">
-    <header id="header">
+	<header id="header">
   <div id="header-main" class="header-inner">
     <div class="outer">
       <a href="http://niusmallnan.com/" id="logo">
@@ -170,8 +188,10 @@
   </div>
 </header>
 
-    <div class="outer">
-        <aside id="profile">
+   	
+   	<div class="outer">
+   		
+	    <aside id="profile">
   <div class="inner profile-inner">
     <div class="base-info profile-block">
       <img id="avatar" src="http://niusmallnan.com/css/images/avatar.jpg">
@@ -264,66 +284,236 @@
   </div>
 </aside>
 
-        <section id="main">
-            <section class="archives-wrap">
-                <div class="archive-category-wrap">
-                    <span class="archive-category">Raspberry Pi</span>
-                </div>
-                <div class="archives">
-                    
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/11/22/rpi-noip-with-docker" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="基于容器实现树莓派的动态域名绑定" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/11/22/rpi-noip-with-docker">基于容器实现树莓派的动态域名绑定</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-11-22 13:59:30 &#43;0800 CST" itemprop="datePublished">2016-11-22</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                        <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <div class="archive-article-thumbnail">
-            
-            <a href="http://niusmallnan.com/2016/11/07/docker-on-rpi" class="thumbnail">
-                <span style="background-image:url(http://niusmallnan.com/)" alt="树莓派上的Docker集群管理" class="thumbnail-image"></span>
-            </a>
-            
-        </div>
-        <header class="archive-article-header">
-            <h1 itemprop="name">
-            <a class="archive-article-title" href="http://niusmallnan.com/2016/11/07/docker-on-rpi">树莓派上的Docker集群管理</a>
-            </h1>
-            <div class="archive-article-date">
-                <i class="fa fa-calendar"></i>
-                <time datetime="2016-11-07 17:36:37 &#43;0800 CST" itemprop="datePublished">2016-11-07</time>
-            </div>
-        </header>
-    </div>
-</article>
- 
-                    
-                </div>
-            </section>
-            <nav id="page-nav">
+	    
 
+	    
+<section id="main">
+
+    <article id="page-undefined" class="article article-type-page" itemscope="" itemprop="blogPost">
+        <div class="article-inner">
+            
+
+            <header class="article-header">
+    <a href="http://niusmallnan.com/2018/01/21/rke-on-rancheros">
+    <h1 class="article-title" itemprop="name">
+        RancherOS上运行RKE
+    </h1>
+    </a>
+    <div class="article-meta">
+
+        
+        <div class="article-date">
+            <i class="fa fa-calendar"></i>
+            <time datetime="2018-01-21 16:23:54 &#43;0800 CST" itemprop="datePublished">2018-01-21</time>
+            &middot;
+            688
+            字数
+            &middot;
+            2
+            分钟阅读
+        </div>
+        
+        
+            
+            
+            <div class="article-category">
+                <i class="fa fa-folder"></i>
+                
+                
+                <a class="article-category-link" href="http://niusmallnan.com/categories/coding">coding</a>
+                
+                
+            </div>
+            
+        
+
+        
+            
+            
+            <div class="article-category">
+                <i class="fa fa-tags"></i>
+                
+                
+                <a class="article-category-link" href="http://niusmallnan.com/tags/rancheros">RancherOS</a>
+                &middot;
+                
+                
+                <a class="article-category-link" href="http://niusmallnan.com/tags/rke">RKE</a>
+                
+                
+            </div>
+            
+        
+    </div>
+</header>
+
+            <div class="article-entry" itemprop="articleBody">
+                <p>RancherOS上运行RKE的注意事项
+</p>
+
+<h3 id="注意事项">注意事项</h3>
+
+<p>RancherOS是一个非常精简的操作系统，功能上肯定不如Ubuntu/CentOS之流全面，所以在其上面使用RKE部署Kubernetes时候需要注意一些问题。</p>
+
+<h4 id="切换到合适的docker-engine上">切换到合适的docker engine上</h4>
+
+<p>一般来说K8s并不会适配所有docker engine，但是RancherOS提供docker engine自由切换的功能，可以先列出RancherOS的支持的docker engine版本:</p>
+
+<pre><code>[root@ip-172-31-5-104 rancher]# ros engine list
+disabled docker-1.12.6
+disabled docker-1.13.1
+disabled docker-17.03.1-ce
+current  docker-17.03.2-ce
+disabled docker-17.04.0-ce
+disabled docker-17.05.0-ce
+disabled docker-17.06.1-ce
+disabled docker-17.06.2-ce
+disabled docker-17.09.1-ce
+</code></pre>
+
+<p>根据RKE的文档，选择合适的docker engine，切换docker engine很简单，使用<code>ros engine switch xxx</code>即可。</p>
+
+<h4 id="持久化相关目录">持久化相关目录</h4>
+
+<p>RancherOS的默认console中只有部分目录是持久化的，这意味着你重启主机后，非持久化目录的数据会自动清理。
+K8s会有一些数据需要持久化的磁盘上，所以针对K8s这些持久化目录，我们需要提前给RancherOS配置额外的持久化目录。</p>
+
+<p>RancherOS中目录的定义，请参考：<a href="http://rancher.com/docs/os/v1.1/en/system-services/system-docker-volumes/">http://rancher.com/docs/os/v1.1/en/system-services/system-docker-volumes/</a></p>
+
+<p>RancherOS默认包括三个持久化目录(user-volumes)，<code>/home/</code> <code>/opt/</code> <code>/var/lib/kubelet</code>，如果要添加其他目录，可以使用下面的方式：</p>
+
+<pre><code># 增加了 /etc/kubernetes 和 /etc/cni
+ros config set rancher.services.user-volumes.volumes  [/home:/home,/opt:/opt,/var/lib/kubelet:/var/lib/kubelet,/etc/kubernetes:/etc/kubernetes,/etc/cni:/etc/cni]
+
+system-docker rm all-volumes
+
+reboot
+</code></pre>
+
+<p>具体那些目录需要持久化，还要看自己的部署需求，相关目录请参考：<a href="https://github.com/rancher/rke#cluster-remove">https://github.com/rancher/rke#cluster-remove</a></p>
+            </div>
+            <footer class="article-footer">
+    <a data-url="http://niusmallnan.com/2018/01/21/rke-on-rancheros" data-id="12cee2d3fb4df252bc16ef247431cf07" class="article-share-link">
+        <i class="fa fa-share"></i>
+        分享
+    </a>
+    
+    <a href="http://niusmallnan.com/2018/01/21/rke-on-rancheros#disqus_thread" class="article-comment-link">
+        评论
+    </a>
+    
+
+    <script>
+    (function ($) {
+        
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+    </script>
+</footer>
+
+        </div>
+
+        
+<nav id="article-nav">
+    
+    <a href="http://niusmallnan.com/2017/12/05/rancheros-on-aliyun" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">
+          老的
+      </strong>
+      <div class="article-nav-title">在阿里云上运行RancherOS</div>
+    </a>
+    
+
+    
 </nav>
 
-        </section>
-        <aside id="sidebar">
+
+    </article>
+
+    
+    <section id="comments">
+        <div id="disqus_thread">
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'niusmallnan';
+    var disqus_identifier = 'http:\/\/niusmallnan.com\/2018\/01\/21\/rke-on-rancheros';
+    var disqus_title = 'RancherOS上运行RKE';
+    var disqus_url = 'http:\/\/niusmallnan.com\/2018\/01\/21\/rke-on-rancheros';
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+        </div>
+    </section>
+    
+</section>
+
+
+	    
+	    <aside id="sidebar">
     
 <div class="widget-wrap">
     <h3 class="widget-title">
@@ -625,7 +815,8 @@
     <div id="toTop" class="fa fa-angle-up"></div>
 </aside>
 
-    </div>
+	    
+	</div>
 </div>
 
 <footer id="footer">
