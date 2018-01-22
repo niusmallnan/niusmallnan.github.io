@@ -29,7 +29,7 @@
 <meta property="og:url" content="http://niusmallnan.com/" />
 
 
-<meta property="og:updated_time" content="2016-10-08T16:09:24&#43;08:00"/>
+<meta property="og:updated_time" content="2016-11-07T17:36:37&#43;08:00"/>
 
 
 
@@ -187,7 +187,7 @@
     </div>
     <div class="article-info profile-block">
       <div class="article-info-block">
-        26
+        27
         <span>文章</span>
       </div>
       <div class="article-info-block">
@@ -267,6 +267,159 @@
 
     <section id="main">
     
+    
+    <article class="article article-type-post" itemscope="" itemprop="blogPost">
+        <div class="article-inner">
+            
+            </a>
+
+            <header class="article-header">
+    <a href="http://niusmallnan.com/2016/11/07/docker-on-rpi">
+    <h1 class="article-title" itemprop="name">
+        树莓派上的Docker集群管理
+    </h1>
+    </a>
+    <div class="article-meta">
+
+        
+        <div class="article-date">
+            <i class="fa fa-calendar"></i>
+            <time datetime="2016-11-07 17:36:37 &#43;0800 CST" itemprop="datePublished">2016-11-07</time>
+            &middot;
+            2676
+            字数
+            &middot;
+            6
+            分钟阅读
+        </div>
+        
+        
+            
+            
+            <div class="article-category">
+                <i class="fa fa-folder"></i>
+                
+                
+                <a class="article-category-link" href="http://niusmallnan.com/categories/coding">coding</a>
+                
+                
+            </div>
+            
+        
+
+        
+            
+            
+            <div class="article-category">
+                <i class="fa fa-tags"></i>
+                
+                
+                <a class="article-category-link" href="http://niusmallnan.com/tags/rancheros">RancherOS</a>
+                &middot;
+                
+                
+                <a class="article-category-link" href="http://niusmallnan.com/tags/raspberry-pi">Raspberry Pi</a>
+                
+                
+            </div>
+            
+        
+    </div>
+</header>
+
+            <div class="article-entry" itemprop="articleBody">
+                <p>
+                    随着IOT市场的火热发展，Docker天然的轻量级以及帮助业务快速重构的特性，
+将会在IOT领域迎来巨大发展潜力，甚至有可能会比它在云端的潜力更大。
+本文将致力于构建一个利用RancherOS来管理运行在树莓派上的容器集群。
+
+                    <br>
+                </p>
+                <p class="article-more-link">
+                    <a href="http://niusmallnan.com/2016/11/07/docker-on-rpi">
+                        查看更多
+                    </a>
+                </p>
+            </div>
+            <footer class="article-footer">
+    <a data-url="http://niusmallnan.com/2016/11/07/docker-on-rpi" data-id="c34d71f33537b81e4bd9c2d65e1a80b1" class="article-share-link">
+        <i class="fa fa-share"></i>
+        分享
+    </a>
+    
+    <a href="http://niusmallnan.com/2016/11/07/docker-on-rpi#disqus_thread" class="article-comment-link">
+        评论
+    </a>
+    
+
+    <script>
+    (function ($) {
+        
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+    </script>
+</footer>
+
+        </div>
+    </article>
     
     <article class="article article-type-post" itemscope="" itemprop="blogPost">
         <div class="article-inner">
@@ -1189,6 +1342,32 @@ Rancher内部是如何使用的？以及我们如何用event来增强一些定�
             
             <li>
                 <div class="item-thumbnail">
+                    <a href="http://niusmallnan.com/2018/01/22/update-microcode-on-rancheros" class="thumbnail">
+                    
+                        <span class="thumbnail-image thumbnail-none"></span>
+                    
+                    </a>
+                </div>
+                <div class="item-inner">
+                    
+                    
+                    <p class="item-category">
+                        
+                        <a class="article-category-link" href="http://niusmallnan.com/categories/coding">
+                        coding
+                        </a>
+                    </p>
+                    
+                    
+                    <p class="item-title"><a href="http://niusmallnan.com/2018/01/22/update-microcode-on-rancheros" class="title">如何在RancherOS上更新microcode</a></p>
+                    <p class="item-date">
+                        <time datetime="2018-01-22 17:16:17 &#43;0800 CST" itemprop="datePublished">2018-01-22</time>
+                    </p>
+                </div>
+            </li>
+            
+            <li>
+                <div class="item-thumbnail">
                     <a href="http://niusmallnan.com/2018/01/21/rke-on-rancheros" class="thumbnail">
                     
                         <span class="thumbnail-image thumbnail-none"></span>
@@ -1291,32 +1470,6 @@ Rancher内部是如何使用的？以及我们如何用event来增强一些定�
                 </div>
             </li>
             
-            <li>
-                <div class="item-thumbnail">
-                    <a href="http://niusmallnan.com/2017/03/09/analysis-of-kubelet-start-failure" class="thumbnail">
-                    
-                        <span class="thumbnail-image thumbnail-none"></span>
-                    
-                    </a>
-                </div>
-                <div class="item-inner">
-                    
-                    
-                    <p class="item-category">
-                        
-                        <a class="article-category-link" href="http://niusmallnan.com/categories/coding">
-                        coding
-                        </a>
-                    </p>
-                    
-                    
-                    <p class="item-title"><a href="http://niusmallnan.com/2017/03/09/analysis-of-kubelet-start-failure" class="title">Kubelet无法访问rancher-metadata问题分析</a></p>
-                    <p class="item-date">
-                        <time datetime="2017-03-09 15:45:41 &#43;0800 CST" itemprop="datePublished">2017-03-09</time>
-                    </p>
-                </div>
-            </li>
-            
         </ul>
     </div>
 </div>
@@ -1335,7 +1488,7 @@ Rancher内部是如何使用的？以及我们如何用event来增强一些定�
                 <a class="category-list-link" href="http://niusmallnan.com/categories/coding">
                     coding
                 </a>
-                <span class="category-list-count">26</span>
+                <span class="category-list-count">27</span>
             </li>
             
         </ul>
@@ -1408,7 +1561,7 @@ Rancher内部是如何使用的？以及我们如何用event来增强一些定�
                 <a class="category-list-link" href="http://niusmallnan.com/tags/rancheros">
                     rancheros
                 </a>
-                <span class="category-list-count">3</span>
+                <span class="category-list-count">4</span>
             </li>
             
             <li class="category-list-item">
