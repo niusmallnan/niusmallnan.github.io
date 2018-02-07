@@ -7,8 +7,71 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-CN</language>
     <copyright>Niusmallnan</copyright>
-    <lastBuildDate>Mon, 22 Jan 2018 17:16:17 +0800</lastBuildDate>
+    <lastBuildDate>Wed, 07 Feb 2018 16:52:31 +0800</lastBuildDate>
     <atom:link href="http://niusmallnan.com/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>RancherOS v1.2.0发布</title>
+      <link>http://niusmallnan.com/2018/02/07/rancheros-v120-release</link>
+      <pubDate>Wed, 07 Feb 2018 16:52:31 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2018/02/07/rancheros-v120-release</guid>
+      <description>&lt;p&gt;一言不合就发新版本
+&lt;/p&gt;
+
+&lt;p&gt;RancherOS v1.2.0版本于北京时间2月7日正式发布，从v1.1到v1.2开发周期中，我们收集到了社区用户和商业用户的Bug report和Feature request，
+感谢大家为此作出的贡献。这个周期内，Meltdown和Spectre漏洞曝出给OS界造成了沉重的打击，我
+们也时刻紧跟业界动向，第一时间把漏洞补丁更新到RancherOS中。&lt;/p&gt;
+
+&lt;h3 id=&#34;spectre-var-2-漏洞修复&#34;&gt;Spectre Var.2 漏洞修复&lt;/h3&gt;
+
+&lt;p&gt;对于Spectre变种2，我们采用了新的GCC编译器开启Retpoline指令重新编译了内核。而Intel的微码补丁，我们并没有采用，因为业界对这个补丁诟病很深，
+已经造成了很多云厂商的Crash问题。&lt;/p&gt;
+
+&lt;p&gt;基于最新的RancherOS v1.2.0可以使用这种方式检测Meltdown和Spectre的修复状态：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;sudo system-docker run --rm -it -v /:/host niusmallnan/spectre-meltdown-checker
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://ws4.sinaimg.cn/large/006tKfTcgy1fo80fauf1fj319s0v8gqy.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;不再支持arm32&#34;&gt;不再支持ARM32&lt;/h3&gt;
+
+&lt;p&gt;考虑到32位操作系统发展情况，以及其他Linux发行版的支持情况，不再对ARM 32位进行硬件支持。
+ARM 64位依然会继续支持，你依然可以继续在合适的树莓派型号上使用它。&lt;/p&gt;
+
+&lt;p&gt;树莓派镜像：&lt;a href=&#34;https://github.com/rancher/os/releases/download/v1.2.0/rancheros-raspberry-pi64.zip&#34;&gt;https://github.com/rancher/os/releases/download/v1.2.0/rancheros-raspberry-pi64.zip&lt;/a&gt;
+安装方式参考：&lt;a href=&#34;https://www.raspberrypi.org/documentation/installation/installing-images/&#34;&gt;https://www.raspberrypi.org/documentation/installation/installing-images/&lt;/a&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;各个console更新&#34;&gt;各个Console更新&lt;/h3&gt;
+
+&lt;p&gt;RancherOS支持多种console，比如Ubuntu、Debian、Alpine等等，默认使用busybox console。
+Busybox console基于&lt;a href=&#34;https://github.com/buildroot/buildroot&#34;&gt;Buildroot&lt;/a&gt;，本次发布更新了较新的稳定版本。&lt;/p&gt;
+
+&lt;p&gt;其他console均更新成LTS版本，版本如下：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Alpine: 3.7&lt;/li&gt;
+&lt;li&gt;CentOS: 7.4.1708&lt;/li&gt;
+&lt;li&gt;Debian: stretch&lt;/li&gt;
+&lt;li&gt;Fedora: 27&lt;/li&gt;
+&lt;li&gt;Ubuntu: xenial&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&#34;其他&#34;&gt;其他&lt;/h3&gt;
+
+&lt;p&gt;AWS相关镜像已经上传到各个region中，可以直接搜索查找并使用，AWS中国区目前还不支持。其他主要镜像列表：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;阿里云镜像：&lt;a href=&#34;https://github.com/rancher/os/releases/download/v1.2.0/rancheros-aliyun.vhd&#34;&gt;https://github.com/rancher/os/releases/download/v1.2.0/rancheros-aliyun.vhd&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;GCE镜像：&lt;a href=&#34;https://github.com/rancher/os/releases/download/v1.2.0/rancheros-gce.tar.gz&#34;&gt;https://github.com/rancher/os/releases/download/v1.2.0/rancheros-gce.tar.gz&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;OpenStack镜像：&lt;a href=&#34;https://github.com/rancher/os/releases/download/v1.2.0/rancheros-openstack.img&#34;&gt;https://github.com/rancher/os/releases/download/v1.2.0/rancheros-openstack.img&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;更多新特性和Bug Fix请参考v1.2.0的&lt;a href=&#34;https://github.com/rancher/os/releases/tag/v1.2.0&#34;&gt;Release Notes&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;文档说明：&lt;a href=&#34;http://rancher.com/docs/os/v1.2/en/&#34;&gt;http://rancher.com/docs/os/v1.2/en/&lt;/a&gt;&lt;/p&gt;</description>
+    </item>
     
     <item>
       <title>如何在RancherOS上更新microcode</title>
@@ -1003,57 +1066,6 @@ health.sh负责监控swarmkit节点的状态（通过与docker.sock通信读取S
 &lt;p&gt;目前来看，由于Kubernetes的发展的确迅猛，所以Rancher的更多精力都放在K8s上。
 针对Swarmkit的支持显得略显单薄，但是Swarmkit本身的问题也很多，目前也难以应对复杂场景，
 所以目前的支持力度应该是足够了。后续对docker1.13版本的Swarmkit支持也在持续迭代中。&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>为什么Rancher v1.2中netstat看不到开放端口</title>
-      <link>http://niusmallnan.com/2016/12/09/rancher-netstat-miss-port</link>
-      <pubDate>Fri, 09 Dec 2016 15:07:14 +0800</pubDate>
-      
-      <guid>http://niusmallnan.com/2016/12/09/rancher-netstat-miss-port</guid>
-      <description>&lt;p&gt;拯救一脸懵逼。
-&lt;/p&gt;
-
-&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
-
-&lt;p&gt;随着Rancher v1.2的发布，越来越多的伙伴参与到新特性的尝鲜中。有时不免会碰到一些问题，
-比如网络不通之类的，这时通常我们都会下意识的使用netstat命令查看端口是否正确开启，
-可是出现的结果却让伙伴们一脸疑问。比如我们使用了ipsec网络，
-netstat命令却看不到UDP 500和4500端口的开放，这是为什么呢？本文将释疑这个问题。&lt;/p&gt;
-
-&lt;h3 id=&#34;问题现象&#34;&gt;问题现象&lt;/h3&gt;
-
-&lt;p&gt;启动之前的Rancher v1.1版本并对比v1.2版本，可以看到如下现象，
-ipsec网络正常，但在新版中netstat却看不到端口开放：&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tKfTcjw1fakk2e84hcj30d509z76g.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-用LB暴露一个服务访问，UI上明明显示了端口，但是在netstat中却看不到：&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/006tKfTcjw1fakk3aasx6j30j7075my6.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-这些现象是为什么？&lt;/p&gt;
-
-&lt;h3 id=&#34;原生docker和k8s可以看到端口&#34;&gt;原生docker和k8s可以看到端口&lt;/h3&gt;
-
-&lt;p&gt;原先的docker，一般run一个容器加入-p参数，就可以看到端口。
-这其实是由当前tcp/ip栈内的docker-proxy开放的，如图：&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tKfTcjw1fakk45w280j30ju06t0v2.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-k8s是可以通过netstat看到端口，举个例子，创建一个service暴露NodePort，如下图：&lt;br /&gt;
-&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tKfTcjw1fakk4l1qplj308z069wer.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-而通过netstat命令却能看到对应的端口，这是因为这个端口是由kube-proxy开放的，
-就是说在这个tcp/ip栈内有应用程序bind了这个端口：&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tKfTcjw1fakk4z18gzj30j605jtah.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&#34;本质原因&#34;&gt;本质原因&lt;/h3&gt;
-
-&lt;p&gt;端口的本质其实是应用程序，就是说需要有process bind port，
-而netstat要能显示出开放端口，则必须在当前的namespace里有应用程序监听了端口才行。
-Rancher中因为是使用CNI模型，虽然也是使用docker0，但是这个docker0是CNI Bridge，
-并不和docker-proxy有协作，所以端口并没有通过docker-proxy暴露，
-只是通过iptables dnat转发到其他的namespace上。在当前的namespace里使用netstat看不到开放的端口，
-iptables dnat规则如下：&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/006tKfTcjw1fakk5qzfr6j30jg03idh7.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&#34;总结&#34;&gt;总结&lt;/h3&gt;
-
-&lt;p&gt;有时候惯性思维让我们忽略了事物的本质，让人匪夷所思的问题往往是很简单的道理。&lt;/p&gt;</description>
     </item>
     
   </channel>
