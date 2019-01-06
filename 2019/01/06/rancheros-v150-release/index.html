@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>Rancher event机制及其实践指南 &middot; Niusmallnan</title>
+    <title>RancherOS v1.5.0发布 &middot; Niusmallnan</title>
     <meta name="generator" content="Hugo 0.17" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -10,7 +10,7 @@
       <meta name="description" content="Niusmallnan Blog Site">
     
     
-    <link rel="canonical" href="http://niusmallnan.com/2016/08/25/rancher-envent"/>
+    <link rel="canonical" href="http://niusmallnan.com/2019/01/06/rancheros-v150-release"/>
     <link rel="icon" href="http://niusmallnan.com/favicon.ico">
     <link rel="apple-touch-icon" href="http://niusmallnan.com/apple-touch-icon.png"/>
     <link rel="stylesheet" href="http://niusmallnan.com/css/style.css">
@@ -20,16 +20,14 @@
     
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,400,600' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-    <meta property="og:title" content="Rancher event机制及其实践指南" />
-<meta property="og:description" content="Rancher在v1.0版本为了Kubernetes的集成，开始扩展并逐步完善了Rancher event机制，
-event机制可以完成技术架构上的解耦。那么Rancher都提供了哪些event？
-Rancher内部是如何使用的？以及我们如何用event来增强一些定制服务？
+    <meta property="og:title" content="RancherOS v1.5.0发布" />
+<meta property="og:description" content="一言不合就发新版本
 " />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="http://niusmallnan.com/2016/08/25/rancher-envent" />
+<meta property="og:url" content="http://niusmallnan.com/2019/01/06/rancheros-v150-release" />
 
 
-<meta property="og:updated_time" content="2016-08-25T13:44:04&#43;08:00"/>
+<meta property="og:updated_time" content="2019-01-06T17:00:46&#43;08:00"/>
 
 
 
@@ -42,15 +40,13 @@ Rancher内部是如何使用的？以及我们如何用event来增强一些定�
 
     
     
-<meta itemprop="name" content="Rancher event机制及其实践指南">
-<meta itemprop="description" content="Rancher在v1.0版本为了Kubernetes的集成，开始扩展并逐步完善了Rancher event机制，
-event机制可以完成技术架构上的解耦。那么Rancher都提供了哪些event？
-Rancher内部是如何使用的？以及我们如何用event来增强一些定制服务？
+<meta itemprop="name" content="RancherOS v1.5.0发布">
+<meta itemprop="description" content="一言不合就发新版本
 ">
 
 
-<meta itemprop="dateModified" content="2016-08-25T13:44:04&#43;08:00" />
-<meta itemprop="wordCount" content="3775">
+<meta itemprop="dateModified" content="2019-01-06T17:00:46&#43;08:00" />
+<meta itemprop="wordCount" content="2117">
 
 
 
@@ -62,10 +58,8 @@ Rancher内部是如何使用的？以及我们如何用event来增强一些定�
 
 
 
-<meta name="twitter:title" content="Rancher event机制及其实践指南"/>
-<meta name="twitter:description" content="Rancher在v1.0版本为了Kubernetes的集成，开始扩展并逐步完善了Rancher event机制，
-event机制可以完成技术架构上的解耦。那么Rancher都提供了哪些event？
-Rancher内部是如何使用的？以及我们如何用event来增强一些定制服务？
+<meta name="twitter:title" content="RancherOS v1.5.0发布"/>
+<meta name="twitter:description" content="一言不合就发新版本
 "/>
 
 
@@ -300,9 +294,9 @@ Rancher内部是如何使用的？以及我们如何用event来增强一些定�
             
 
             <header class="article-header">
-    <a href="http://niusmallnan.com/2016/08/25/rancher-envent">
+    <a href="http://niusmallnan.com/2019/01/06/rancheros-v150-release">
     <h1 class="article-title" itemprop="name">
-        Rancher event机制及其实践指南
+        RancherOS v1.5.0发布
     </h1>
     </a>
     <div class="article-meta">
@@ -310,12 +304,12 @@ Rancher内部是如何使用的？以及我们如何用event来增强一些定�
         
         <div class="article-date">
             <i class="fa fa-calendar"></i>
-            <time datetime="2016-08-25 13:44:04 &#43;0800 CST" itemprop="datePublished">2016-08-25</time>
+            <time datetime="2019-01-06 17:00:46 &#43;0800 CST" itemprop="datePublished">2019-01-06</time>
             &middot;
-            3775
+            2117
             字数
             &middot;
-            8
+            5
             分钟阅读
         </div>
         
@@ -340,7 +334,7 @@ Rancher内部是如何使用的？以及我们如何用event来增强一些定�
                 <i class="fa fa-tags"></i>
                 
                 
-                <a class="article-category-link" href="http://niusmallnan.com/tags/rancher">Rancher</a>
+                <a class="article-category-link" href="http://niusmallnan.com/tags/rancheros">RancherOS</a>
                 
                 
             </div>
@@ -350,140 +344,110 @@ Rancher内部是如何使用的？以及我们如何用event来增强一些定�
 </header>
 
             <div class="article-entry" itemprop="articleBody">
-                <p>Rancher在v1.0版本为了Kubernetes的集成，开始扩展并逐步完善了Rancher event机制，
-event机制可以完成技术架构上的解耦。那么Rancher都提供了哪些event？
-Rancher内部是如何使用的？以及我们如何用event来增强一些定制服务？
+                <p>一言不合就发新版本
 </p>
 
-<h3 id="引言">引言</h3>
+<p>年关将至，寒意习习，落叶萧萧下，阳光日日稀。RancherOS团队历时两个来月的开发，正式发布RancherOS v1.5.0版本。
+在此期间同为Container Linux阵营的CoreOS已经从红帽再入IBM，潮流之变，业界态势，让我们无不更加努力去争得一席之地。
+无论是商业用户的积累，还是业界变化带来的社区用户增长，都在催促我们不断革新，应该说1.5.0版本是用户的需求推着我们走出来的。</p>
 
-<p>我们的Rancher官方技术社区已经创立些许时日了，相信通过我们的线下meetup和线上布道工作，
-很多朋友对Rancher的使用已经掌握得很纯熟了。一些高级用户开始真正把自己的业务进行微服务化并向Rancher迁移，
-在迁移的过程中，由于业务本身的复杂性特殊性，
-可能需要利用Rancher的一些高级特性甚至要对Rancher进行一定的扩展，
-这就需要对Rancher的一些组件的实现机制有些许了解。</p>
+<h3 id="重大特性更新">重大特性更新</h3>
 
-<p>本次分享就介绍一下Rancher的event机制，由于相关内容文档极其欠缺，本人也只是通过实践和代码阅读分析其原理，
-如有谬误欢迎交流指正，小腩双手红包奉上！同时为保证收视率，本次分享会以原理+实践的方式进行。</p>
+<p>本版本的新特征众多，无法一次性全部说明，以下只表述一些用户关注度比较高的特性。个别特性详细说明，我们会不断推出文章一一展开。</p>
 
-<h3 id="原理分析">原理分析</h3>
+<h4 id="启动性能提升">启动性能提升</h4>
 
-<p>在大规模系统架构中，event机制通常采用消息驱动 ，它对提升分布式架构的容错性灵活性有很大帮助，
-同时也是各个组件之间解耦的利器。Rancher能够管理N多的agent同时又拆分出各种服务组件，
-event机制是必不可少的。为实现event机制，通常我们会采用RabbitMQ、ActiveMQ、ZeroMQ等中间件来实现。
-而Rancher则采用了基于websocket协议的一种非常轻量级的实现方式，
-它的好处就是极大程度的精简了Rancher的部署，Rancher无需额外维护一个MQ集群，
-毕竟websocket的消息收发实现是非常简单的，各种语言库均可以支持。</p>
+<p>一直以来RancherOS的initrd一直采用xz格式压缩，随着RancherOS的体积不断增大，xz压缩越来越影响系统启动速度。虽然xz格式能够带来比较小的initrd和ISO，
+但是我们也需要兼顾启动速度。v1.5.0版本的initrd已经采用了gzip格式，文件体积有所增大，但是启动速度有了质的飞跃。
+同时我们也优化了system-docker的镜像加载和cloud-init的启动，对启动速度进行了深度优化。</p>
 
-<p>这里我们会考虑一个问题，websocket毕竟不是真正工业级MQ的实现，消息不能持久化，
-一旦某个event的处理出现问题，或者发生消息丢失，Rancher如何保证各个资源的原子性一致性？
-Rancher中有一个processpool的概念，它可以看做一个所有event的执行池，
-当API/UI/CLI有操作时，Rancher会把操作分解成多个event并放入processpool中。
-比如删除一个容器时会把 compute.instance.remove 放入processpool中，
-这个event会发送到对应的host agent上，agent处理完成后会发送reply给rancher-server。
-如果在这个过程中，由于网络问题消息丢失，或者agent上执行出现问题，
-rancher-server没有收到reply信息，cattle会把这个event重新放到processpool中再次重复上面的过程，
-直到 compute.instance.remove 完成操作，这个容器的状态才会在DB中更新，
-否则该容器状态会一直处于lock不能被其他服务更新。当然cattle不会把这些event不停的重复执行下去，
-通常会设置一下TIMEOUT超出后便不再执行（有些资源没有TIMEOUT机制）。</p>
+<h4 id="luks磁盘加密支持">LUKS磁盘加密支持</h4>
 
-<p>上面的表述，我们其实可以在UI上看到这个过程，RancherUI上的Processes的Running Tab页上就能实时得看到这些信息，
-Processes 在排查一些Rancher的相关问题是非常有用的，大家可以养成 ”查问题先查Processes“的好习惯：<br />
-<img src="http://ww4.sinaimg.cn/large/7853084cjw1fa1zux9y7bj20ly091dh6.jpg" alt="" /><br />
-那么监听event的URL怎么设定呢？非常简单：<br />
-<code>ws://&lt;rancher-server-ip&gt;:8080/v1/projects/&lt;projectId&gt;/subscribe?eventNames=xxxx</code><br />
-除此之外还需要加上basic-auth的header信息：<br />
-<code>Authorization: Basic +base64encode(&lt;cattle-access-key&gt;:&lt;cattle-secret-key&gt;)</code><br />
-如果是Host上的agent组件，除此之外还需要添加agentId参数：<br />
-<code>ws://&lt;rancher-server-ip&gt;:8080/v1/projects/&lt;projectId&gt;/subscribe?eventNames=xxxx&amp;agentId=xxxx</code><br />
-agentId 是注册Host时生成的，如果没有agentId参数，
-任何有关无关的event都会发送到所有的Host agent上，这样就会发生类似“广播风暴”的效果。</p>
+<p>支持LUKS，允许用户对跟磁盘分区进行加密，在一些特殊场景下增强了RancherOS的安全性。运行效果参考下图：</p>
 
-<p>Host agent上运行很多组件，其中python-agent是负责接收和回执event信息的，
-其运行日志可以在Host上的/var/log/rancher/agent.log文件中查看。
-细心的朋友可能会有疑问，我们在添加Host时执行agent容器时并没有指定cattle-access-key和cattle-secret-key，
-也就是说python-agent运行时如何获取这两个秘钥信息呢？</p>
+<p><img src="https://user-images.githubusercontent.com/4208881/47795869-ee87a780-dd2b-11e8-91be-4ac8f685d8fa.gif" alt="" /></p>
 
-<p>其实Rancher有两种apikey：一种是我们熟知的在UI上手动创建的apikey；
-另外一种就是agentApikey，它是系统级的，专门为agent设定，
-添加Host时会先把agentApikey发送到Host上。在cattle的credential表中可以查询到相关信息：<br />
-<img src="http://ww1.sinaimg.cn/large/7853084cjw1fa1zxokn7dj20ea05774u.jpg" alt="" /></p>
+<h4 id="wifi和4g支持">WiFi和4G支持</h4>
 
-<p>eventNames都定义了哪些呢？下面两个文件可以参考：<br />
-* <a href="https://github.com/rancher/cattle/blob/master/code/iaas/events/src/main/java/io/cattle/platform/iaas/event/IaasEvents.java">IaasEvents.java</a>
-* <a href="https://github.com/rancher/cattle/blob/master/code/packaging/app-config/src/main/resources/META-INF/cattle/process/spring-process-context.xml">系统级的event定义</a>，详细到每种资源(host、volume、instance、stack、service等)的event定义。</p>
+<p>Intel正在micro PC领域不断发力，RancherOS被纳入其生态体系，我们支持了WiFi和4G网络，用户可以通过简单的cloud-config配置就可以开启，
+带来了十分简洁的用户体验，这部分我们会在后续其他文章中详细介绍。</p>
 
-<p>此外，我们在UI/CLI/API上的某个操作都会被分解成多个event来执行，
-每个event信息都会被保存在mysql中，每个event执行成功后会设置成purged状态，
-所以记录并不会真正删除，这就会导致相应的表（container_event表、service_event表、process_instance表）会无限膨胀下去。
-Rancher为解决此问题提供了周期性清理机制：</p>
+<h4 id="hyper-v支持">Hyper-V支持</h4>
 
-<ol>
-<li>events.purge.after.seconds 可以清理container_event和service_event，每两周清理一次</li>
-<li>process_instance.purge.after.seconds可以清理process_instance，每天清理一次。<br />
-这两个配置我们都可以在<a href="http://rancher-server-ip:8080/v1/settings">http://rancher-server-ip:8080/v1/settings</a>动态修改。</li>
-</ol>
+<p>很多社区用户一直希望能在Hyper-V使用RancherOS，先前我们一直提供给用户一些custom build的方式来实现它，现在我们正式支持了它，并会持续维护。
+无论是docker-machine方式还是boot from ISO方式均可以支持。</p>
 
-<h3 id="实践操作">实践操作</h3>
+<p>下一个版本我们也会带来RancherOS的Azure Cloud支持。</p>
 
-<p>下面我们来实践一下，看看如何在程序中实现对Rancher event的监听。
-Rancher提供了resource.change事件，这个事件是不用reply的，就是说不会影响Rancher系统的运行，
-它是专门开放给开发者用来实现一些自己的定制功能，所以我们就以resource.change作为例子实践一下。</p>
+<h4 id="多docker-engine支持">多docker engine支持</h4>
 
-<p>Rancher的组件大部分都是基于Golang编写，所以我们也采用相同的语言。
-为了能够快速实现这个程序，我们需要了解一些辅助快速开发的小工具。</p>
+<p>这是一个很有趣的特性，目前RancherOS中默认拥有一个user docker。在v1.5.0中，用户可以用过ROS CLI来创建多个user docker engine，
+并且每个docker拥有独立的ROOTFS和网络栈，并且可以在console很容易的切换使用任意一个docker。</p>
+
+<p>当然我们并不推荐您在生产中使用，我们的某个商业客户把这个特性应用在其CI环境中，极大的提升了资源的利用率，减少了物理机器数量的开销。</p>
+
+<h4 id="改善vmware的支持">改善VMware的支持</h4>
+
+<p>RancherOS的广大用户中Vmware是占有很大的用户群，之前我们的版本中只针对docker-machine方式做了一些改善，但是很多用户还希望使用boot from ISO方式和VMDK方式，
+我们相关的镜像也做了支持，用户可以饿直接下载使用它：</p>
 
 <ul>
-<li>Trash，Golang package管理的小工具，可以帮助我们定义依赖包的路径和版本，非常轻量且方便；</li>
-<li>Dapper，这个是基于容器实现Golang编译的工具，主要是可以帮助我们统一编译环境；</li>
-<li>Go-skel，它可以帮我们快速创建一个Rancher式的微服务程序，可以为我们省去很多的基本代码，
-同时还集成了Trash和Dapper这两个实用的小工具。</li>
+<li>[VMDK] <a href="https://releases.rancher.com/os/v1.5.0/vmware/rancheros.vmdk">https://releases.rancher.com/os/v1.5.0/vmware/rancheros.vmdk</a></li>
+<li>[Docker Machine] <a href="https://releases.rancher.com/os/v1.5.0/rancheros-vmware.iso">https://releases.rancher.com/os/v1.5.0/rancheros-vmware.iso</a></li>
+<li>[Boot From ISO] <a href="https://releases.rancher.com/os/v1.5.0/vmware/rancheros.iso">https://releases.rancher.com/os/v1.5.0/vmware/rancheros.iso</a></li>
 </ul>
 
-<p>首先我们基于go-skel创建一个工程名为 scale-subscriber （名字很随意），执行过程需要耐心的等待：<br />
-<img src="http://ww4.sinaimg.cn/large/7853084cjw1fa2044jpu9j20im0ce78n.jpg" alt="" /></p>
+<h4 id="arm的支持">ARM的支持</h4>
 
-<p>执行完毕后，我们把工程放到GOPATH中，开始添加相关的逻辑代码。
-在这之前我们可以考虑添加一个healthcheck的服务端口，纵观Rancher所有的微服务组件，
-基本上除了主程序之外都会添加 healthcheck port，这个主要是为了与Rancher中的healthcheck功能配合，
-通过设定对这个端口的检查机制来保证微服务的可靠性。我们利用Golang的goroutine机制，
-分别添加主服务和healthcheck服务：<br />
-<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa2053h2k7j20i908u0uu.jpg" alt="" /></p>
+<p>由于Rancher和ARM已经开始了战略合作，我们会在一起做很多有趣的事。RancherOS的ARM支持也是其中的一部分，原先我们只是对RPi做了支持，
+现在我们提供ARM版本的initrd和vmlinuz，用户可以用它们使用iPXE方式启动：</p>
 
-<p>主服务的核心就是监听resource.change的信息，同时注册handler来获取event的payload信息，
-从而可以定制扩展自己的逻辑，这里需要利用Rancher提供的
-<a href="https://github.com/rancher/event-subscriber">event-subsriber</a>库来快速实现。
-如下图，在<strong>reventhandlers.NewResourceChangeHandler().Handler</strong>中就可以实现自己的逻辑：<br />
-<img src="http://ww4.sinaimg.cn/large/7853084cjw1fa206sahqtj20ka07habz.jpg" alt="" /></p>
+<ul>
+<li><a href="https://releases.rancher.com/os/v1.5.0/arm64/initrd">https://releases.rancher.com/os/v1.5.0/arm64/initrd</a></li>
+<li><a href="https://releases.rancher.com/os/v1.5.0/arm64/vmlinuz">https://releases.rancher.com/os/v1.5.0/arm64/vmlinuz</a></li>
+</ul>
 
-<p>这里我们只是演示监听event的机制，所以我们就不做过多的业务逻辑处理，打印输出event信息即可。
-然后在项目根目录下执行make，make会自动调用dapper，在bin目录下生成scale-subscriber，
-我们执行scale-subscriber就可以监听resource.change的信息：<br />
-<img src="http://ww4.sinaimg.cn/large/7853084cjw1fa207fymwlj20u904gdhf.jpg" alt="" /></p>
+<p>我们依然只会对ARM64支持，且v1.5.0的ARM支持只是实验性质的，并不推荐应用在生产中。
+我们会和ARM进行合作进行更广泛的测试，后续的版本将会是更稳定的。</p>
 
-<p>这里我们可以看到分别启动了healthcheck功能和event listener。然后可以在UI上随意删除一个stack，
-scale-subsciber就可以获取event信息：<br />
-<img src="http://ww1.sinaimg.cn/large/7853084cjw1fa207xudcej20ni07mgpy.jpg" alt="" /></p>
+<h3 id="更加友好的自定义">更加友好的自定义</h3>
 
-<h3 id="附加小技巧">附加小技巧</h3>
+<p>社区中越来越多的发烧友并不局限使用我们的正式发布版本，他们会根据自己的需求修改RancherOS，构建自己的RancherOS。
+我们提供了一些友好的编译选项，用户可以自定义自己的RancherOS。</p>
 
-<p>如要将其部署在Rancher中，那就可以将scale-subsciber执行程序打包放到镜像中，通过compose来启动。
-但是我们知道scale-subsciber启动需要指定CATTLE_URL、CATTLE_ACCESS_KEY、CATTLE_SECRET_KEY，
-正常的做法就是我们需要先生成好apikey，然后启动service的时候设置对应的环境变量。
-这样做就会有弊端，就是apikey这种私密的信息不得不对外暴露，而且还要手动维护这些apikey，非常不方便。</p>
+<h4 id="更改默认docker-engine">更改默认docker engine</h4>
 
-<p>Rancher提供了一个非常方便的做法，就是在service中添加两个label，
-<strong>io.rancher.container.create_agent: true</strong>和<strong>io.rancher.container.agent.role: environment</strong>，
-设定这两个label后，Rancher引擎会自动创建apikey，并把相应的值设置到容器的ENV中，
-只要你的程序通过系统环境变量来读取这些值，就会非常顺利的运行起来。</p>
+<p>RancherOS的每个版本都会有自己设定的默认docker engine，而在用户的场景下，可能需要一个内部认可的docker engine，且希望它是RancherOS默认的版本。
+那么用户可以在构建时候指定docker engine版本，来构建自己的RancherOS，以docker 17.03.2为例：</p>
+
+<pre><code>USER_DOCKER_VERSION=17.03.2 make release
+</code></pre>
+
+<h4 id="更改默认console">更改默认console</h4>
+
+<p>RancherOS支持很多console，比如ubuntu、alpine、centos等，由于我们的default console基于busybox，有些用户并不喜欢它，且不希望每次都去切换console。
+那么用户可以使用这种方式构建一个默认console是自己喜欢的版本，以alpine console为例：</p>
+
+<pre><code>$ OS_CONSOLE=alpine make release
+</code></pre>
+
+<h3 id="其他">其他</h3>
+
+<p>AWS相关镜像已经上传到各个region中，可以直接搜索查找并使用，包括AWS中国区。其他主要镜像列表参考：<a href="https://github.com/rancher/os/blob/v1.5.x/README.md#release">https://github.com/rancher/os/blob/v1.5.x/README.md#release</a></p>
+
+<p>更多新特性和Bug Fix请参考v1.5.0的<a href="https://github.com/rancher/os/releases/tag/v1.5.0">Release Notes</a></p>
+
+<p>文档说明：<a href="https://rancher.com/docs/os/v1.x/en/">https://rancher.com/docs/os/v1.x/en/</a></p>
+
+<p>最后，RancherOS还是一个小众的开源项目，我们专注Docker在Linux上的精简体验，如果喜欢RancherOS，请在Github上给我们一个star，鼓励我们继续前行。</p>
             </div>
             <footer class="article-footer">
-    <a data-url="http://niusmallnan.com/2016/08/25/rancher-envent" data-id="7b92c2c0d8f3c2932e8a2ba4e514acfd" class="article-share-link">
+    <a data-url="http://niusmallnan.com/2019/01/06/rancheros-v150-release" data-id="710ed72b81f3a586753c411791810929" class="article-share-link">
         <i class="fa fa-share"></i>
         分享
     </a>
     
-    <a href="http://niusmallnan.com/2016/08/25/rancher-envent#disqus_thread" class="article-comment-link">
+    <a href="http://niusmallnan.com/2019/01/06/rancheros-v150-release#disqus_thread" class="article-comment-link">
         评论
     </a>
     
@@ -559,21 +523,14 @@ scale-subsciber就可以获取event信息：<br />
         
 <nav id="article-nav">
     
-    <a href="http://niusmallnan.com/2016/08/15/rancher-smart-tools" id="article-nav-older" class="article-nav-link-wrap">
+    <a href="http://niusmallnan.com/2018/02/07/rancheros-v120-release" id="article-nav-older" class="article-nav-link-wrap">
       <strong class="article-nav-caption">
           老的
       </strong>
-      <div class="article-nav-title">扒一扒Rancher社区中的小工具</div>
+      <div class="article-nav-title">RancherOS v1.2.0发布</div>
     </a>
     
 
-    
-    <a href="http://niusmallnan.com/2016/09/19/docker-cnm-practice" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">
-          新的
-      </strong>
-      <div class="article-nav-title">CNM macvlan实践</div>
-    </a>
     
 </nav>
 
@@ -586,9 +543,9 @@ scale-subsciber就可以获取event信息：<br />
             <div id="disqus_thread"></div>
 <script type="text/javascript">
     var disqus_shortname = 'niusmallnan';
-    var disqus_identifier = 'http:\/\/niusmallnan.com\/2016\/08\/25\/rancher-envent';
-    var disqus_title = 'Rancher event机制及其实践指南';
-    var disqus_url = 'http:\/\/niusmallnan.com\/2016\/08\/25\/rancher-envent';
+    var disqus_identifier = 'http:\/\/niusmallnan.com\/2019\/01\/06\/rancheros-v150-release';
+    var disqus_title = 'RancherOS v1.5.0发布';
+    var disqus_url = 'http:\/\/niusmallnan.com\/2019\/01\/06\/rancheros-v150-release';
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

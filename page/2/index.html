@@ -29,7 +29,7 @@
 <meta property="og:url" content="http://niusmallnan.com/" />
 
 
-<meta property="og:updated_time" content="2017-01-19T17:32:56&#43;08:00"/>
+<meta property="og:updated_time" content="2017-02-05T14:08:38&#43;08:00"/>
 
 
 
@@ -187,7 +187,7 @@
     </div>
     <div class="article-info profile-block">
       <div class="article-info-block">
-        28
+        29
         <span>文章</span>
       </div>
       <div class="article-info-block">
@@ -267,6 +267,161 @@
 
     <section id="main">
     
+    
+    <article class="article article-type-post" itemscope="" itemprop="blogPost">
+        <div class="article-inner">
+            
+            </a>
+
+            <header class="article-header">
+    <a href="http://niusmallnan.com/2017/02/05/rancher-k8s-helm-practice">
+    <h1 class="article-title" itemprop="name">
+        Rancher K8s Helm使用体验
+    </h1>
+    </a>
+    <div class="article-meta">
+
+        
+        <div class="article-date">
+            <i class="fa fa-calendar"></i>
+            <time datetime="2017-02-05 14:08:38 &#43;0800 CST" itemprop="datePublished">2017-02-05</time>
+            &middot;
+            1038
+            字数
+            &middot;
+            3
+            分钟阅读
+        </div>
+        
+        
+            
+            
+            <div class="article-category">
+                <i class="fa fa-folder"></i>
+                
+                
+                <a class="article-category-link" href="http://niusmallnan.com/categories/coding">coding</a>
+                
+                
+            </div>
+            
+        
+
+        
+            
+            
+            <div class="article-category">
+                <i class="fa fa-tags"></i>
+                
+                
+                <a class="article-category-link" href="http://niusmallnan.com/tags/rancher">Rancher</a>
+                &middot;
+                
+                
+                <a class="article-category-link" href="http://niusmallnan.com/tags/kubernetes">Kubernetes</a>
+                &middot;
+                
+                
+                <a class="article-category-link" href="http://niusmallnan.com/tags/helm">Helm</a>
+                
+                
+            </div>
+            
+        
+    </div>
+</header>
+
+            <div class="article-entry" itemprop="articleBody">
+                <p>
+                    潇潇洒洒玩一玩
+
+                    <br>
+                </p>
+                <p class="article-more-link">
+                    <a href="http://niusmallnan.com/2017/02/05/rancher-k8s-helm-practice">
+                        查看更多
+                    </a>
+                </p>
+            </div>
+            <footer class="article-footer">
+    <a data-url="http://niusmallnan.com/2017/02/05/rancher-k8s-helm-practice" data-id="572e329cddc3c879ccb11b80d2866f5d" class="article-share-link">
+        <i class="fa fa-share"></i>
+        分享
+    </a>
+    
+    <a href="http://niusmallnan.com/2017/02/05/rancher-k8s-helm-practice#disqus_thread" class="article-comment-link">
+        评论
+    </a>
+    
+
+    <script>
+    (function ($) {
+        
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+    </script>
+</footer>
+
+        </div>
+    </article>
     
     <article class="article article-type-post" itemscope="" itemprop="blogPost">
         <div class="article-inner">
@@ -1612,157 +1767,6 @@
         </div>
     </article>
     
-    <article class="article article-type-post" itemscope="" itemprop="blogPost">
-        <div class="article-inner">
-            
-            </a>
-
-            <header class="article-header">
-    <a href="http://niusmallnan.com/2016/11/28/rancher12-infra-architect">
-    <h1 class="article-title" itemprop="name">
-        Rancher v1.2基础设施引擎整体架构
-    </h1>
-    </a>
-    <div class="article-meta">
-
-        
-        <div class="article-date">
-            <i class="fa fa-calendar"></i>
-            <time datetime="2016-11-28 20:53:44 &#43;0800 CST" itemprop="datePublished">2016-11-28</time>
-            &middot;
-            4044
-            字数
-            &middot;
-            9
-            分钟阅读
-        </div>
-        
-        
-            
-            
-            <div class="article-category">
-                <i class="fa fa-folder"></i>
-                
-                
-                <a class="article-category-link" href="http://niusmallnan.com/categories/coding">coding</a>
-                
-                
-            </div>
-            
-        
-
-        
-            
-            
-            <div class="article-category">
-                <i class="fa fa-tags"></i>
-                
-                
-                <a class="article-category-link" href="http://niusmallnan.com/tags/rancher">Rancher</a>
-                &middot;
-                
-                
-                <a class="article-category-link" href="http://niusmallnan.com/tags/rancher-v1.2">Rancher v1.2</a>
-                
-                
-            </div>
-            
-        
-    </div>
-</header>
-
-            <div class="article-entry" itemprop="articleBody">
-                <p>
-                    Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
-
-                    <br>
-                </p>
-                <p class="article-more-link">
-                    <a href="http://niusmallnan.com/2016/11/28/rancher12-infra-architect">
-                        查看更多
-                    </a>
-                </p>
-            </div>
-            <footer class="article-footer">
-    <a data-url="http://niusmallnan.com/2016/11/28/rancher12-infra-architect" data-id="2eaad19f8ee8c5110beac4cc9d7082d9" class="article-share-link">
-        <i class="fa fa-share"></i>
-        分享
-    </a>
-    
-    <a href="http://niusmallnan.com/2016/11/28/rancher12-infra-architect#disqus_thread" class="article-comment-link">
-        评论
-    </a>
-    
-
-    <script>
-    (function ($) {
-        
-        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
-            __SHARE_BUTTON_BINDED__ = true;
-        } else {
-            return;
-        }
-        $('body').on('click', function() {
-            $('.article-share-box.on').removeClass('on');
-        }).on('click', '.article-share-link', function(e) {
-            e.stopPropagation();
-
-            var $this = $(this),
-                url = $this.attr('data-url'),
-                encodedUrl = encodeURIComponent(url),
-                id = 'article-share-box-' + $this.attr('data-id'),
-                offset = $this.offset(),
-                box;
-
-            if ($('#' + id).length) {
-                box = $('#' + id);
-
-                if (box.hasClass('on')){
-                    box.removeClass('on');
-                    return;
-                }
-            } else {
-                var html = [
-                    '<div id="' + id + '" class="article-share-box">',
-                        '<input class="article-share-input" value="' + url + '">',
-                        '<div class="article-share-links">',
-                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
-                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
-                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
-                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
-                        '</div>',
-                    '</div>'
-                ].join('');
-
-              box = $(html);
-
-              $('body').append(box);
-            }
-
-            $('.article-share-box.on').hide();
-
-            box.css({
-                top: offset.top + 25,
-                left: offset.left
-            }).addClass('on');
-
-        }).on('click', '.article-share-box', function (e) {
-            e.stopPropagation();
-        }).on('click', '.article-share-box-input', function () {
-            $(this).select();
-        }).on('click', '.article-share-box-link', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
-        });
-    })(jQuery);
-    </script>
-</footer>
-
-        </div>
-    </article>
-    
 
     <nav id="page-nav">
 
@@ -1790,6 +1794,32 @@
     </h3>
     <div class="widget">
         <ul id="recent-post">
+            
+            <li>
+                <div class="item-thumbnail">
+                    <a href="http://niusmallnan.com/2019/01/06/rancheros-v150-release" class="thumbnail">
+                    
+                        <span class="thumbnail-image thumbnail-none"></span>
+                    
+                    </a>
+                </div>
+                <div class="item-inner">
+                    
+                    
+                    <p class="item-category">
+                        
+                        <a class="article-category-link" href="http://niusmallnan.com/categories/coding">
+                        coding
+                        </a>
+                    </p>
+                    
+                    
+                    <p class="item-title"><a href="http://niusmallnan.com/2019/01/06/rancheros-v150-release" class="title">RancherOS v1.5.0发布</a></p>
+                    <p class="item-date">
+                        <time datetime="2019-01-06 17:00:46 &#43;0800 CST" itemprop="datePublished">2019-01-06</time>
+                    </p>
+                </div>
+            </li>
             
             <li>
                 <div class="item-thumbnail">
@@ -1895,32 +1925,6 @@
                 </div>
             </li>
             
-            <li>
-                <div class="item-thumbnail">
-                    <a href="http://niusmallnan.com/2017/05/16/rancher-extend-network" class="thumbnail">
-                    
-                        <span class="thumbnail-image thumbnail-none"></span>
-                    
-                    </a>
-                </div>
-                <div class="item-inner">
-                    
-                    
-                    <p class="item-category">
-                        
-                        <a class="article-category-link" href="http://niusmallnan.com/categories/coding">
-                        coding
-                        </a>
-                    </p>
-                    
-                    
-                    <p class="item-title"><a href="http://niusmallnan.com/2017/05/16/rancher-extend-network" class="title">Rancher下实现Calico/Flat/Macvlan网络</a></p>
-                    <p class="item-date">
-                        <time datetime="2017-05-16 16:31:50 &#43;0800 CST" itemprop="datePublished">2017-05-16</time>
-                    </p>
-                </div>
-            </li>
-            
         </ul>
     </div>
 </div>
@@ -1939,7 +1943,7 @@
                 <a class="category-list-link" href="http://niusmallnan.com/categories/coding">
                     coding
                 </a>
-                <span class="category-list-count">28</span>
+                <span class="category-list-count">29</span>
             </li>
             
         </ul>
@@ -2012,7 +2016,7 @@
                 <a class="category-list-link" href="http://niusmallnan.com/tags/rancheros">
                     rancheros
                 </a>
-                <span class="category-list-count">5</span>
+                <span class="category-list-count">6</span>
             </li>
             
             <li class="category-list-item">
@@ -2090,7 +2094,7 @@
 <footer id="footer">
   <div class="outer">
     <div id="footer-info" class="inner">
-      &copy; 2018
+      &copy; 2019
       Niusmallnan
     </div>
   </div>
