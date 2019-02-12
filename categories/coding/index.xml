@@ -10,6 +10,86 @@
     <atom:link href="http://niusmallnan.com/categories/coding/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
+      <title>Runc CVE-2019-5736以及RancherOS v1.5.1发布</title>
+      <link>http://niusmallnan.com/2019/02/12/rancheros-v151-release</link>
+      <pubDate>Tue, 12 Feb 2019 14:24:44 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2019/02/12/rancheros-v151-release</guid>
+      <description>&lt;p&gt;一言不合就发新版本
+&lt;/p&gt;
+
+&lt;p&gt;runc是一个根据OCI(Open Container Initiative)标准创建并运行容器的CLI tool，目前docker引擎内部也是基于runc构建的。
+2019年2月11日，研究人员通过oss-security邮件列表披露了runc容器逃逸漏洞的详情，根据OpenWall的规定EXP会在7天后也就是2019年2月18日公开。&lt;/p&gt;
+
+&lt;p&gt;此漏洞允许以root身份运行的容器以特权用户身份在主机上执行任意代码。实际上，这意味着容器可能会破坏Docker主机(覆盖runc CLI)。
+所需要的只是能够使用root来运行容器。攻击者可以使用受感染的Docker镜像或对未受感染的正在运行的容器运行exec命令。针对此问题的已知缓解措施包括：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;使用只读主机文件系统运行&lt;/li&gt;
+&lt;li&gt;运行用户命名空间&lt;/li&gt;
+&lt;li&gt;不在容器中运行root&lt;/li&gt;
+&lt;li&gt;正确配置的AppArmor / SELinux策略（当前的默认策略不够）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;收到披露邮件后，RancherOS团队尝试编写了攻击脚本，在一个普通容器中运行一个非常简单的脚本就完成了对主机的攻击，将主机上的runc替换成了其他程序。&lt;/p&gt;
+
+&lt;p&gt;Docker在第一时间发布了&lt;a href=&#34;https://github.com/docker/docker-ce/releases/tag/v18.09.2&#34;&gt;18.09.2&lt;/a&gt;，用户可升级到此版本以修复该漏洞。
+但是通常由于各种因素，用户的生产环境并不容易升级太新的Docker版本，Rancher Labs已经将修复程序反向移植到所有版本的Docker。
+相关修补程序以及安装说明，请参考&lt;a href=&#34;https://github.com/rancher/runc-cve&#34;&gt;rancher/run-cve&lt;/a&gt;。&lt;/p&gt;
+
+&lt;p&gt;RancherOS作为一款容器化操作系统，其中很多组件依赖runc，我们也在第一时间更新了补丁并发布了v1.5.1和v1.4.3两个版本。&lt;/p&gt;
+
+&lt;h3 id=&#34;rancheros的更新&#34;&gt;RancherOS的更新&lt;/h3&gt;
+
+&lt;p&gt;RancherOS的核心部件system-docker和user-docker都依赖runc，所以v1.5.1和v1.4.3都对他们进行了更新。而针对user-docker，RancherOS可以切换各种版本的docker engine，
+所以我们对一下docker engine都进行了反向移植：&lt;strong&gt;v1.12.6/v1.13.1/v17.03.2/v17.06.2/v17.09.1/v17.12.1/v18.03.1/v18.06.1&lt;/strong&gt;。&lt;/p&gt;
+
+&lt;p&gt;默认安装v1.5.1和v1.4.3，补丁程序已经是内置的，你无需任何操作就可以避免该漏洞。如果你希望使用早起的docker版本，那么切换user-docker时，请使用上面提到的补丁修复版本：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;root@ip-172-31-2-241:~# ros engine list
+disabled docker-1.12.6
+disabled docker-1.13.1
+disabled docker-17.03.1-ce
+disabled docker-17.03.2-ce
+disabled docker-17.06.1-ce
+disabled docker-17.06.2-ce
+disabled docker-17.09.0-ce
+disabled docker-17.09.1-ce
+disabled docker-17.12.0-ce
+disabled docker-17.12.1-ce
+disabled docker-18.03.0-ce
+disabled docker-18.03.1-ce
+disabled docker-18.06.0-ce
+enabled  docker-18.06.1-ce
+disabled docker-18.09.0
+disabled docker-18.09.1
+disabled docker-18.09.2
+
+root@ip-172-31-2-241:~# ros engine switch docker-17.03.2-ce
+...
+
+root@ip-172-31-2-241:~# docker info | grep Server
+Server Version: 17.03.2-ce
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;同时v1.5.1版本也是支持docker 18.09.2，你可以切换到该版本，如果你考虑使用Docker官方的修复版本。只需简单运行: &lt;code&gt;ros engine switch docker-18.09.2&lt;/code&gt;。&lt;/p&gt;
+
+&lt;h3 id=&#34;v1-5-1-和-v1-4-3&#34;&gt;v1.5.1 和 v1.4.3&lt;/h3&gt;
+
+&lt;p&gt;推荐您使用最新的v1.5.1版本，除了修复CVE-2019-5736漏洞外还支持其他新特性以及一些Bug Fix。当然，仍然有很多用户在使用1.4.x版本，所以我们也发布了v1.4.3，
+它只修复了runc漏洞，没有其他额外的更新。&lt;/p&gt;
+
+&lt;p&gt;AWS相关镜像已经上传到各个region中，可以直接搜索查找并使用，包括AWS中国区。其他主要镜像列表参考：&lt;a href=&#34;https://github.com/rancher/os/blob/v1.5.x/README.md#release&#34;&gt;https://github.com/rancher/os/blob/v1.5.x/README.md#release&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;更多新特性和Bug Fix请参考v1.5.1的&lt;a href=&#34;https://github.com/rancher/os/releases/tag/v1.5.1&#34;&gt;Release Notes&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;文档说明：&lt;a href=&#34;https://rancher.com/docs/os/v1.x/en/&#34;&gt;https://rancher.com/docs/os/v1.x/en/&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;最后，RancherOS还是一个小众的开源项目，我们专注Docker在Linux上的精简体验，如果喜欢RancherOS，请下载使用，非常期待收到您的反馈。
+同时Github上的star，也是鼓励我们继续前行的精神动力。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
       <title>RancherOS v1.5.0发布</title>
       <link>http://niusmallnan.com/2019/01/06/rancheros-v150-release</link>
       <pubDate>Sun, 06 Jan 2019 17:00:46 +0800</pubDate>
@@ -1046,65 +1126,6 @@ ansible all --sudo -m shell -a &amp;quot;cat ~/dead | xargs docker rm -f&amp;quo
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;如此，每隔30分钟定期清理这些dead containers，Rancher Server就不会受其影响。&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>Docker中的device or resource busy问题分析</title>
-      <link>http://niusmallnan.com/2016/12/27/docker-device-resource-busy</link>
-      <pubDate>Tue, 27 Dec 2016 07:15:44 +0800</pubDate>
-      
-      <guid>http://niusmallnan.com/2016/12/27/docker-device-resource-busy</guid>
-      <description>&lt;p&gt;拯救一脸懵逼
-&lt;/p&gt;
-
-&lt;h3 id=&#34;现象描述&#34;&gt;现象描述&lt;/h3&gt;
-
-&lt;p&gt;使用docker的时候，当我们删除某些容器，有时候会报出device or resource busy错误：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;Error response from daemon:
-Unable to remove filesystem for
-a9a1c11e8210d60ddba09f95ea93ae21f32327c4e5877c218862c752d1088533: 
-remove /var/lib/docker/containers/a9a1c11e8210d60ddba09f95ea93ae21f32327c4e5877c218862c752d1088533/shm:
-device or resource busy
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;然后可以查看相关容器的状态变成了很少见的Dead状态。&lt;/p&gt;
-
-&lt;h3 id=&#34;原因分析&#34;&gt;原因分析&lt;/h3&gt;
-
-&lt;p&gt;通常我们看到device or resource busy首先想到的是，这个设备被其他程序占用导致。
-在容器中，其实理论是一样的，每个容器生成都会有一个containers/&lt;uuid&gt;/shm设备产生，
-恰巧这个设备被其他程序mount了，就会被占用无法卸载，也就是device or resource busy。&lt;/p&gt;
-
-&lt;p&gt;那么什么情况下会占用containers/&lt;uuid&gt;/shm设备呢？其最大的可能原因就是容器启动时挂载了/var/lib/docker目录，
-此时恰巧docker出现了bug，顺带mount了containers/&lt;uuid&gt;/shm设备。
-为证实猜想，我们启动一个挂载/var/lib/docker目录的容器，然后到容器中查看/proc/mounts，如下：&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tKfTcjw1fb4znsftd3j30kh08ntfm.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-其实除了/var/lib/docker做了多余挂载之外，映射/var/run和/run/目录都会有同样的问题：&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tKfTcjw1fb4zo5bmavj30ex04n0u4.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&#34;修复方式&#34;&gt;修复方式&lt;/h3&gt;
-
-&lt;p&gt;首先这肯定是docker的一个bug，很明显它不应该做多余的mount。这个bug在docker v1.12.4版本做了一些修复，
-相关PR&lt;a href=&#34;https://github.com/docker/docker/pull/29083&#34;&gt;https://github.com/docker/docker/pull/29083&lt;/a&gt;，类似的issue&lt;a href=&#34;https://github.com/docker/docker/issues/20560&#34;&gt;https://github.com/docker/docker/issues/20560&lt;/a&gt;，
-都可以在github上找到。所以docker v1.12.4之前也都会比较容易碰到这个问题，
-虽然有一些FIX已经merge了，但是其实并没有完全解决，起码我在docker v1.12.6上使用AUFS驱动，
-还是会发现这个问题。&lt;/p&gt;
-
-&lt;p&gt;那么如果因为各种原因无法变更docker，但是还想避免这个问题怎么办？
-比如可以在mount /var/lib/docker（或是你迁移之后的DockerRootDir）的容器中执行以下脚本：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;#!/bin/bash
-
-for i in $(curl -s --unix /var/run/docker.sock http://localhost/info | jq -r .DockerRootDir) /var/lib/docker /run /var/run; do
-    for m in $(tac /proc/mounts | awk &#39;{print $2}&#39; | grep ^${i}/); do
-        umount $m || true
-    done
-done
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;主要目的是把多余mount的path卸载掉，这样就不会因为同时挂载导致device or resource busy的问题。
-需要注意的是，是否也要umount /run和/var/run要结合自身实际应用去考虑。&lt;/p&gt;</description>
     </item>
     
   </channel>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>扒一扒Rancher社区中的小工具 &middot; Niusmallnan</title>
+    <title>Runc CVE-2019-5736以及RancherOS v1.5.1发布 &middot; Niusmallnan</title>
     <meta name="generator" content="Hugo 0.17" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -10,7 +10,7 @@
       <meta name="description" content="Niusmallnan Blog Site">
     
     
-    <link rel="canonical" href="http://niusmallnan.com/2016/08/15/rancher-smart-tools"/>
+    <link rel="canonical" href="http://niusmallnan.com/2019/02/12/rancheros-v151-release"/>
     <link rel="icon" href="http://niusmallnan.com/favicon.ico">
     <link rel="apple-touch-icon" href="http://niusmallnan.com/apple-touch-icon.png"/>
     <link rel="stylesheet" href="http://niusmallnan.com/css/style.css">
@@ -20,15 +20,14 @@
     
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,400,600' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-    <meta property="og:title" content="扒一扒Rancher社区中的小工具" />
-<meta property="og:description" content="除了我们所熟知的Rancher &amp; RancherOS，Rancher Labs的开发团队在实践中提炼了很多实用的小工具，
-这些小工具虽然并不会左右Rancher发展的大局，但是在项目标准化和开发效率上给团队带来巨大的便捷。
+    <meta property="og:title" content="Runc CVE-2019-5736以及RancherOS v1.5.1发布" />
+<meta property="og:description" content="一言不合就发新版本
 " />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="http://niusmallnan.com/2016/08/15/rancher-smart-tools" />
+<meta property="og:url" content="http://niusmallnan.com/2019/02/12/rancheros-v151-release" />
 
 
-<meta property="og:updated_time" content="2016-08-15T14:16:42&#43;08:00"/>
+<meta property="og:updated_time" content="2019-02-12T14:24:44&#43;08:00"/>
 
 
 
@@ -41,14 +40,13 @@
 
     
     
-<meta itemprop="name" content="扒一扒Rancher社区中的小工具">
-<meta itemprop="description" content="除了我们所熟知的Rancher &amp; RancherOS，Rancher Labs的开发团队在实践中提炼了很多实用的小工具，
-这些小工具虽然并不会左右Rancher发展的大局，但是在项目标准化和开发效率上给团队带来巨大的便捷。
+<meta itemprop="name" content="Runc CVE-2019-5736以及RancherOS v1.5.1发布">
+<meta itemprop="description" content="一言不合就发新版本
 ">
 
 
-<meta itemprop="dateModified" content="2016-08-15T14:16:42&#43;08:00" />
-<meta itemprop="wordCount" content="3128">
+<meta itemprop="dateModified" content="2019-02-12T14:24:44&#43;08:00" />
+<meta itemprop="wordCount" content="1537">
 
 
 
@@ -60,9 +58,8 @@
 
 
 
-<meta name="twitter:title" content="扒一扒Rancher社区中的小工具"/>
-<meta name="twitter:description" content="除了我们所熟知的Rancher &amp; RancherOS，Rancher Labs的开发团队在实践中提炼了很多实用的小工具，
-这些小工具虽然并不会左右Rancher发展的大局，但是在项目标准化和开发效率上给团队带来巨大的便捷。
+<meta name="twitter:title" content="Runc CVE-2019-5736以及RancherOS v1.5.1发布"/>
+<meta name="twitter:description" content="一言不合就发新版本
 "/>
 
 
@@ -297,9 +294,9 @@
             
 
             <header class="article-header">
-    <a href="http://niusmallnan.com/2016/08/15/rancher-smart-tools">
+    <a href="http://niusmallnan.com/2019/02/12/rancheros-v151-release">
     <h1 class="article-title" itemprop="name">
-        扒一扒Rancher社区中的小工具
+        Runc CVE-2019-5736以及RancherOS v1.5.1发布
     </h1>
     </a>
     <div class="article-meta">
@@ -307,12 +304,12 @@
         
         <div class="article-date">
             <i class="fa fa-calendar"></i>
-            <time datetime="2016-08-15 14:16:42 &#43;0800 CST" itemprop="datePublished">2016-08-15</time>
+            <time datetime="2019-02-12 14:24:44 &#43;0800 CST" itemprop="datePublished">2019-02-12</time>
             &middot;
-            3128
+            1537
             字数
             &middot;
-            7
+            4
             分钟阅读
         </div>
         
@@ -337,7 +334,7 @@
                 <i class="fa fa-tags"></i>
                 
                 
-                <a class="article-category-link" href="http://niusmallnan.com/tags/rancher">Rancher</a>
+                <a class="article-category-link" href="http://niusmallnan.com/tags/rancheros">RancherOS</a>
                 
                 
             </div>
@@ -347,153 +344,86 @@
 </header>
 
             <div class="article-entry" itemprop="articleBody">
-                <p>除了我们所熟知的Rancher &amp; RancherOS，Rancher Labs的开发团队在实践中提炼了很多实用的小工具，
-这些小工具虽然并不会左右Rancher发展的大局，但是在项目标准化和开发效率上给团队带来巨大的便捷。
+                <p>一言不合就发新版本
 </p>
 
-<h3 id="引言">引言</h3>
+<p>runc是一个根据OCI(Open Container Initiative)标准创建并运行容器的CLI tool，目前docker引擎内部也是基于runc构建的。
+2019年2月11日，研究人员通过oss-security邮件列表披露了runc容器逃逸漏洞的详情，根据OpenWall的规定EXP会在7天后也就是2019年2月18日公开。</p>
 
-<p>与Linux、OpenStack等成熟的技术社区相比，Rancher社区还是处于初级发展阶段，
-一个技术社区的成败并不是单纯的代码贡献，而学习文档的数量和代码管理作业流程也是非常重要的。
-如何让怀揣不同需求的工程师都能在社区中快速找到相应的解决方案，这就需要大家协同合作共同促进社区发展与完善。
-除了我们所熟知的Rancher &amp; RancherOS，Rancher Labs的开发团队在实践中提炼了很多实用的小工具，
-这些小工具虽然并不会左右Rancher发展的大局，但是在项目标准化和开发效率上给团队带来巨大的便捷。
-这次主要是带着大家一起来认识一下这些小工具。</p>
+<p>此漏洞允许以root身份运行的容器以特权用户身份在主机上执行任意代码。实际上，这意味着容器可能会破坏Docker主机(覆盖runc CLI)。
+所需要的只是能够使用root来运行容器。攻击者可以使用受感染的Docker镜像或对未受感染的正在运行的容器运行exec命令。针对此问题的已知缓解措施包括：</p>
 
-<h5 id="golang包管理工具-trash">Golang包管理工具-Trash</h5>
+<ul>
+<li>使用只读主机文件系统运行</li>
+<li>运行用户命名空间</li>
+<li>不在容器中运行root</li>
+<li>正确配置的AppArmor / SELinux策略（当前的默认策略不够）</li>
+</ul>
 
-<p>项目地址：<a href="https://github.com/rancher/trash">https://github.com/rancher/trash</a><br />
-目前主流的编程语言 Python、Ruby、Java、Php 等已经把包管理的流程设计的犹如行云流水般流畅，
-一般情况下开发者是不需要操心类库包依赖管理以及升级、备份、团队协作的。Golang在1.5版本开始，
-官方开始引入包管理的设计，加了 vendor目录来支持本地包管理依赖，
-但是需要特殊设置 GO15VENDOREXPERIMENT=1，在1.6时代这个特性已经是默认的了。
-可是vendor并没有统一的版本号管理功能，只是额外提供了project内包的依赖路径。
-于是Trash这个工具就应运而生了，Trash的使用非常简单，只需要有一份依赖包的描述文件即可。</p>
+<p>收到披露邮件后，RancherOS团队尝试编写了攻击脚本，在一个普通容器中运行一个非常简单的脚本就完成了对主机的攻击，将主机上的runc替换成了其他程序。</p>
 
-<p>描述文件 trash.conf 支持两种格式，普通方式和YAML方式，
-可以直接在其中描述依赖库的远程地址、版本号等，一个简单的例子（我这里使用普通格式）：<br />
-<img src="http://ww1.sinaimg.cn/large/7853084cjw1fa20qdpd40j20c302t0t0.jpg" alt="" /></p>
+<p>Docker在第一时间发布了<a href="https://github.com/docker/docker-ce/releases/tag/v18.09.2">18.09.2</a>，用户可升级到此版本以修复该漏洞。
+但是通常由于各种因素，用户的生产环境并不容易升级太新的Docker版本，Rancher Labs已经将修复程序反向移植到所有版本的Docker。
+相关修补程序以及安装说明，请参考<a href="https://github.com/rancher/runc-cve">rancher/run-cve</a>。</p>
 
-<p>然后在根目录执行trash，即可获得相关版本的依赖包，非常轻量级，非常简洁：<br />
-<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa20qtj6kcj20av06cjrr.jpg" alt="" /></p>
+<p>RancherOS作为一款容器化操作系统，其中很多组件依赖runc，我们也在第一时间更新了补丁并发布了v1.5.1和v1.4.3两个版本。</p>
 
-<h5 id="golang编译工具-dapper">Golang编译工具-Dapper</h5>
+<h3 id="rancheros的更新">RancherOS的更新</h3>
 
-<p>项目地址：<a href="https://github.com/rancher/dapper">https://github.com/rancher/dapper</a><br />
-我们在编译golang执行程序的时候，因为涉及到协作开发，这就会碰到一个问题，
-就是如何保证编译环境的一致性。环境一致性最好的办法就是使用容器技术，
-Dapper就是利用Docker build镜像的过程中可以执行各种命令生成容器的原理。
-只需在项目的根目录下创建 Dockerfile.dapper 文件，这是一个参考Dockerfile标准的文件，
-执行dapper命令即可按照约定规则生成最终的执行程序，通过这种方式统一的编译环境。</p>
+<p>RancherOS的核心部件system-docker和user-docker都依赖runc，所以v1.5.1和v1.4.3都对他们进行了更新。而针对user-docker，RancherOS可以切换各种版本的docker engine，
+所以我们对一下docker engine都进行了反向移植：<strong>v1.12.6/v1.13.1/v17.03.2/v17.06.2/v17.09.1/v17.12.1/v18.03.1/v18.06.1</strong>。</p>
 
-<p>几乎所有的Rancher项目都是基于Dapper来编译的，随意打开一个项目比如
-<a href="https://github.com/rancher/rancher-dns">rancher-dns</a>就可以看到Dockerfile.dapper文件：<br />
-<img src="http://ww3.sinaimg.cn/large/7853084cjw1fa20thy5rhj20j809ojtr.jpg" alt="" /></p>
+<p>默认安装v1.5.1和v1.4.3，补丁程序已经是内置的，你无需任何操作就可以避免该漏洞。如果你希望使用早起的docker版本，那么切换user-docker时，请使用上面提到的补丁修复版本：</p>
 
-<p>DAPPER_SOURCE 指定了容器内的源码路径<br />
-DAPPER_OUTPUT 指定了编译后的输出路径，bin dist 目录会自动在项目根目录下创建<br />
-DAPPER_DOCKER_SOCKET 设置为True相当于<code>docker run -v /var/run/docker.sock:/var/run/docker.sock ...</code><br />
-DAPPER_ENV 相当于<code>docker run -e TAG -e REPO ...</code></p>
+<pre><code>root@ip-172-31-2-241:~# ros engine list
+disabled docker-1.12.6
+disabled docker-1.13.1
+disabled docker-17.03.1-ce
+disabled docker-17.03.2-ce
+disabled docker-17.06.1-ce
+disabled docker-17.06.2-ce
+disabled docker-17.09.0-ce
+disabled docker-17.09.1-ce
+disabled docker-17.12.0-ce
+disabled docker-17.12.1-ce
+disabled docker-18.03.0-ce
+disabled docker-18.03.1-ce
+disabled docker-18.06.0-ce
+enabled  docker-18.06.1-ce
+disabled docker-18.09.0
+disabled docker-18.09.1
+disabled docker-18.09.2
 
-<p>有一点需要注意的是，目前Dapper装载源码有两种方式bind和cp，bind就是直接mount本地的源码路径，
-但是如果使用remote docker daemon方式那就得使用cp模式了。</p>
+root@ip-172-31-2-241:~# ros engine switch docker-17.03.2-ce
+...
 
-<h5 id="golang项目标准化工具-go-skel">Golang项目标准化工具 Go-skel</h5>
+root@ip-172-31-2-241:~# docker info | grep Server
+Server Version: 17.03.2-ce
+</code></pre>
 
-<p>项目地址：<a href="https://github.com/rancher/go-skel">https://github.com/rancher/go-skel</a><br />
-介绍了包管理工具和打包编译工具，如果我们在创建一个golang项目时能把这两个工具整合起来一起使用，
-那就太赞了。go-skel就是提供了这样一个便利，我们直接来demo一下。</p>
+<p>同时v1.5.1版本也是支持docker 18.09.2，你可以切换到该版本，如果你考虑使用Docker官方的修复版本。只需简单运行: <code>ros engine switch docker-18.09.2</code>。</p>
 
-<p>clone一份go-skel的源码，创建一个rancher-tour（./skel.sh rancher-tour）的项目：<br />
-<img src="http://ww1.sinaimg.cn/large/7853084cjw1fa20wzh1pxj20jt09v0vf.jpg" alt="" /></p>
+<h3 id="v1-5-1-和-v1-4-3">v1.5.1 和 v1.4.3</h3>
 
-<p>执行完毕后，会创建一个标准的项目，包含了dapper和trash这两个工具，
-同时定义了一份Makefile，我们可以通过make命令来简化操作：<br />
-<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa20xj5jd3j20cw0art9r.jpg" alt="" /></p>
+<p>推荐您使用最新的v1.5.1版本，除了修复CVE-2019-5736漏洞外还支持其他新特性以及一些Bug Fix。当然，仍然有很多用户在使用1.4.x版本，所以我们也发布了v1.4.3，
+它只修复了runc漏洞，没有其他额外的更新。</p>
 
-<p>比如我们要执行一个ci操作，那就可以直接运行 make ci，自动运行单元测试，
-并在bin目录下生成最终的可执行程序：<br />
-<img src="http://ww1.sinaimg.cn/large/7853084cjw1fa20xw28tzj20gz05kmyl.jpg" alt="" /></p>
+<p>AWS相关镜像已经上传到各个region中，可以直接搜索查找并使用，包括AWS中国区。其他主要镜像列表参考：<a href="https://github.com/rancher/os/blob/v1.5.x/README.md#release">https://github.com/rancher/os/blob/v1.5.x/README.md#release</a></p>
 
-<p>标准项目已经创建了一些初始化代码，集成了 github.com/urfave/cli ，所以我们可以执行执行rancher-tour：<br />
-<img src="http://ww1.sinaimg.cn/large/7853084cjw1fa20y6wzdjj20kq08xgmw.jpg" alt="" /></p>
+<p>更多新特性和Bug Fix请参考v1.5.1的<a href="https://github.com/rancher/os/releases/tag/v1.5.1">Release Notes</a></p>
 
-<h5 id="微服务辅助小工具-giddyup">微服务辅助小工具 Giddyup</h5>
+<p>文档说明：<a href="https://rancher.com/docs/os/v1.x/en/">https://rancher.com/docs/os/v1.x/en/</a></p>
 
-<p>项目地址：<a href="https://github.com/cloudnautique/giddyup">https://github.com/cloudnautique/giddyup</a><br />
-一个传统的服务在容器化的过程中，通常我们会将其拆分成多个微服务，
-充分展现每个容器只做好一件事情这样的哲学。那么就会出现我们在Rancher中看到的sidekick容器，
-数据卷容器，专门负责更新配置信息的容器等等。实际应用中我们会遇到一些问题，
-比如这些微服务容器的启动是无序的，无序启动会导致微服务之间可能出现连接失败，
-进而导致整个服务不可用；再比如我们如何来判定依赖的微服务已经正常启动，
-这可能需要一个health check的服务端口。giddyup就是简化这种微服务检查工作的利器，它都能做些什么呢：</p>
-
-<ol>
-<li>Get connection strings from DNS or Rancher Metadata.</li>
-<li>Determine if your container is the leader in the service.</li>
-<li>Proxy traffic to the leader.</li>
-<li>Wait for service to have the desired scale.</li>
-<li>Get the scale of the service.</li>
-<li>Get Managed-IP of the container (/self/container/primary_ip).</li>
-</ol>
-
-<p>我们还是创建stack并在其中创建service来体验一下giddyup的部分功能，
-service中包含两个容器分别为主容器main和sidekick容器conf，他们共享网络栈：<br />
-<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa210w5l9pj20c807xt9a.jpg" alt="" /></p>
-
-<p>我们可以在conf内启动giddyup health，会启动一个监听1620端口的http服务，服务路径是/ping：<br />
-<img src="http://ww4.sinaimg.cn/large/7853084cjw1fa2115foy9j20a703h3yl.jpg" alt="" /></p>
-
-<p>此时我们可以在其他服务的容器内查看这个服务 health port的健康状态，
-通过giddyup ip stringify获取服务地址，使用giddyup probe可以查看相关状态：<br />
-<img src="http://ww1.sinaimg.cn/large/7853084cjw1fa211iwkz2j20ql03jgmj.jpg" alt="" /></p>
-
-<p>可以看到probe返回了OK的信息，说明giddy/main的health port是正常的，
-如果我们把giddyup health的端口停掉，giddyup probe会如何？<br />
-<img src="http://ww4.sinaimg.cn/large/7853084cjw1fa211ulol7j20mw06kn1u.jpg" alt="" /></p>
-
-<p>除了开启health port功能外，还可以sleep等待service内所有容器都启动，
-比如刚才的service，我在main上做wait操作，同时在UI上对service扩容，
-可以看到为了等待完成扩容差不多sleep了3s：<br />
-<img src="http://ww1.sinaimg.cn/large/7853084cjw1fa212n0tykj20ep031mxg.jpg" alt="" /></p>
-
-<p>更多功能可以去看一看giddyup项目的README文档，另外也可以看看catalog中的一些项目是怎么使用giddyup的，
-参考：<a href="https://github.com/rancher/catalog-dockerfiles">https://github.com/rancher/catalog-dockerfiles</a></p>
-
-<h5 id="rancher-cli-工具">Rancher CLI 工具</h5>
-
-<p>项目地址：<a href="https://github.com/rancher/cli">https://github.com/rancher/cli</a><br />
-现在我们管理Rancher的方式包括UI、API方式，为了能够和其他工具更好的融合Rancher开发了CLI工具，
-可以非常轻量级的嵌入到其他工具中。CLI将会在Rancher 1.2-pre2版本中正式放出，
-兼容性上目前来看没有支持老版本的计划，所以在老版本上出现各种问题也是正常的。</p>
-
-<p>直接在<a href="https://github.com/rancher/cli/releases">https://github.com/rancher/cli/releases</a>下载最新版本即可试用，
-将rancher cli放到PATH中，正式使用前需要初始化：<br />
-<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa214oqzn5j20hy07a405.jpg" alt="" /></p>
-
-<p>然后便可以执行各种犀利的操作，比如针对某个service进行scale操作，
-这比之前需要用rancher-compose cli要简洁的多：<br />
-<img src="http://ww2.sinaimg.cn/large/7853084cjw1fa2155xxeaj20ps05ggng.jpg" alt="" /></p>
-
-<p>再比如可以实时监听rancher events，可以即时查看Rancher中正在发生的各种任务，
-对协助排查问题，分析系统运行情况都非常有用：<br />
-<img src="http://ww4.sinaimg.cn/large/7853084cjw1fa215gzjcrj20dr077myp.jpg" alt="" /></p>
-
-<h4 id="后语">后语</h4>
-
-<p>小工具中内含着大智慧，工具文化是工程师Team高效协作的重要标志，
-高质量的工具能让项目开发有事半功倍之效，其背后也蕴藏着深厚的团队文化理念，
-就是不计项目KPI利用个人业余时间为团队做贡献的和谐氛围。
-其实国内很多互联网公司都是有专门设立工具开发工程师的岗位，
-对工具带来的生产效率提升，其重视程度不言而喻！</p>
+<p>最后，RancherOS还是一个小众的开源项目，我们专注Docker在Linux上的精简体验，如果喜欢RancherOS，请下载使用，非常期待收到您的反馈。
+同时Github上的star，也是鼓励我们继续前行的精神动力。</p>
             </div>
             <footer class="article-footer">
-    <a data-url="http://niusmallnan.com/2016/08/15/rancher-smart-tools" data-id="2054e121c8ee620c794589a437ad545b" class="article-share-link">
+    <a data-url="http://niusmallnan.com/2019/02/12/rancheros-v151-release" data-id="57935f7c7a8fbdaf4a51908bf0a88a06" class="article-share-link">
         <i class="fa fa-share"></i>
         分享
     </a>
     
-    <a href="http://niusmallnan.com/2016/08/15/rancher-smart-tools#disqus_thread" class="article-comment-link">
+    <a href="http://niusmallnan.com/2019/02/12/rancheros-v151-release#disqus_thread" class="article-comment-link">
         评论
     </a>
     
@@ -569,21 +499,14 @@ service中包含两个容器分别为主容器main和sidekick容器conf，他们
         
 <nav id="article-nav">
     
-    <a href="http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0" id="article-nav-older" class="article-nav-link-wrap">
+    <a href="http://niusmallnan.com/2019/01/06/rancheros-v150-release" id="article-nav-older" class="article-nav-link-wrap">
       <strong class="article-nav-caption">
           老的
       </strong>
-      <div class="article-nav-title">Kubernetes in Rancher1.0 架构分析</div>
+      <div class="article-nav-title">RancherOS v1.5.0发布</div>
     </a>
     
 
-    
-    <a href="http://niusmallnan.com/2016/08/25/rancher-envent" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">
-          新的
-      </strong>
-      <div class="article-nav-title">Rancher event机制及其实践指南</div>
-    </a>
     
 </nav>
 
@@ -596,9 +519,9 @@ service中包含两个容器分别为主容器main和sidekick容器conf，他们
             <div id="disqus_thread"></div>
 <script type="text/javascript">
     var disqus_shortname = 'niusmallnan';
-    var disqus_identifier = 'http:\/\/niusmallnan.com\/2016\/08\/15\/rancher-smart-tools';
-    var disqus_title = '扒一扒Rancher社区中的小工具';
-    var disqus_url = 'http:\/\/niusmallnan.com\/2016\/08\/15\/rancher-smart-tools';
+    var disqus_identifier = 'http:\/\/niusmallnan.com\/2019\/02\/12\/rancheros-v151-release';
+    var disqus_title = 'Runc CVE-2019-5736以及RancherOS v1.5.1发布';
+    var disqus_url = 'http:\/\/niusmallnan.com\/2019\/02\/12\/rancheros-v151-release';
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
