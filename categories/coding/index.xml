@@ -70,6 +70,8 @@
 For Linux 3.x kernels use the binaries that end with no-memfd_create. Then replace the docker-runc on your host with the patched one.
 &lt;/code&gt;&lt;/pre&gt;
 
+&lt;p&gt;我们依然在不断完善我们的补丁，如果在你的系统上补丁无法运作，请随时告知我们，欢迎在rancher/runc-cve向我们提issue。&lt;/p&gt;
+
 &lt;h4 id=&#34;如何正确使用exp&#34;&gt;如何正确使用EXP？&lt;/h4&gt;
 
 &lt;p&gt;首先不建议大家广泛传播EXP，因为它每暴露一次，就为整体环境增加了一丝风险，我们可以研究学习但是不要恶意传播。
