@@ -10,6 +10,77 @@
     <atom:link href="http://niusmallnan.com/tags/rancheros/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
+      <title>[后记] runc cve-2019-5736</title>
+      <link>http://niusmallnan.com/2019/02/14/runc-cve-2019-5736-afterword</link>
+      <pubDate>Thu, 14 Feb 2019 14:06:57 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2019/02/14/runc-cve-2019-5736-afterword</guid>
+      <description>&lt;p&gt;有些话不知当讲不当讲
+&lt;/p&gt;
+
+&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
+
+&lt;p&gt;runc是一个根据OCI(Open Container Initiative)标准创建并运行容器的CLI tool，目前docker引擎内部也是基于runc构建的。
+2019年2月11日，研究人员通过oss-security邮件列表披露了runc容器逃逸漏洞的详情，根据OpenWall的规定EXP会在7天后也就是2019年2月18日公开。&lt;/p&gt;
+
+&lt;p&gt;经过几天的咨询内容轰炸，相信大家已经对漏洞已经有了初步的了解，甚至在Github上已经有人提交了EXP代码。Rancher在第一时间完成了补丁修复，并向企业用户推送的修复方案。
+同时在我们也收到了大量来自社区用户在后台的提问，为了疏解种种谜团，我们特意再发布一篇文章，选择一些比较热点的问题进行回复。&lt;/p&gt;
+
+&lt;h3 id=&#34;热点问题&#34;&gt;热点问题&lt;/h3&gt;
+
+&lt;h4 id=&#34;非特权容器也能发起攻击吗&#34;&gt;非特权容器也能发起攻击吗？&lt;/h4&gt;
+
+&lt;p&gt;答案是肯定的，Rancher安全团队做了一些测试，即使运行容器时不使用privileged参数，一样可以发起攻击。因为这个漏洞核心要素在于，容器内的用户是否对runc有访问权限，
+容器内默认是root用户，只是这个root是受限制的root，但是它是具有对runc的访问权限，所以一定可以发起攻击。&lt;/p&gt;
+
+&lt;h4 id=&#34;主机上不用root用户启动容器可以避免攻击吗&#34;&gt;主机上不用root用户启动容器可以避免攻击吗？&lt;/h4&gt;
+
+&lt;p&gt;答案是无法避免，如上一个问题分析，它和容器内的用户有关，至于在主机上以什么用户启动无关。Rancher安全团队在Ubuntu系统上做了测试，即使使用ubuntu用户启动容器，
+依然可以完成对runc的替换。&lt;/p&gt;
+
+&lt;h4 id=&#34;更新官方docker的注意事项&#34;&gt;更新官方Docker的注意事项&lt;/h4&gt;
+
+&lt;p&gt;Docker也在第一时间发布了两个版本18.06.2和18.09.2，这两个版本都可以修复runc漏洞，但是你需要注意的是他们都只兼容4.x内核，如果你的系统依然使用的3.x内核，
+请谨慎使用，因为它基本不会起作用，甚至可能导致额外的问题。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;Ubuntu 14.04 customers using a 3.13 kernel will need to upgrade to a supported Ubuntu 4.x kernel
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;参考两个版本的RN：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.docker.com/engine/release-notes/#18062&#34;&gt;https://docs.docker.com/engine/release-notes/#18062&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.docker.com/engine/release-notes/#18092&#34;&gt;https://docs.docker.com/engine/release-notes/#18092&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h4 id=&#34;kubernetes用户怎么办&#34;&gt;Kubernetes用户怎么办？&lt;/h4&gt;
+
+&lt;p&gt;使用K8s的用户都很清楚，K8s并不能兼容太高的Docker版本，所以更新官方Docker版本是很难的一件事，为此K8s官方特意发表了一篇Blog：&lt;a href=&#34;https://kubernetes.io/blog/2019/02/11/runc-and-cve-2019-5736/&#34;&gt;https://kubernetes.io/blog/2019/02/11/runc-and-cve-2019-5736/&lt;/a&gt; 。
+主要思想就是，不要在容器中使用root，它推荐的方案是使用PodSecurityPolicy。当然很多用户修改PodSecurityPolicy后可能会引发各种问题，所以它也推荐用户更新Docker。
+同时它也提到，不能更新Docker的用户，可以使用Rancher提供的方案，Rancher为每个版本都移植了补丁：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;If you are unable to upgrade Docker, the Rancher team has provided backports of the fix for many older versions at github.com/rancher/runc-cve.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h4 id=&#34;如何使用rancher提供的补丁&#34;&gt;如何使用Rancher提供的补丁？&lt;/h4&gt;
+
+&lt;p&gt;如上一个问题提到的，用户可以直接访问 &lt;a href=&#34;https://github.com/rancher/runc-cve&#34;&gt;https://github.com/rancher/runc-cve&lt;/a&gt; 来获取方案，值得一提的是Rancher为3.x和4.x内核用户都提供了补丁版本。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;To install, find the runc for you docker version, for example Docker 17.06.2 for amd64 will be runc-v17.06.2-amd64. 
+For Linux 3.x kernels use the binaries that end with no-memfd_create. Then replace the docker-runc on your host with the patched one.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h4 id=&#34;如何正确使用exp&#34;&gt;如何正确使用EXP？&lt;/h4&gt;
+
+&lt;p&gt;首先不建议大家广泛传播EXP，因为它每暴露一次，就为整体环境增加了一丝风险，我们可以研究学习但是不要恶意传播。
+我们在后台看到有些人问到，他们使用了某些EXP代码，攻击没有成功，想知道是不是自己的系统是安全的，不用考虑升级。
+Rancher安全团队也查看了一些外部公开的EXP，有些EXP是不完整的，它可能只能在某些环境上起作用。
+比如利用libseccomp的EXP，就无法在静态编译的runc上起作用，我们使用了一些公开的EXP就无法在RancherOS上完成攻击。
+虽然不同版本的Docker都使用runc，但是不同的操作系统使用runc的方式不同，有的使用static runc，有的使用dynamic runc。
+所以不能以某些公开的EXP的执行结果为标准，来判断自己系统是否存在漏洞。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
       <title>Runc CVE-2019-5736以及RancherOS v1.5.1发布</title>
       <link>http://niusmallnan.com/2019/02/12/rancheros-v151-release</link>
       <pubDate>Tue, 12 Feb 2019 14:24:44 +0800</pubDate>
