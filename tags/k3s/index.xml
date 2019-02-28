@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>K3s on Niusmallnan</title>
+    <link>http://niusmallnan.com/tags/k3s/</link>
+    <description>Recent content in K3s on Niusmallnan</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Thu, 28 Feb 2019 14:24:44 +0800</lastBuildDate>
+    
+	<atom:link href="http://niusmallnan.com/tags/k3s/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>K3s 初探</title>
+      <link>http://niusmallnan.com/2019/02/28/k3s-init/</link>
+      <pubDate>Thu, 28 Feb 2019 14:24:44 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/2019/02/28/k3s-init/</guid>
+      <description>&lt;p&gt;你等着 走着瞧！&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

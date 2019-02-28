@@ -1,128 +1,129 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>http://niusmallnan.com/</loc>
+    <loc>http://niusmallnan.com/2019/02/28/k3s-init/</loc>
+    <lastmod>2019-02-28T14:24:44+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://niusmallnan.com/2019/02/14/runc-cve-2019-5736-afterword/</loc>
     <lastmod>2019-02-14T14:06:57+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2019/02/14/runc-cve-2019-5736-afterword</loc>
-    <lastmod>2019-02-14T14:06:57+08:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>http://niusmallnan.com/2019/02/12/rancheros-v151-release</loc>
+    <loc>http://niusmallnan.com/2019/02/12/rancheros-v151-release/</loc>
     <lastmod>2019-02-12T14:24:44+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2019/01/06/rancheros-v150-release</loc>
+    <loc>http://niusmallnan.com/2019/01/06/rancheros-v150-release/</loc>
     <lastmod>2019-01-06T17:00:46+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2018/02/07/rancheros-v120-release</loc>
+    <loc>http://niusmallnan.com/2018/02/07/rancheros-v120-release/</loc>
     <lastmod>2018-02-07T16:52:31+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2018/01/22/update-microcode-on-rancheros</loc>
+    <loc>http://niusmallnan.com/2018/01/22/update-microcode-on-rancheros/</loc>
     <lastmod>2018-01-22T17:16:17+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2018/01/21/rke-on-rancheros</loc>
+    <loc>http://niusmallnan.com/2018/01/21/rke-on-rancheros/</loc>
     <lastmod>2018-01-21T16:23:54+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2017/12/05/rancheros-on-aliyun</loc>
+    <loc>http://niusmallnan.com/2017/12/05/rancheros-on-aliyun/</loc>
     <lastmod>2017-12-05T16:32:52+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2017/05/16/rancher-extend-network</loc>
+    <loc>http://niusmallnan.com/2017/05/16/rancher-extend-network/</loc>
     <lastmod>2017-05-16T16:31:50+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2017/04/11/rancher-logging</loc>
+    <loc>http://niusmallnan.com/2017/04/11/rancher-logging/</loc>
     <lastmod>2017-04-11T11:56:14+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2017/03/09/analysis-of-kubelet-start-failure</loc>
+    <loc>http://niusmallnan.com/2017/03/09/analysis-of-kubelet-start-failure/</loc>
     <lastmod>2017-03-09T15:45:41+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2017/02/23/rancher-scheduler-based-on-resource</loc>
+    <loc>http://niusmallnan.com/2017/02/23/rancher-scheduler-based-on-resource/</loc>
     <lastmod>2017-02-23T18:58:19+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2017/02/23/thinking-about-subcribe-rancher-events</loc>
+    <loc>http://niusmallnan.com/2017/02/23/thinking-about-subcribe-rancher-events/</loc>
     <lastmod>2017-02-23T17:33:56+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2017/02/05/rancher-k8s-helm-practice</loc>
+    <loc>http://niusmallnan.com/2017/02/05/rancher-k8s-helm-practice/</loc>
     <lastmod>2017-02-05T14:08:38+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2017/01/19/optimize-rancher-k8s-in-china</loc>
+    <loc>http://niusmallnan.com/2017/01/19/optimize-rancher-k8s-in-china/</loc>
     <lastmod>2017-01-19T17:32:56+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2017/01/06/rancher-lb-logs</loc>
+    <loc>http://niusmallnan.com/2017/01/06/rancher-lb-logs/</loc>
     <lastmod>2017-01-06T15:12:10+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2017/01/01/rancher-server-overwhelmed-by-dead-containers</loc>
+    <loc>http://niusmallnan.com/2017/01/01/rancher-server-overwhelmed-by-dead-containers/</loc>
     <lastmod>2017-01-01T07:42:28+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2016/12/27/docker-device-resource-busy</loc>
+    <loc>http://niusmallnan.com/2016/12/27/docker-device-resource-busy/</loc>
     <lastmod>2016-12-27T07:15:44+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2016/12/14/rancher12-swarmkit-architect</loc>
+    <loc>http://niusmallnan.com/2016/12/14/rancher12-swarmkit-architect/</loc>
     <lastmod>2016-12-14T21:53:27+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2016/12/09/rancher-netstat-miss-port</loc>
+    <loc>http://niusmallnan.com/2016/12/09/rancher-netstat-miss-port/</loc>
     <lastmod>2016-12-09T15:07:14+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key</loc>
+    <loc>http://niusmallnan.com/2016/12/05/go-machine-service-access-api-key/</loc>
     <lastmod>2016-12-05T11:14:19+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2016/12/02/rancher12-run-on-laptop</loc>
+    <loc>http://niusmallnan.com/2016/12/02/rancher12-run-on-laptop/</loc>
     <lastmod>2016-12-02T21:31:53+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2016/12/01/rancher12-networking</loc>
+    <loc>http://niusmallnan.com/2016/12/01/rancher12-networking/</loc>
     <lastmod>2016-12-01T21:18:36+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2016/11/28/rancher12-infra-architect</loc>
+    <loc>http://niusmallnan.com/2016/11/28/rancher12-infra-architect/</loc>
     <lastmod>2016-11-28T20:53:44+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2016/11/22/rpi-noip-with-docker</loc>
+    <loc>http://niusmallnan.com/2016/11/22/rpi-noip-with-docker/</loc>
     <lastmod>2016-11-22T13:59:30+08:00</lastmod>
   </url>
   
@@ -132,38 +133,127 @@
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2016/11/07/docker-on-rpi</loc>
+    <loc>http://niusmallnan.com/2016/11/07/docker-on-rpi/</loc>
     <lastmod>2016-11-07T17:36:37+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2016/10/08/rancher-k8s-hacking</loc>
+    <loc>http://niusmallnan.com/2016/10/08/rancher-k8s-hacking/</loc>
     <lastmod>2016-10-08T16:09:24+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2016/09/23/rancher-ha-practice</loc>
+    <loc>http://niusmallnan.com/2016/09/23/rancher-ha-practice/</loc>
     <lastmod>2016-09-23T17:12:27+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2016/09/19/docker-cnm-practice</loc>
+    <loc>http://niusmallnan.com/2016/09/19/docker-cnm-practice/</loc>
     <lastmod>2016-09-19T17:22:00+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2016/08/25/rancher-envent</loc>
+    <loc>http://niusmallnan.com/2016/08/25/rancher-envent/</loc>
     <lastmod>2016-08-25T13:44:04+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2016/08/15/rancher-smart-tools</loc>
+    <loc>http://niusmallnan.com/2016/08/15/rancher-smart-tools/</loc>
     <lastmod>2016-08-15T14:16:42+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0</loc>
+    <loc>http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0/</loc>
     <lastmod>2016-07-28T14:49:47+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://niusmallnan.com/categories/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://niusmallnan.com/categories/coding/</loc>
+    <lastmod>2019-02-28T14:24:44+08:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://niusmallnan.com/tags/docker/</loc>
+    <lastmod>2017-01-01T07:42:28+08:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://niusmallnan.com/tags/helm/</loc>
+    <lastmod>2017-02-05T14:08:38+08:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://niusmallnan.com/tags/k3s/</loc>
+    <lastmod>2019-02-28T14:24:44+08:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://niusmallnan.com/tags/kubernetes/</loc>
+    <lastmod>2017-03-09T15:45:41+08:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://niusmallnan.com/tags/networking/</loc>
+    <lastmod>2017-05-16T16:31:50+08:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://niusmallnan.com/</loc>
+    <lastmod>2019-02-28T14:24:44+08:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://niusmallnan.com/post/</loc>
+    <lastmod>2019-02-28T14:24:44+08:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://niusmallnan.com/tags/rancher/</loc>
+    <lastmod>2017-05-16T16:31:50+08:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://niusmallnan.com/tags/rancher-v1.2/</loc>
+    <lastmod>2017-01-06T15:12:10+08:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://niusmallnan.com/tags/rancheros/</loc>
+    <lastmod>2019-02-14T14:06:57+08:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://niusmallnan.com/tags/raspberry-pi/</loc>
+    <lastmod>2016-11-22T13:59:30+08:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://niusmallnan.com/tags/rke/</loc>
+    <lastmod>2018-01-21T16:23:54+08:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://niusmallnan.com/tags/</loc>
+    <lastmod>2017-01-01T07:42:28+08:00</lastmod>
+    <priority>0</priority>
   </url>
   
 </urlset>

@@ -1,326 +1,53 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Niusmallnan</title>
-    <link>http://niusmallnan.com/tags/kubernetes/index.xml</link>
-    <description>Recent content on Niusmallnan</description>
+    <title>Kubernetes on Niusmallnan</title>
+    <link>http://niusmallnan.com/tags/kubernetes/</link>
+    <description>Recent content in Kubernetes on Niusmallnan</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-CN</language>
-    <copyright>Niusmallnan</copyright>
-    <atom:link href="http://niusmallnan.com/tags/kubernetes/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 09 Mar 2017 15:45:41 +0800</lastBuildDate>
+    
+	<atom:link href="http://niusmallnan.com/tags/kubernetes/index.xml" rel="self" type="application/rss+xml" />
+    
     
     <item>
       <title>Kubelet无法访问rancher-metadata问题分析</title>
-      <link>http://niusmallnan.com/2017/03/09/analysis-of-kubelet-start-failure</link>
+      <link>http://niusmallnan.com/2017/03/09/analysis-of-kubelet-start-failure/</link>
       <pubDate>Thu, 09 Mar 2017 15:45:41 +0800</pubDate>
       
-      <guid>http://niusmallnan.com/2017/03/09/analysis-of-kubelet-start-failure</guid>
-      <description>&lt;p&gt;拯救一脸懵逼
-&lt;/p&gt;
-
-&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
-
-&lt;p&gt;Rancher能够支持Kubernetes，可以快速几乎无障碍的拉起一套K8s环境，这对刚入门K8s的小白来说简直是一大利器。
-当然由于系统特性五花八门，系统内置软件也相互影响，所以有时候伙伴们会碰到比较难缠的问题。
-本文就分析一下关于kubelet无法访问rancher-metadata问题，当然这个问题并不是必现，
-这里要感谢一位Rancher社区网友的帮助，他的环境中发现了这个问题，并慷慨得将访问权限共享给了我。&lt;/p&gt;
-
-&lt;h3 id=&#34;问题现象&#34;&gt;问题现象&lt;/h3&gt;
-
-&lt;p&gt;使用Rancher部署K8s后，发现一切服务状态均正常，这时候打开K8s dashboard却无法访问，
-细心得查看会发现，dashboard服务并没有部署起来，这时下意识的行为是查看kubelet的日志，
-此时会发现一个异常：&lt;br /&gt;
-&lt;img src=&#34;https://ww1.sinaimg.cn/large/006tNbRwly1fdgnj5h1bjj30g503omxw.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-你会发现kubelet容器内部一直无法访问rancher-metadata，查看rancher-k8s-package源码，
-kubelet服务启动之前需要通过访问rancher-metadata做一些初始化动作，由于访问不了，
-便一直处于sleep状态，也就是出现了上面提到的那些异常日志的现象：&lt;br /&gt;
-&lt;img src=&#34;https://ww2.sinaimg.cn/large/006tNbRwly1fdgnn1tbzzj30k2071q41.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;同样，在github上也能看到类似的issue：&lt;a href=&#34;https://github.com/rancher/rancher/issues/7160&#34;&gt;https://github.com/rancher/rancher/issues/7160&lt;/a&gt;&lt;/p&gt;
-
-&lt;h3 id=&#34;排查分析&#34;&gt;排查分析&lt;/h3&gt;
-
-&lt;p&gt;进入kubelet容器一探究竟，分别用ping和dig测试对rancher-metadata访问情况如下：&lt;br /&gt;
-&lt;img src=&#34;https://ww1.sinaimg.cn/large/006tNbRwly1fdgnq66xs1j30ey0abmyh.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-dig明显可以解析，但是ping无法解析，因此基本排除了容器内dns nameserver或者网络链路情况的问题。&lt;/p&gt;
-
-&lt;p&gt;既然dig没有问题，ping有问题，那么我们就直接采取使用strace（&lt;code&gt;strace ping rancher-metadata -c 1&lt;/code&gt;）来调试，
-这样可以打印系统内部调用的情况，可以更深层次找到问题根源：&lt;br /&gt;
-&lt;img src=&#34;https://ww1.sinaimg.cn/large/006tNbRwly1fdgnsufow0j30k7090tb2.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;之前提到这个问题并不是必现的，所以我们找一个正常的环境，同样用strace调试，如下：&lt;br /&gt;
-&lt;img src=&#34;https://ww2.sinaimg.cn/large/006tNbRwly1fdgnu63kl2j30m0077dhj.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;对这两张图，其实已经能够很明显的看出区别，有问题的kubelet在解析rancher-metadata之前，
-向nscd请求的解析结果，nscd返回了unkown host，所以就没有进行dns解析。
-而正常的kubelet节点并没有找到nscd.socket，而后直接请求dns进行解析rancher-metadata地址。&lt;/p&gt;
-
-&lt;p&gt;经过以上的分析，基本上断定问题出在nscd上，那么为什么同样版本的rancher-k8s，
-一个有nscd socket，而另一个却没有，仔细看一下kubelet的compose定义：&lt;br /&gt;
-&lt;img src=&#34;https://ww4.sinaimg.cn/large/006tNbRwly1fdgny3wpihj30c5087wf5.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-kubelet启动时候映射了主机目录/var/run，那么基本可以得知nscd来自于系统。
-检查一下有问题的kubelet节点的系统，果然会发现安装了nscd服务（服务名为unscd）。&lt;/p&gt;
-
-&lt;p&gt;用比较暴力的方案证明一下分析过程，直接删除nscd socket文件，这时候你会发现kubelet服务正常启动了，
-rancher-metadata也可以访问了。&lt;/p&gt;
-
-&lt;p&gt;回过头来思考一下原理，为什么ping/curl这种会先去nscd中寻找解析结果呢，而dig/nslookup则不受影响。
-ping/curl这种在解析地址前都会先读取/etc/nsswitch.conf，这是由于其底层均引用了glibc，
-由nsswitch调度，最终指引ping/curl先去找nscd服务。nscd服务是一个name services cache服务，
-很多解析结果他会缓存，而我们知道这个nscd是运行在Host上的，Host上是不能直接访问rancher-metadata这个服务名，
-所以kubelet容器中就无法访问rancher-metadata。&lt;/p&gt;
-
-&lt;h3 id=&#34;其他解决方案&#34;&gt;其他解决方案&lt;/h3&gt;
-
-&lt;p&gt;其实我们也未必要如此暴力删除nscd，nscd也有一些配置，我们可以修改一下以避免这种情况，
-可以disable hosts cache，这样nscd中便不会有相应内容的缓存，所以解析rancher-metadata并不会出现unknown host，
-而是继续向dns nameserver申请解析地址，这样也不会有问题。&lt;br /&gt;
-&lt;img src=&#34;https://ww4.sinaimg.cn/large/006tNbRwly1fdgo48mxf8j30ej06lab0.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&#34;总结&#34;&gt;总结&lt;/h3&gt;
-
-&lt;p&gt;遇到问题不能慌，关键是要沉得住气，很多看似非常复杂的问题，其实往往都是一个小配置引发的血案。&lt;/p&gt;</description>
+      <guid>http://niusmallnan.com/2017/03/09/analysis-of-kubelet-start-failure/</guid>
+      <description>&lt;p&gt;拯救一脸懵逼&lt;/p&gt;</description>
     </item>
     
     <item>
       <title>Rancher K8s Helm使用体验</title>
-      <link>http://niusmallnan.com/2017/02/05/rancher-k8s-helm-practice</link>
+      <link>http://niusmallnan.com/2017/02/05/rancher-k8s-helm-practice/</link>
       <pubDate>Sun, 05 Feb 2017 14:08:38 +0800</pubDate>
       
-      <guid>http://niusmallnan.com/2017/02/05/rancher-k8s-helm-practice</guid>
-      <description>&lt;p&gt;潇潇洒洒玩一玩
-&lt;/p&gt;
-
-&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
-
-&lt;p&gt;之前的文章已经阐述了Rancher K8s中国区的使用优化，
-&lt;a href=&#34;http://niusmallnan.com/2017/01/19/optimize-rancher-k8s-in-china/&#34;&gt;http://niusmallnan.com/2017/01/19/optimize-rancher-k8s-in-china/&lt;/a&gt;，
-本文则是选取一个特殊的组件Helm，深入一些体验使用过程。Helm是K8s中类似管理catalog的组件，
-在较新的Rancher K8s版本中，Helm已经默认集成可直接使用。&lt;/p&gt;
-
-&lt;h3 id=&#34;初始化cli环境&#34;&gt;初始化CLI环境&lt;/h3&gt;
-
-&lt;p&gt;如果已经习惯使用Rancher UI上自带的kubectl tab，那么可以跳过此步。
-大部分玩家还是更喜欢在自己的机器上使用kubectl和helm CLI来做管理的。
-在自己的机器上部署kubectl和helm命令行工具，有一个比较偷懒的方法，
-就是直接到kubectld容器拷贝出来，主要过程如下：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# kubectrld容器ID为 42291346c064
-$ docker cp 42291346c064:/usr/bin/kubectl /usr/local/bin/kubectl
-$ docker cp 42291346c064:/usr/bin/helm /usr/local/bin/helm
-$ docker cp 42291346c064:/tmp/.helm ~/.helm
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;当然也不要忘记kubectl的配置文件，在Rancher UI上生成，然后拷贝到对应的本地目录上。&lt;br /&gt;
-&lt;img src=&#34;https://ww1.sinaimg.cn/large/006tNc79ly1fcfkc0a5yjj30dx07edgb.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&#34;基于helm部署mysql&#34;&gt;基于Helm部署Mysql&lt;/h3&gt;
-
-&lt;p&gt;K8s官方的Charts中已经有了mysql这个应用，
-这里&lt;a href=&#34;https://github.com/kubernetes/charts/tree/master/stable&#34;&gt;https://github.com/kubernetes/charts/tree/master/stable&lt;/a&gt;可以找到，
-几乎所有的Chart都需要依赖PersistentVolumeClaim提供卷，所以在一切开始之前，
-我们需要先创建一个PersistentVolume，来提供一个数据卷池。这里可以选择部署比较方便的NFS。&lt;/p&gt;
-
-&lt;p&gt;选择一台主机，安装nfs-kernel-server，并做相应配置：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ apt-get install nfs-kernel-server
-
-# 配置卷
-# 修改 /etc/exports，添加如下内容
-/nfsexports *(rw,async,no_root_squash,no_subtree_check)
-
-# 重启nfs-server
-service nfs-kernel-server restart
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;使用kubectl创建PV，文件内容如下：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: pv0003
-  annotations:
-    volume.beta.kubernetes.io/storage-class: &amp;quot;slow&amp;quot;
-spec:
-  capacity:
-    storage: 2Gi
-  accessModes:
-    - ReadWriteMany
-  persistentVolumeReclaimPolicy: Retain
-  nfs:
-    path: /nfsexports #NFS mount path
-    server: 172.31.17.169 #NFS Server IP
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;安装mysql之前，需要准备一份mysql chart的配置文件，也就是对应的values.yaml，
-其他内容&lt;a href=&#34;https://github.com/kubernetes/charts/blob/master/stable/mysql/values.yaml&#34;&gt;https://github.com/kubernetes/charts/blob/master/stable/mysql/values.yaml&lt;/a&gt;基本不变，
-主要修改persistence部分，这样所依赖的PVC才能bound到对应的PV上，如下：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;persistence:
-  enabled: true
-  storageClass: slow
-  accessMode: ReadWriteMany
-  size: 1Gi
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;一切准备妥当，就可以进行Mysql Chart的安装，执行过程如下：&lt;code&gt;helm install --name ddb -f values.yaml stable/mysql&lt;/code&gt;。&lt;/p&gt;
-
-&lt;p&gt;安装完毕后，在Rancher UI和K8s Dashboard上都可以看到。&lt;br /&gt;
-&lt;img src=&#34;https://ww1.sinaimg.cn/large/006tNc79ly1fcfkfju2ayj30k407q750.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-&lt;img src=&#34;https://ww3.sinaimg.cn/large/006tNc79ly1fcfkfsuoayj30ed05zaae.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;</description>
+      <guid>http://niusmallnan.com/2017/02/05/rancher-k8s-helm-practice/</guid>
+      <description>&lt;p&gt;潇潇洒洒玩一玩&lt;/p&gt;</description>
     </item>
     
     <item>
       <title>如何hack一下rancher k8s</title>
-      <link>http://niusmallnan.com/2016/10/08/rancher-k8s-hacking</link>
+      <link>http://niusmallnan.com/2016/10/08/rancher-k8s-hacking/</link>
       <pubDate>Sat, 08 Oct 2016 16:09:24 +0800</pubDate>
       
-      <guid>http://niusmallnan.com/2016/10/08/rancher-k8s-hacking</guid>
+      <guid>http://niusmallnan.com/2016/10/08/rancher-k8s-hacking/</guid>
       <description>&lt;p&gt;Rancher可以轻松实现Kubernetes的部署，尽管默认的部署已经完全可用，
-但是如果我们想修改部署的K8s版本，这时应当如何应对？
-&lt;/p&gt;
-
-&lt;h3 id=&#34;原理分析与执行&#34;&gt;原理分析与执行&lt;/h3&gt;
-
-&lt;p&gt;在Rancher中，由于K8s是基于Cattle引擎来部署，所以在K8s在部署完成之后，
-我们可以通过Link Graph来很清晰的看到整体的部署情况。&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/006tNc79jw1fa0ybyprq4j30mi07tdh0.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;既然基于Cattle引擎部署，也就是说需要两个compose文件，
-k8s引擎的compose文件放在&lt;a href=&#34;https://github.com/rancher/rancher-catalog/tree/master/templates&#34;&gt;https://github.com/rancher/rancher-catalog/tree/master/templates&lt;/a&gt;下面，
-这里面有两个相关目录kubernetes与k8s，k8s是Rancher1.2开始使用的，
-而kubernetes则是Rancher1.2之后开始使用的。&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/006tNc79jw1fa0ydzd1dgj30gt07qmyg.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;为了我们可以自己hack一下rancher k8s的部署，我们可以在github上fork一下rancher-catalog，
-同时还需要修改一下Rancher中默认的catalog的repo地址，
-这个可以在&lt;a href=&#34;http://rancher-server/v1/settings&#34;&gt;http://rancher-server/v1/settings&lt;/a&gt;页面下，
-寻找名为 catalog.url 的配置项，然后进入编辑修改。比如我这里将library库的地址换成了自己的：
-&lt;a href=&#34;https://github.com/niusmallnan/rancher-catalog.git&#34;&gt;https://github.com/niusmallnan/rancher-catalog.git&lt;/a&gt;&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tNc79jw1fa0yff7sbzj30h206imyy.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;此时，我们就可以修改了，找一个比较实用的场景。我们都知道k8s的pod都会依赖一个基础镜像，
-这个镜像默认的地址是被GFW挡在墙外了，一般我们会把kubelet的启动参数调整一下，
-以便重新指定这个镜像地址，比如指定到国内的镜像源上。&lt;br /&gt;
-&lt;strong&gt;&amp;ndash;pod-infra-container-image=index.tenxcloud.com/google_containers/pause:2.0&lt;/strong&gt;。&lt;/p&gt;
-
-&lt;p&gt;如果我们要让rancher k8s部署时自动加上该参数，
-可以直接修改私有rancher-catalog中的k8s compose文件。&lt;br /&gt;
-&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tNc79jw1fa0ygscal6j30gv0asjtp.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;修改之后稍等片刻（主要是为了让rancher-server更新到新的catalog compose文件），
-添加一个k8s env并在其中添加host，k8s引擎就开始自动部署，
-部署完毕后，我们可以看到Kubernetes Stack的compose文件，
-已经有了&amp;ndash;pod-infra-container-image这个启动参数。&lt;br /&gt;
-&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tNc79jw1fa0yhg3alsj30gn09rtav.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-如此我们在添加pod时再也不用手动导入pod基础镜像了。&lt;/p&gt;
-
-&lt;p&gt;在compose file中，部署k8s的基础镜像是rancher/k8s，这个镜像的Dockerfile在rancher维护的k8s分支中，
-如在rancher-k8s 1.2.4分支中可以看到：&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tNc79jw1fa0yi5rmplj30e007ogmr.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;这样如果想对rancher-k8s发行版进行深度定制，就可以重新build相关镜像，通过rancher-compose来部署自己的发行版。&lt;/p&gt;
-
-&lt;h3 id=&#34;总结&#34;&gt;总结&lt;/h3&gt;
-
-&lt;p&gt;本文写于Rancher1.2行将发布之际，1.2版本是非常重大的更新，Rancher会支持部署原生的K8s版本，
-同时CNI网络和Cloud Provider等都会以插件方式，用户可以自己定义，并且在UI上都会有很好的体现。
-只要了解Rancher部署K8s的原理和过程，我们就可以定制非常适合自身使用的k8s，
-通过Rancher来部署自定义的k8s，我们就可以很容易的扩展了k8s不擅长的UI、Catalog、
-用户管理、审计日志维护等功能，这也是本文的目的。&lt;/p&gt;</description>
+但是如果我们想修改部署的K8s版本，这时应当如何应对？&lt;/p&gt;</description>
     </item>
     
     <item>
       <title>Kubernetes in Rancher1.0 架构分析</title>
-      <link>http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0</link>
+      <link>http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0/</link>
       <pubDate>Thu, 28 Jul 2016 14:49:47 +0800</pubDate>
       
-      <guid>http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0</guid>
+      <guid>http://niusmallnan.com/2016/07/28/k8s-in-rancher-1-0/</guid>
       <description>&lt;p&gt;该主题是本人于Rancher k8s 北京meetup进行的一次线下分享，应Rancher China官方之邀，
 重新梳理成文字版本，便于大家阅读传播，如有问题纰漏或任何不妥之处随时联系牛小腩（niusmallnan），
-我会以最快速度更正。
-&lt;/p&gt;
-
-&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
-
-&lt;p&gt;在Rancher 1.0版本开始，Rancher逐步增加了Kubernetes、Swarm、Mesos等多编排引擎的支持，
-很多朋友就此产生了疑惑，诸如Cattle引擎和这几个之间到底什么关系？
-每种引擎是如何支持的？自家的业务环境如何选型？我们将逐步揭开这些神秘面纱，
-了解基础架构才能在遇到问题时进行有效的分析，进而准确的定位问题并解决问题，
-因为没有一种生产环境是完全可靠的。基于这个背景下，这次我们首先向大家介绍kubernetes in Rancher的架构。&lt;/p&gt;
-
-&lt;h3 id=&#34;分析&#34;&gt;分析&lt;/h3&gt;
-
-&lt;p&gt;从现在Rancher的发展节奏来看，Cattle引擎已经被定义成Rancher的基础设施引擎，
-而Rancher的基础设施服务都包括哪些呢？如下：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;Networking，rancher的统一网络服务，由rancher-net组件提供&lt;/li&gt;
-&lt;li&gt;Load Balancer，rancher的负载均衡服务，目前来看套路基本上是基于Haproxy来构建&lt;/li&gt;
-&lt;li&gt;DNS Service，rancher的dns服务，主要是为了提供服务发现能力，由rancher-dns组件来提供&lt;/li&gt;
-&lt;li&gt;Metadata Service，rancher的元数据服务，metadata是我们通过compose编排应用时的利器，
-可以很灵活的像service中注入特定信息&lt;/li&gt;
-&lt;li&gt;Persistent Storage Service，持久化存储服务目前是由convoy来提供，
-而对于真正的后端存储的实现rancher还有longhorn没有完全放出&lt;/li&gt;
-&lt;li&gt;Audit Logging，审计日志服务是企业场景中比较重要的一个属性，
-目前是集成在cattle内部没有被完全分离出来&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;所以Rancher在接入任何一种编排引擎，最终都会把基础设施服务整合到该引擎中，
-Kubernetes in Rancher的做法正是如此。&lt;/p&gt;
-
-&lt;p&gt;Kubernetes各个组件的角色可以归为三类即Master、Minion、Etcd，
-Master主要是kube-apiserver、kube-scheduler、kube-controller-manager，
-Minion主要是kubelet和kube-proxy。Rancher为了融合k8s的管控功能，
-又在Master中添加了kuberctrld、ingress-controller、kubernetes-agent三个服务来打通Rancher和K8s，
-同时每个node上都会依赖Rancher提供的rancher-dns、rancher-metadata、rancher-net这些基础设施服务。&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/7853084cjw1fa21xnsfbrj20p40c0wgm.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;由于K8s是基于Cattle引擎来部署，所以在K8s在部署完成之后，
-我们可以通过Link Graph来很清晰的看到整体的部署情况。&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/7853084cjw1fa21y87258j20mi07tdh0.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-整个服务基于Cattle引擎的rancher-compose构建，新增节点后自动添加kubelet和kube-proxy服务
-（此处利用了Global Label的特性），各个组件都添加了health-check机制，
-保证一定程度的高可用。考虑到Etcd最低1个最多3个节点，
-单台agent host就可以部署K8s，三节点agent host则更合理些。&lt;/p&gt;
-
-&lt;p&gt;K8s集群完成部署后，我们就可以在其中添加各种应用服务，
-目前Rancher支持管理K8s的service、pod、replication-controller等，
-我们可以用一张图来形象得描述一下应用视图结构。&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/7853084cjw1fa21z5ellcj20qj0cuq5u.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-rancher-net组件会给每个pod分配一个ip，rancher-dns则替代了K8s的Skydns来实现服务发现，
-在pod的容器内部依然可以访问rancher-metadata服务来获取元数据信息。除了这三个基础服务外，
-我们之前提到的kuberctrld、ingress-controller、kubernetes-agent也在其中扮演者重要角色。&lt;/p&gt;
-
-&lt;p&gt;无论是K8s还是Rancher，其中一些抽象对象（如rancher的stack/service，或者K8s的serivice/pod）
-在属性更新时都会有events产生，在任何服务入口来更改这些抽象对象都会有events产生，
-所以要保证Rancher和k8s能够互相感知各自对象的更新，那么kubernetes-agent就应运而生了。&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/7853084cjw1fa22166xnyj20nt0d60ut.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-诸如K8s的namespaces、services、replicationcontrollers、pods等对象的信息变更会及时通知给Rancher，
-而Cattle管理的Host资源出现信息变更（诸如host label的变动）也会通知给K8s。&lt;/p&gt;
-
-&lt;p&gt;简单得说kubernetes-agent是为了维护Rancher和K8s之间的对象一致性，
-而真正要通过Rancher来创建K8s中的service或者pod之类的对象，
-还需要另外一个服务来实现，它就是kubectrld，直观的讲它就是包装了kubectrl，
-实现了其中kubectl create/apply/get 等功能。&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/7853084cjw1fa221z612jj20o80bhq4q.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-所有的K8s对象创建请求都会走cattle引擎，cattle会把请求代理到kubectrld启动的一个api服务。
-除此之外，还会监听rancher events来辅助实现相关对象的CRUD。&lt;/p&gt;
-
-&lt;p&gt;K8s上创建的service如需对外暴露访问，那么必然会用到LoadBalancer Type和Ingress kind，
-注意K8s概念下的LoadBalancer和Ingress略有不同，LoadBalancer的功能主要关注在L4支持http/tcp，
-而Ingrees则是要实现L7的负载均衡且只能支持http。K8s 的LoadBalancer需要在K8s中实现一个Cloud Provider，
-目前只有GCE，而Rancher则维护了自己的K8s版本在其中提供了Rancher Cloud Provider。
-对于Ingress则是提供了Ingress-controller组件，它实现了K8s的ingress框架，
-可以获取ingress的创建信息并执行相应的接口。当然最终这两者都会调用cattle api来创建Rancher的负载均衡，
-且都是通过Haproxy完成负责均衡功能。&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/7853084cjw1fa22370rzfj20hv0b6gn5.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&#34;后语&#34;&gt;后语&lt;/h3&gt;
-
-&lt;p&gt;以目前K8s社区的火热势头，Rancher应该会持续跟进并不断更新功能优化架构，
-待到Rancher1.2发布之后，CNI的支持会是一个里程碑，
-到那时Kubernetes in Rancher也会更加成熟，一起向着最好用Kubernetes发行版大踏步的前进。&lt;/p&gt;</description>
+我会以最快速度更正。&lt;/p&gt;</description>
     </item>
     
   </channel>

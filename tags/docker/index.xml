@@ -1,299 +1,52 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Niusmallnan</title>
-    <link>http://niusmallnan.com/tags/docker/index.xml</link>
-    <description>Recent content on Niusmallnan</description>
+    <title>Docker on Niusmallnan</title>
+    <link>http://niusmallnan.com/tags/docker/</link>
+    <description>Recent content in Docker on Niusmallnan</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-CN</language>
-    <copyright>Niusmallnan</copyright>
-    <atom:link href="http://niusmallnan.com/tags/docker/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 01 Jan 2017 07:42:28 +0800</lastBuildDate>
+    
+	<atom:link href="http://niusmallnan.com/tags/docker/index.xml" rel="self" type="application/rss+xml" />
+    
     
     <item>
       <title>Dead容器导致Rancher Server过载的解决方案</title>
-      <link>http://niusmallnan.com/2017/01/01/rancher-server-overwhelmed-by-dead-containers</link>
+      <link>http://niusmallnan.com/2017/01/01/rancher-server-overwhelmed-by-dead-containers/</link>
       <pubDate>Sun, 01 Jan 2017 07:42:28 +0800</pubDate>
       
-      <guid>http://niusmallnan.com/2017/01/01/rancher-server-overwhelmed-by-dead-containers</guid>
+      <guid>http://niusmallnan.com/2017/01/01/rancher-server-overwhelmed-by-dead-containers/</guid>
       <description>&lt;p&gt;接之前的一篇文章&lt;a href=&#34;http://niusmallnan.com/2016/12/27/docker-device-resource-busy/&#34;&gt;device or resource busy&lt;/a&gt;，
-其中描述了Docker的一个bug，这个bug其实会导致Rancher Server出现一个比较严重的问题。
-&lt;/p&gt;
-
-&lt;h3 id=&#34;现象与原因&#34;&gt;现象与原因&lt;/h3&gt;
-
-&lt;p&gt;Rancher Server运行一段时间后，如若发现各种操作卡死，Host添加不上，Stack&amp;amp;Service也无法active，
-且在proceeses列表里发现大量volumestoragepoolmap.remove任务，可以参考本文的解决方案：&lt;br /&gt;
-&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tKfTcjw1fbateimvjnj30iv0a40ug.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;这些无法完成的volumestoragepoolmap.remove任务，背后其实就是那些dead containers，
-分析之后，大致原因如下：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;docker本身的一个bug，导致一些容器删除失败，进入dead状态。&lt;/li&gt;
-&lt;li&gt;Rancher的调度系统在不断重试删除这些dead容器，但是无法删除。&lt;/li&gt;
-&lt;li&gt;无法删除导致，这些删除任务不断加入rancher调度系统中，造成调度系统过载。&lt;/li&gt;
-&lt;li&gt;主机创建或是Stack/Service active请求都在排队，不能被迅速执行。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&#34;临时解决方案&#34;&gt;临时解决方案&lt;/h3&gt;
-
-&lt;p&gt;依据之前的分析，processes里面出现了很多永远无法完成的任务，这些任务在不断的重试，这会压垮Rancher Server。
-所以解决方案的目标就是，介入外部力量删除这些dead容器，升级docker engine是一个选择，
-但是直接在生产环境升级是一个需要勇气的选择。比较温和的做法是定制脚本到每台agent节点上
-强行删除这些dead容器。&lt;/p&gt;
-
-&lt;p&gt;考虑到这里有多台主机批量执行的场景，所以我们可以选择使用ansible工具，
-创建一个工作目录如/opt/agent_upgrade，所有脚本都放到这个目录下。
-首先我们要生成一个agent host的列表，这里可以借用Rancher的CLI工具，
-具体脚本get_hosts.sh如下：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;#!/bin/bash
-#set -ex
-rm -f all_hosts_ip
-
-RANCHER=&amp;quot;/usr/local/bin/rancher&amp;quot;
-
-for env in `$RANCHER env -a --format {{.ID}}`; do
-    for host in `$RANCHER --env $env hosts --format json| jq .Host.agentIpAddress| sed &#39;s/\&amp;quot;//g&#39;`; do
-        echo &amp;quot;${host}&amp;quot; &amp;gt;&amp;gt; all_hosts_ip
-    done
-done
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;定义一个ansible的配置文件，由于所有agent host都是有运维专有访问秘钥的，
-所以这里直接定义private_key_file比较方便，如下：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;[defaults]
-hostfile=/opt/agent_upgrade/all_hosts_ip
-host_key_checking = False
-remote_user = ubuntu
-private_key_file=/opt/agent_upgrade/aws-prd.pem
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;然后我们就可以使用ansible来做批量操作了，删除dead容器的脚本非常简单，
-clean_dead_containers.sh脚本如下：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;#!/bin/bash
-
-#set -ex
-ansible all --sudo -m shell -a &amp;quot;docker ps -aq --filter status=dead &amp;gt; ~/dead&amp;quot; -vvvv
-ansible all --sudo -m shell -a &amp;quot;cat ~/dead | xargs docker rm -f&amp;quot; -vvvv
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;由于Rancher集群在运行时仍然会产生这些dead containers，所以我们可以借用crontab来做定时清理，
-添加一条crontab如下：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;*/30 * * * * cd /opt/agent_upgrade &amp;amp;&amp;amp; sh get_hosts.sh &amp;amp;&amp;amp; sh clean_dead_containers.sh &amp;gt; /tmp/dead_containers.log 2&amp;gt;&amp;amp;1
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;如此，每隔30分钟定期清理这些dead containers，Rancher Server就不会受其影响。&lt;/p&gt;</description>
+其中描述了Docker的一个bug，这个bug其实会导致Rancher Server出现一个比较严重的问题。&lt;/p&gt;</description>
     </item>
     
     <item>
       <title>Docker中的device or resource busy问题分析</title>
-      <link>http://niusmallnan.com/2016/12/27/docker-device-resource-busy</link>
+      <link>http://niusmallnan.com/2016/12/27/docker-device-resource-busy/</link>
       <pubDate>Tue, 27 Dec 2016 07:15:44 +0800</pubDate>
       
-      <guid>http://niusmallnan.com/2016/12/27/docker-device-resource-busy</guid>
-      <description>&lt;p&gt;拯救一脸懵逼
-&lt;/p&gt;
-
-&lt;h3 id=&#34;现象描述&#34;&gt;现象描述&lt;/h3&gt;
-
-&lt;p&gt;使用docker的时候，当我们删除某些容器，有时候会报出device or resource busy错误：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;Error response from daemon:
-Unable to remove filesystem for
-a9a1c11e8210d60ddba09f95ea93ae21f32327c4e5877c218862c752d1088533: 
-remove /var/lib/docker/containers/a9a1c11e8210d60ddba09f95ea93ae21f32327c4e5877c218862c752d1088533/shm:
-device or resource busy
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;然后可以查看相关容器的状态变成了很少见的Dead状态。&lt;/p&gt;
-
-&lt;h3 id=&#34;原因分析&#34;&gt;原因分析&lt;/h3&gt;
-
-&lt;p&gt;通常我们看到device or resource busy首先想到的是，这个设备被其他程序占用导致。
-在容器中，其实理论是一样的，每个容器生成都会有一个containers/&lt;uuid&gt;/shm设备产生，
-恰巧这个设备被其他程序mount了，就会被占用无法卸载，也就是device or resource busy。&lt;/p&gt;
-
-&lt;p&gt;那么什么情况下会占用containers/&lt;uuid&gt;/shm设备呢？其最大的可能原因就是容器启动时挂载了/var/lib/docker目录，
-此时恰巧docker出现了bug，顺带mount了containers/&lt;uuid&gt;/shm设备。
-为证实猜想，我们启动一个挂载/var/lib/docker目录的容器，然后到容器中查看/proc/mounts，如下：&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tKfTcjw1fb4znsftd3j30kh08ntfm.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-其实除了/var/lib/docker做了多余挂载之外，映射/var/run和/run/目录都会有同样的问题：&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tKfTcjw1fb4zo5bmavj30ex04n0u4.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&#34;修复方式&#34;&gt;修复方式&lt;/h3&gt;
-
-&lt;p&gt;首先这肯定是docker的一个bug，很明显它不应该做多余的mount。这个bug在docker v1.12.4版本做了一些修复，
-相关PR&lt;a href=&#34;https://github.com/docker/docker/pull/29083&#34;&gt;https://github.com/docker/docker/pull/29083&lt;/a&gt;，类似的issue&lt;a href=&#34;https://github.com/docker/docker/issues/20560&#34;&gt;https://github.com/docker/docker/issues/20560&lt;/a&gt;，
-都可以在github上找到。所以docker v1.12.4之前也都会比较容易碰到这个问题，
-虽然有一些FIX已经merge了，但是其实并没有完全解决，起码我在docker v1.12.6上使用AUFS驱动，
-还是会发现这个问题。&lt;/p&gt;
-
-&lt;p&gt;那么如果因为各种原因无法变更docker，但是还想避免这个问题怎么办？
-比如可以在mount /var/lib/docker（或是你迁移之后的DockerRootDir）的容器中执行以下脚本：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;#!/bin/bash
-
-for i in $(curl -s --unix /var/run/docker.sock http://localhost/info | jq -r .DockerRootDir) /var/lib/docker /run /var/run; do
-    for m in $(tac /proc/mounts | awk &#39;{print $2}&#39; | grep ^${i}/); do
-        umount $m || true
-    done
-done
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;主要目的是把多余mount的path卸载掉，这样就不会因为同时挂载导致device or resource busy的问题。
-需要注意的是，是否也要umount /run和/var/run要结合自身实际应用去考虑。&lt;/p&gt;</description>
+      <guid>http://niusmallnan.com/2016/12/27/docker-device-resource-busy/</guid>
+      <description>&lt;p&gt;拯救一脸懵逼&lt;/p&gt;</description>
     </item>
     
     <item>
       <title>基于容器实现树莓派的动态域名绑定</title>
-      <link>http://niusmallnan.com/2016/11/22/rpi-noip-with-docker</link>
+      <link>http://niusmallnan.com/2016/11/22/rpi-noip-with-docker/</link>
       <pubDate>Tue, 22 Nov 2016 13:59:30 +0800</pubDate>
       
-      <guid>http://niusmallnan.com/2016/11/22/rpi-noip-with-docker</guid>
+      <guid>http://niusmallnan.com/2016/11/22/rpi-noip-with-docker/</guid>
       <description>&lt;p&gt;家庭使用树莓派场景中，如何给树莓派绑定一个域名，让我们一扫运营商动态IP的困扰，
-可以轻轻松松在外网使用域名访问。
-&lt;/p&gt;
-
-&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
-
-&lt;p&gt;我们在家里使用树莓派时，如果在上面搭建了一些服务，有时会期待能在外网可以访问。
-家庭宽带会给我们分配一个外网IP，可以通过这个IP在公网上访问树莓派上的服务。
-但是运营商提供的这个IP是非静态的，很可能在凌晨的时候会被重新分配，
-而且IP也不是很好记，所以通常我们都希望能有一个域名可以直接访问。
-动态域名解析是个老话题，国内最早花生壳就做过，具体原理不必多说。&lt;/p&gt;
-
-&lt;h3 id=&#34;我们的需求清单如下&#34;&gt;我们的需求清单如下：&lt;/h3&gt;
-
-&lt;ol&gt;
-&lt;li&gt;一个动态域名解析的软件，最好是一定程度Free。&lt;/li&gt;
-&lt;li&gt;域名解析的client端一定要是开源的（谁也不想被当肉鸡&amp;hellip;）。&lt;/li&gt;
-&lt;li&gt;部署控制要非常简单。&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&#34;最终选型如下&#34;&gt;最终选型如下：&lt;/h3&gt;
-
-&lt;ol&gt;
-&lt;li&gt;使用国外&lt;a href=&#34;https://www.noip.com/&#34;&gt;noip&lt;/a&gt;的服务，免费账户可以绑定三个免费域名，
-每个域名30天有效，失效后需要手动添加回来。这种程度对于我这种玩家已经完全足够了。&lt;/li&gt;
-&lt;li&gt;noip的client端支持各种平台，支持&lt;a href=&#34;https://www.noip.com/download?page=linux&#34;&gt;Linux&lt;/a&gt;，同时是开源。&lt;/li&gt;
-&lt;li&gt;为了让部署变得更加简洁，决定使用Docker容器来部署。&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&#34;执行过程&#34;&gt;执行过程&lt;/h3&gt;
-
-&lt;p&gt;首先，需要到&lt;a href=&#34;https://www.noip.com/&#34;&gt;noip&lt;/a&gt;上注册账户，并填写自己的域名，注册过程请自行体验，比如：&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tNc79jw1fa0utbt10oj30ja04maap.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;然后，我们就需要在下载客户端，并在树莓派上进行编译，生成适合ARM运行的版本，编译只要执行make即可：&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tNc79jw1fa0uxw14ulj30fk0a4wgz.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;初次执行需要先在client端注册账号信息，其实就是生成一下相关配置文件，再次执行就可以运行起来了。&lt;/p&gt;
-
-&lt;p&gt;这么看来，对于很多用户来说还是太复杂，所以我们决定使用容器来简化这个过程。
-可以把上面繁琐操作，全部放在容器中，为了精简程序的编译环境，
-我们使用alpine-linux来进行编译，容器的Dockerfile如下：&lt;br /&gt;
-&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tNc79jw1fa0uz7rv7oj30i304pmyk.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;接着，我们需要对树莓派的系统进行容器化，以便我们可以运行noip容器程序，此时可以有三种选择：
-1. RancherOS
-2. HypriotOS
-3. Rasbian 基础上安装Docker&lt;/p&gt;
-
-&lt;p&gt;前两个都是内置Docker Engine的，用起来比较方便，Rasbian需要自行安装Docker。我选择的OS是RancherOS。&lt;/p&gt;
-
-&lt;h3 id=&#34;最简方式部署noip-只需三步&#34;&gt;最简方式部署noip，只需三步&lt;/h3&gt;
-
-&lt;p&gt;在RancherOS上修改registry mirror后，可以加速镜像下载，然后拉取前面Dockerfile编译的镜像：&lt;br /&gt;
-&lt;code&gt;$ docker pull hypriot/rpi-noip&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;注册noip client，按照提示添加用户名密码等信息：&lt;br /&gt;
-&lt;code&gt;$ docker run -ti -v noip:/usr/local/etc/ hypriot/rpi-noip noip2 -C&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;运行noip clent：&lt;br /&gt;
-&lt;code&gt;$ docker run -v noip:/usr/local/etc/ --restart=always hypriot/rpi-noip&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;登录No-IP的&lt;a href=&#34;https://my.noip.com/#!/dynamic-dns&#34;&gt;控制台&lt;/a&gt;可以看到 dns绑定情况：&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tNc79jw1fa0v2h5umhj30km05rjs0.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;在本地使用dig确认一下解析情况：&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tNc79jw1fa0v2po6wfj30gy08yjt4.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;以上所有源码可以参考：&lt;a href=&#34;https://github.com/hypriot/rpi-noip&#34;&gt;https://github.com/hypriot/rpi-noip&lt;/a&gt;。
-这样，我们就在树莓派上非常简单的实现了动态域名绑定。&lt;/p&gt;</description>
+可以轻轻松松在外网使用域名访问。&lt;/p&gt;</description>
     </item>
     
     <item>
       <title>CNM macvlan实践</title>
-      <link>http://niusmallnan.com/2016/09/19/docker-cnm-practice</link>
+      <link>http://niusmallnan.com/2016/09/19/docker-cnm-practice/</link>
       <pubDate>Mon, 19 Sep 2016 17:22:00 +0800</pubDate>
       
-      <guid>http://niusmallnan.com/2016/09/19/docker-cnm-practice</guid>
-      <description>&lt;p&gt;针对Dcoker原生网络模型CNM的一次实践记录，网络模式macvlan。&lt;/p&gt;
-
-&lt;p&gt;
-首先测试一下系统对bridge和namespace的支持情况：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# add the namespaces
-ip netns add ns1
-ip netns add ns2
-
-# create the macvlan link attaching it to the parent host eno1
-ip link add mv1 link eno1 type macvlan mode bridge
-ip link add mv2 link eno1 type macvlan mode bridge
-
-# move the new interface mv1/mv2 to the new namespace
-ip link set mv1 netns ns1
-ip link set mv2 netns ns2
-
-# bring the two interfaces up
-ip netns exec ns1 ip link set dev mv1 up
-ip netns exec ns2 ip link set dev mv2 up
-
-# set ip addresses
-ip netns exec ns1 ifconfig mv1 192.168.1.50/24 up
-ip netns exec ns2 ifconfig mv2 192.168.1.60/24 up
-
-# show interface detail
-ip netns exec ns1 ip a
-ip netns exec ns2 ip a
-
-# ping from one ns to another
-ip netns exec ns1 ping -c 4 192.168.1.60
-
-# cleanup
-ip netns del ns1
-ip netns del ns2
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;给网卡创建一个vlan设备：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# create a new subinterface tied to dot1q vlan 1045
-ip link add link eno1 name eno1.1045 type vlan id 1045
-
-# assign an IP addr
-ip a add 192.168.120.24/24 dev eno1.1045
-
-# enable the new sub-interface
-ip link set eno1.1045 up
-
-# remove sub-interface
-#ip link del eno1.1045
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;创建docker network：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;docker network create -d macvlan \
-    --subnet=192.168.225.0/24 \
-    --gateway=192.168.225.1 \
-    -o parent=eno1.1045 macvlan1045
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;创建容器，测试网络连通性：
-&lt;code&gt;docker run --net=macvlan1045 --rm --ip=192.168.225.24 -it alpine /bin/sh&lt;/code&gt;&lt;/p&gt;</description>
+      <guid>http://niusmallnan.com/2016/09/19/docker-cnm-practice/</guid>
+      <description>&lt;p&gt;针对Dcoker原生网络模型CNM的一次实践记录，网络模式macvlan。&lt;/p&gt;</description>
     </item>
     
   </channel>

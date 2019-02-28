@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Tags on Niusmallnan</title>
+    <link>http://niusmallnan.com/tags/</link>
+    <description>Recent content in Tags on Niusmallnan</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Sun, 01 Jan 2017 07:42:28 +0800</lastBuildDate>
+    
+	<atom:link href="http://niusmallnan.com/tags/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Docker</title>
+      <link>http://niusmallnan.com/tags/docker/</link>
+      <pubDate>Sun, 01 Jan 2017 07:42:28 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/tags/docker/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Helm</title>
+      <link>http://niusmallnan.com/tags/helm/</link>
+      <pubDate>Sun, 05 Feb 2017 14:08:38 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/tags/helm/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>K3s</title>
+      <link>http://niusmallnan.com/tags/k3s/</link>
+      <pubDate>Thu, 28 Feb 2019 14:24:44 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/tags/k3s/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Kubernetes</title>
+      <link>http://niusmallnan.com/tags/kubernetes/</link>
+      <pubDate>Thu, 09 Mar 2017 15:45:41 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/tags/kubernetes/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Networking</title>
+      <link>http://niusmallnan.com/tags/networking/</link>
+      <pubDate>Tue, 16 May 2017 16:31:50 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/tags/networking/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Rancher</title>
+      <link>http://niusmallnan.com/tags/rancher/</link>
+      <pubDate>Tue, 16 May 2017 16:31:50 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/tags/rancher/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Rancher V1.2</title>
+      <link>http://niusmallnan.com/tags/rancher-v1.2/</link>
+      <pubDate>Fri, 06 Jan 2017 15:12:10 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/tags/rancher-v1.2/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Rancheros</title>
+      <link>http://niusmallnan.com/tags/rancheros/</link>
+      <pubDate>Thu, 14 Feb 2019 14:06:57 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/tags/rancheros/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Raspberry Pi</title>
+      <link>http://niusmallnan.com/tags/raspberry-pi/</link>
+      <pubDate>Tue, 22 Nov 2016 13:59:30 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/tags/raspberry-pi/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Rke</title>
+      <link>http://niusmallnan.com/tags/rke/</link>
+      <pubDate>Sun, 21 Jan 2018 16:23:54 +0800</pubDate>
+      
+      <guid>http://niusmallnan.com/tags/rke/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>

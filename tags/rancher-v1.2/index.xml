@@ -1,506 +1,59 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Niusmallnan</title>
-    <link>http://niusmallnan.com/tags/rancher-v1.2/index.xml</link>
-    <description>Recent content on Niusmallnan</description>
+    <title>Rancher V1.2 on Niusmallnan</title>
+    <link>http://niusmallnan.com/tags/rancher-v1.2/</link>
+    <description>Recent content in Rancher V1.2 on Niusmallnan</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-CN</language>
-    <copyright>Niusmallnan</copyright>
-    <atom:link href="http://niusmallnan.com/tags/rancher-v1.2/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 06 Jan 2017 15:12:10 +0800</lastBuildDate>
+    
+	<atom:link href="http://niusmallnan.com/tags/rancher-v1.2/index.xml" rel="self" type="application/rss+xml" />
+    
     
     <item>
       <title>Rancher-LB开启访问日志</title>
-      <link>http://niusmallnan.com/2017/01/06/rancher-lb-logs</link>
+      <link>http://niusmallnan.com/2017/01/06/rancher-lb-logs/</link>
       <pubDate>Fri, 06 Jan 2017 15:12:10 +0800</pubDate>
       
-      <guid>http://niusmallnan.com/2017/01/06/rancher-lb-logs</guid>
-      <description>&lt;p&gt;拯救一脸懵逼
-&lt;/p&gt;
-
-&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
-
-&lt;p&gt;在Rancher v1.2之前的版本，Rancher LB也就是Haproxy都是放在agent/instance内的，由于这个镜像本身要支持很多功能，
-所以要开启Haproxy的访问日志比较麻烦。因为Harpoxy的日志和其他Nginx之类略有不同，它是通过syslog协议讲日志发送出去的，
-要想展现日志还要开启syslog进行收集。Rancher v1.2版本开始，
-Rancher LB的功能已经解耦成独立的镜像rancher/lb-service-haproxy，如此日志收集的工作就可以做了。&lt;/p&gt;
-
-&lt;h3 id=&#34;开启访问日志&#34;&gt;开启访问日志&lt;/h3&gt;
-
-&lt;p&gt;lb-service-haproxy的实现可以仔细阅读源码&lt;a href=&#34;https://github.com/rancher/lb-controller&#34;&gt;https://github.com/rancher/lb-controller&lt;/a&gt;，
-简单的说，其内置了rsyslog来收集haproxy的日志，在容器内部查看配置文件&lt;strong&gt;/etc/haproxy/rsyslogd.conf&lt;/strong&gt;，
-可以知道其开启了udp 8514端口，不同的级别的日志发送到不同的文件中：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ModLoad imudp.so
-$UDPServerRun 8514
-$template CustomFormat,&amp;quot;%timegenerated% %HOSTNAME% %syslogtag%%msg%\n&amp;quot;
-$ActionFileDefaultTemplate CustomFormat
-
-/* info */
-if $programname contains &#39;haproxy&#39; and $syslogseverity == 6 then (
-    action(type=&amp;quot;omfile&amp;quot; file=&amp;quot;/var/log/haproxy/traffic&amp;quot;)
-)
-if $programname contains &#39;haproxy&#39; and $syslogseverity-text == &#39;err&#39; then (
-    action(type=&amp;quot;omfile&amp;quot; file=&amp;quot;/var/log/haproxy/errors&amp;quot;)
-)
-/* notice */
-if $programname contains &#39;haproxy&#39; and $syslogseverity &amp;lt;= 5 then (
-    action(type=&amp;quot;omfile&amp;quot; file=&amp;quot;/var/log/haproxy/events&amp;quot;)
-)
-
-*.* /var/log/messages
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;关于syslog的Severity level可以参考这里：&lt;a href=&#34;https://en.wikipedia.org/wiki/Syslog&#34;&gt;https://en.wikipedia.org/wiki/Syslog&lt;/a&gt;，
-所以我们要查看的访问日志，应该就是/var/log/haproxy/traffic文件。
-同时还添加了logrotate的配置进行日志分割和压缩，可查看容器内的&lt;strong&gt;/etc/logrotate.d/haproxy&lt;/strong&gt;文件。&lt;/p&gt;
-
-&lt;p&gt;当前lb-service-haproxy版本默认是不开启日志收集的，需要自己手动开启，
-我们都知道Haproxy开启日志需要在其global和defaults配置中添加log的配置。
-Rancher LB是支持custom haproxy.cfg的，所以在Rancher中添加这两块配置就可以这样：&lt;br /&gt;
-&lt;img src=&#34;https://ww2.sinaimg.cn/large/006tKfTcjw1fbgy5m62l3j30i80ecgn1.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-Rancher会自动合并这几条配置，最终在lb-service-haproxy容器内生成的配置就是这样：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;global
-    log 127.0.0.1:8514 local0
-    log 127.0.0.1:8514 local1 notice
-    chroot /var/lib/haproxy
-    daemon
-    group haproxy
-    maxconn 4096
-.....
-.....
-defaults
-    log global
-    option tcplog
-    errorfile 400 /etc/haproxy/errors/400.http
-    errorfile 403 /etc/haproxy/errors/403.http
-.....
-.....
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;那么查看之前分析的日志目录文件，可以看到响应的访问日志信息：&lt;br /&gt;
-&lt;img src=&#34;https://ww1.sinaimg.cn/large/006tKfTcjw1fbgya5nb4vj30l309vn1r.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&#34;注意事项&#34;&gt;注意事项&lt;/h3&gt;
-
-&lt;p&gt;日志虽然可以这样灵活的开启，但是使用时需要注意：&lt;/p&gt;
-
-&lt;ol&gt;
-&lt;li&gt;日志文件放在容器内会不断增大，虽然有logrotate，但是扛不住日积月累。
-临时测试用本地可以，但是长远看还是发送到外部syslog服务上比较好。&lt;/li&gt;
-&lt;li&gt;lb-service-haproxy的早期版本是默认就开启了访问日志，v0.4.5版本后取消了这个默认配置，
-所以你就得使用我上面所说的方式，早期的lb-service-haproxy会积存很多访问日志，
-所以尽早升级到v0.4.5以上的版本。&lt;/li&gt;
-&lt;/ol&gt;</description>
+      <guid>http://niusmallnan.com/2017/01/06/rancher-lb-logs/</guid>
+      <description>&lt;p&gt;拯救一脸懵逼&lt;/p&gt;</description>
     </item>
     
     <item>
       <title>Rancher v1.2 Swarmkit的实现</title>
-      <link>http://niusmallnan.com/2016/12/14/rancher12-swarmkit-architect</link>
+      <link>http://niusmallnan.com/2016/12/14/rancher12-swarmkit-architect/</link>
       <pubDate>Wed, 14 Dec 2016 21:53:27 +0800</pubDate>
       
-      <guid>http://niusmallnan.com/2016/12/14/rancher12-swarmkit-architect</guid>
-      <description>&lt;p&gt;Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
-&lt;/p&gt;
-
-&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
-
-&lt;p&gt;Rancher v1.2更新了之前对Swarm的支持，与Docker一样抛弃了就有的Swarm，
-选择支持Swarmkit。Swarmkit引擎非常轻量级，由于其内置早Docker Engine中，
-所以部署起来会非常方便。虽然目前Swarmkit引擎还在不断发展，而且bug也很多，
-但是它也有其擅长的使用场景，比如简单的CI/CD场景，它会非常灵活简洁。
-本文将带大家体验一下，Rancher v1.2对Swarmkit的支持。&lt;/p&gt;
-
-&lt;h3 id=&#34;部署与使用&#34;&gt;部署与使用&lt;/h3&gt;
-
-&lt;p&gt;部署方面秉承Rancher一贯的原则，非常简单，只需要在创建Env时选择Sawrm即可。&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tKfTcjw1favae6x30jj30nn09odgr.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-Env创建完毕后，会看到多个Infra Service需要创建，这时候和其他引擎一样，
-我们需要向Env中添加Host。我们知道Swarm的node有两种：Manager和Worker。
-Rancher创建的Swarm集群默认是3个Manager，多个Manager内有一个是Leader，
-另外两个备用。这样单个Host出问题，新的Leader会很快选举出来，保证集群的稳定性。
-比如我添加了两个Host，默认是先添加Manager角色，
-所以2个Host都会以Manager方式添加，如下图所示：&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/006tKfTcjw1favaeq4hrhj30hc074aav.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-进入其中一台Host内，查看swarm集群状态，可以看到一个是Leader，另外一个Reachable做备用。&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/006tKfTcjw1favaey8g8qj30fc01wq3g.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-尝试创建一个简单的程序，查看与UI上的联动效果，如图所示：&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tKfTcjw1favaf8yytqj30eb05vdgv.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-如果使用Swarmkit的自定义网络方式，情况如何？虽然在UI上显示无IP，
-但是进入容器内部可以看到overlay对应的网卡，如图所示：
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tKfTcjw1favafscwv8j30ii07habk.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&#34;实现原理&#34;&gt;实现原理&lt;/h3&gt;
-
-&lt;p&gt;那么Rancher是如何来完成Swarmkit的部署和联动呢？Rancher中Swarmkit也是基于Cattle来部署的，
-根据之前的文章分析，我们可以知道Rancher的基础设施编排的定义都是通过catalog中的infra-templates实现的，
-Swarmkit比较特殊它是在community-catalog中定义的，如果一直在rancher-catalog中寻找肯定找不到。
-compose文件中定义了一个service swarmkit-mon，如图所示：&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tKfTcjw1favaggy2snj30iz0at40g.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-如果探究原理，我们就需要知道swarmkit-mon对应的镜像是如何定义的。
-rancher/swarmkit这个dockerfile并没有在&lt;a href=&#34;https://github.com/rancher&#34;&gt;https://github.com/rancher&lt;/a&gt;下面的项目中，
-这个需要顺藤摸瓜，找到该Dockerfile的维护者（其实也是Rancher的一名员工），
-最终地址是&lt;a href=&#34;https://github.com/LLParse/swarmkit-catalog&#34;&gt;https://github.com/LLParse/swarmkit-catalog&lt;/a&gt;。如图所示：&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/006tKfTcjw1favahpg2pzj30kc0aiq57.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-swarmkit-mon中内置了docker，并映射了Host上的docker.sock，
-这样可以在swarmkit-mon容器中控制docker创建swarmkit集群。swarmkit-mon的实现比较简单，
-主要包括两个shell脚本：run.sh负责swarmkit集群的管理和Rancher的联动，
-agent节点信息需要通过rancher-metadata读取，设置Host Label则直接调用Rancher API；
-health.sh负责监控swarmkit节点的状态（通过与docker.sock通信读取Swarm.LocalNodeState的状态），
-并与giddyup协作暴露健康检查端口，这样可以利用Rancher Cattle的healthcheck来保证swarmkit-mon服务的高可用性，
-每个Host的swarmkit-mon出问题时可以进行自动重建恢复。原理如图：&lt;br /&gt;
-&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tKfTcjw1favaidbyfgj30bh08qmyh.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&#34;总结&#34;&gt;总结&lt;/h3&gt;
-
-&lt;p&gt;目前来看，由于Kubernetes的发展的确迅猛，所以Rancher的更多精力都放在K8s上。
-针对Swarmkit的支持显得略显单薄，但是Swarmkit本身的问题也很多，目前也难以应对复杂场景，
-所以目前的支持力度应该是足够了。后续对docker1.13版本的Swarmkit支持也在持续迭代中。&lt;/p&gt;</description>
+      <guid>http://niusmallnan.com/2016/12/14/rancher12-swarmkit-architect/</guid>
+      <description>&lt;p&gt;Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。&lt;/p&gt;</description>
     </item>
     
     <item>
       <title>实践指南-快速解锁Rancher v1.2</title>
-      <link>http://niusmallnan.com/2016/12/02/rancher12-run-on-laptop</link>
+      <link>http://niusmallnan.com/2016/12/02/rancher12-run-on-laptop/</link>
       <pubDate>Fri, 02 Dec 2016 21:31:53 +0800</pubDate>
       
-      <guid>http://niusmallnan.com/2016/12/02/rancher12-run-on-laptop</guid>
-      <description>&lt;p&gt;Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
-&lt;/p&gt;
-
-&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
-
-&lt;p&gt;Rancher v1.2已经发布，相信众多容器江湖的伙伴们正魔拳擦准备好好体验一番。
-由于Docker能够落地的操作系统众多，各种Docker版本不同的Graph driver，
-所以通常大版本的第一个release都会在兼容性上有一些小问题。
-为了更好的体验Rancher v1.2的完整特性，我们选取了Rancher测试比较严格的运行环境。
-手握众多服务器资源的devops们可以飘过此文，身背MBP或Windows笔记本的Sales/Pre-Sales们可以品读一番。&lt;/p&gt;
-
-&lt;h3 id=&#34;基础软件安装&#34;&gt;基础软件安装&lt;/h3&gt;
-
-&lt;p&gt;首先需要安装基础软件，由于Rancher v1.2已经支持Docker v1.2，
-所以可以直接使用Docker的Mac或Windows版（以下以Mac为例），
-下载地址：&lt;a href=&#34;https://www.docker.com/&#34;&gt;https://www.docker.com/&lt;/a&gt;。在Mac上，
-Docker会使用xhyve轻量级虚拟化来保证一个Linux环境，所以可以把Rancher Server直接运行起来。&lt;/p&gt;
-
-&lt;p&gt;因为要在MBP上添加多个Host组成小集群，所以需要用虚拟化扩展多个节点添加到Rancher集群中。
-这里可以使用docker-machine控制VirtualBox来添加节点，
-VirtualBox下载地址：&lt;a href=&#34;https://www.virtualbox.org/wiki/Downloads&#34;&gt;https://www.virtualbox.org/wiki/Downloads&lt;/a&gt;。&lt;/p&gt;
-
-&lt;p&gt;在Host节点的操作系统上，可以选取RancherOS，我们的目标是快速体验新特性，
-而Rancher Labs在Rancher和RancherOS的相互兼容性上是做了大量测试的，
-这样可以避免我们少进坑，直接体验新特性。
-RancherOS下载地址：&lt;a href=&#34;https://github.com/rancher/os&#34;&gt;https://github.com/rancher/os&lt;/a&gt;，推荐使用最新release版本。&lt;/p&gt;
-
-&lt;p&gt;在用docker-machine驱动VirtualBox来创建Host时，可以指定操作系统ISO的URL路径，
-由于我们使用RancherOS，所以最好把RancherOS放到本机HTTP服务器内。
-MBP内自带Apache HTTPD，将Apache的vhosts模块开启，并添加配置：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# 开启vhost /etc/apache2/httpd.conf
-# 以下两行的默认注释去掉
-LoadModule vhost_alias_module libexec/apache2/mod_vhost_alias.so
-Include /private/etc/apache2/extra/httpd-vhosts.conf
-
-# vhost的配置 /etc/apache2/extra/httpd-vhosts.conf
-# DocumentRoot目录就是在用户根目录下创建Sites
-# 如用户名niusmallnan，则DocumentRoot就是/Users/niusmallnan/Sites
-&amp;lt;VirtualHost *:80&amp;gt;
-    DocumentRoot &amp;quot;/Users/niusmallnan/Sites&amp;quot;
-    ServerName localhost
-    ErrorLog &amp;quot;/private/var/log/apache2/sites-error_log&amp;quot;
-    CustomLog &amp;quot;/private/var/log/apache2/sites-access_log&amp;quot; common
-    &amp;lt;Directory /&amp;gt;
-        Options Indexes FollowSymLinks MultiViews
-        AllowOverride None
-        Order allow,deny
-        Allow from all
-        Require all granted
-    &amp;lt;/Directory&amp;gt;
-&amp;lt;/VirtualHost&amp;gt;
-
-# 重启 Apache
-$ sudo apachectl restart
-
-# 拷贝 RancherOS的ISO 到 DocumentRoot
-$ cp rancheros.iso /Users/niusmallnan/Sites/
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&#34;rancher安装&#34;&gt;Rancher安装&lt;/h3&gt;
-
-&lt;p&gt;首先打开Docker，并配置registry mirror，配置完成后重启Docker。
-mirror的服务可以去各个公用云厂商申请一个，比如我这里使用的是阿里云的registry mirror，
-如图所示：&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tKfTcjw1fav9vw30d1j30jh082403.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;打开terminal，安装Rancher Server：&lt;br /&gt;
-&lt;code&gt;$ docker run -d --restart=unless-stopped -p 8080:8080 rancher/server:stable&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;若要添加Host节点，则需要通过docker-machine创建Host，
-这里使用的规格是2核2G（具体可根据自身MBP的性能调整），脚本（add_ros_host.sh）参考如下：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;#!/usr/bin/env bash
-ROS_ISO_URL=&#39;http://127.0.0.1/rancheros.iso&#39;
-ROS_CPU_COUNT=2
-ROS_MEMORY=2048
-docker-machine create -d virtualbox \
-        --virtualbox-boot2docker-url $ROS_ISO_URL \
-        --virtualbox-cpu-count $ROS_CPU_COUNT \
-        --virtualbox-memory $ROS_MEMORY \
-        $1
-docker-machine ls
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;添加节点则需执行：&lt;br /&gt;
-&lt;code&gt;$ ./add_ros_host.sh ros-1&lt;/code&gt;&lt;br /&gt;
-添加完成后，可以进入虚机内进行设置：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ docker-machine ls
-NAME  ACTIVE DRIVER     STATE     URL                       SWARM DOCKER ERRORS 
-ros-1 -      virtualbox Running   tcp://192.168.99.100:2376       v1.12.3
-
-# 进入VM中
-$ docker-machine ssh ros-1
-# RancherOS内设置registry mirror
-$ sudo ros config set rancher.docker.extra_args \
-        &amp;quot;[&#39;--registry-mirror&#39;,&#39;https://s06nkgus.mirror.aliyuncs.com&#39;]&amp;quot;
-$ sudo system-docker restart docker
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;由于我们要使用VirtualBox的虚机组成一个小集群，所以建议把Rancher的Host Registration URL
-设置为&lt;a href=&#34;http://192.168.99.1:8080&#34;&gt;http://192.168.99.1:8080&lt;/a&gt;，如下图所示：&lt;br /&gt;
-&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tKfTcjw1fav9z6dih7j30eo072gmf.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-添加Rancher agent的时候也要注意，CATTLE_AGENT_IP参数要设置成虚机内192.168.99.0/24网段的IP，
-如下图所示：&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/006tKfTcjw1fav9zo3g5zj30hp06tmyk.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-如此就可以基本完全解锁Rancher v1.2的各种功能了，完整演示各种特性。&lt;/p&gt;
-
-&lt;h3 id=&#34;总结&#34;&gt;总结&lt;/h3&gt;
-
-&lt;p&gt;Docker目前版本分支众多，虽然最新的v1.13即将发布，但是各个公司的使用版本应该说涵盖了v1.9到v1.12，
-而且Docker graph driver也有很多，再加上很多的LinuxOS，可以说使用Docker而产生组合有很多种，
-这就会带来各种各样的兼容性问题，因此导致的生产环境故障会让人头疼不已。
-当然如果纯粹基于演示和调研新功能，我们可以优先兼容性较好的选择。&lt;/p&gt;</description>
+      <guid>http://niusmallnan.com/2016/12/02/rancher12-run-on-laptop/</guid>
+      <description>&lt;p&gt;Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。&lt;/p&gt;</description>
     </item>
     
     <item>
       <title>Rancher v1.2网络架构解读</title>
-      <link>http://niusmallnan.com/2016/12/01/rancher12-networking</link>
+      <link>http://niusmallnan.com/2016/12/01/rancher12-networking/</link>
       <pubDate>Thu, 01 Dec 2016 21:18:36 +0800</pubDate>
       
-      <guid>http://niusmallnan.com/2016/12/01/rancher12-networking</guid>
-      <description>&lt;p&gt;Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
-&lt;/p&gt;
-
-&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
-
-&lt;p&gt;在之前的Rancher版本上，用户经常诟病Rancher的网络只有IPsec，没有其他选择。
-而容器社区的发展是十分迅猛的，各种容器网络插件风起云涌，欲在江湖中一争高下。
-Rancher v1.2版本中与时俱进，对之前的网络实现进行了改造，支持了CNI标准，
-除IPsec之外又实现了呼声比较高的VXLAN网络，同时增加了CNI插件管理机制，
-让我们可以hacking接入其他第三方CNI插件。本文将和大家一起解读一下Rancher v1.2中网络的实现。&lt;/p&gt;
-
-&lt;h3 id=&#34;rancher-net-cni化&#34;&gt;Rancher-net CNI化&lt;/h3&gt;
-
-&lt;p&gt;以最简单最快速方式部署Rancher并添加Host，以默认的IPsec网络部署一个简单的应用后，
-进入应用容器内部看一看网络情况，对比一下之前的Rancher版本：&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tKfTcjw1fav9di74b7j30iv06tgoo.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-我们最直观的感受便是，网卡名从eth0到eth0@if8有了变化，原先网卡多IP的实现也去掉了，
-变成了单纯的IPsec网络IP。这其实就引来了我们要探讨的内容，虽然网络实现还是IPsec，
-但是rancher-net组件实际上是已经基于CNI标准了。最直接的证明就是看一下，
-rancher-net镜像的Dockerfile：&lt;br /&gt;
-&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tKfTcjw1fav9e5komyj30ju06o40i.jpg&#34; alt=&#34;&#34; /&gt;
-熟悉CNI规范的伙伴都知道/opt/cni/bin目录是CNI的插件目录，bridge和loopback也是CNI的默认插件，
-这里的rancher-bridge实际上和CNI原生的bridge没有太大差别，只是在幂等性健壮性上做了增强。
-而在IPAM也就是IP地址管理上，Rancher实现了一个自己的rancher-cni-ipam，它的实现非常简单，
-就是通过访问rancher-metadata来获取系统给容器分配的IP。
-Rancher实际上Fork了CNI的代码并做了这些修改，&lt;a href=&#34;https://github.com/rancher/cni&#34;&gt;https://github.com/rancher/cni&lt;/a&gt;。
-这样看来实际上，rancher-net的IPsec和Vxlan网络其实就是基于CNI的bridge基础上实现的。&lt;/p&gt;
-
-&lt;p&gt;在解释rancher-net怎么和CNI融合之前，我们需要了解一下CNI bridge模式是怎么工作的。
-举个例子，假设有两个容器nginx和mysql，每个容器都有自己的eth0，
-由于每个容器都是在各自的namespace里面，所以互相之间是无法通信的，
-这就需要在外部构建一个bridge来做二层转发，
-容器内的eth0和外部连接在容器上的虚拟网卡构建成对的veth设备，这样容器之间就可以通信了。
-其实无论是docker的bridge还是cni的bridge，这部分工作原理是差不多的，如图所示：&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tKfTcjw1fav9ffzi1sj30ch08q750.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;那么我们都知道CNI网络在创建时需要有一个配置，这个配置用来定义CNI网络模式，
-读取哪个CNI插件。在这个场景下也就是cni bridge的信息，
-这个信息rancher是通过rancher-compose传入metadata来控制的。
-查看ipsec服务的rancher-compose.yml可以看到，type使用rancher-bridge，
-ipam使用rancher-cni-ipam，bridge网桥则复用了docker0，
-有了这个配置我们甚至可以随意定义ipsec网络的CIDR，如下图所示：&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tKfTcjw1fav9g15ofmj30c80anab3.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;ipsec服务实际上有两个容器：一个是ipsec主容器，内部包含rancher-net服务和ipsec需要的charon服务；
-另一个sidekick容器是cni-driver，它来控制cni bridge的构建。两端主机通过IPsec隧道网络通信时，
-数据包到达物理网卡时，需要通过Host内的Iptables规则转发到ipsec容器内，
-这个Iptables规则管理则是由network-manager组件来完成的，
-&lt;a href=&#34;https://github.com/rancher/plugin-manager&#34;&gt;https://github.com/rancher/plugin-manager&lt;/a&gt;。其原理如下图所示（以IPsec为例）：&lt;br /&gt;
-&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tKfTcjw1fav9gp2vkwj30hj06pacf.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-整体上看cni ipsec的实现比之前的ipsec精进了不少，而且也做了大量的解耦工作，
-不单纯是走向社区的标准，之前大量的Iptables规则也有了很大的减少，性能上其实也有了很大提升。&lt;/p&gt;
-
-&lt;h3 id=&#34;rancher-net-vxlan的实现&#34;&gt;Rancher-net vxlan的实现&lt;/h3&gt;
-
-&lt;p&gt;那么rancher-net的另外一个backend vxlan又是如何实现的呢？
-我们需要创建一套VXLAN网络环境来一探究竟，默认的Cattle引擎网络是IPsec，
-如果修改成VXLAN有很多种方式，可以参考我下面使用的方式。&lt;/p&gt;
-
-&lt;p&gt;首先，创建一个新的Environment Template，把Rancher IPsec禁用，同时开启Rancher VXLAN，如下图所示：&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tKfTcjw1fav9hpxm04j30ft09wmya.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-然后，我们创建一个新的ENV，并使用刚才创建的模版Cattle-VXLAN，创建完成后，
-添加Host即可使用。如下图所示：&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tKfTcjw1fav9i7um3fj30d7083js5.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-以分析IPsec网络实现方式来分析VXLAN，基本上会发现其原理大致相同。
-同样是基于CNI bridge，使用rancher提供的rancher-cni-bridge、rancher-cni-ipam，
-网络配置信息以metadata方式注入。区别就在于rancher-net容器内部，
-rancher-net激活的是vxlan driver，它会生成一个vtep1042设备，并开启udp 4789端口，
-这个设备基于udp 4789构建vxlan overlay的两端通信，对于本机的容器通过eth0走bridge通信，对于
-其他Host的容器，则是通过路由规则转发到vtep1042设备上，再通过overlay到对端主机，
-由对端主机的bridge转发到相应的容器上。整个过程如图所示：&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tKfTcjw1fav9j4nhblj30e607z0um.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-vxlan实现的原理可更多参考：&lt;a href=&#34;https://www.kernel.org/doc/Documentation/networking/vxlan.txt&#34;&gt;https://www.kernel.org/doc/Documentation/networking/vxlan.txt&lt;/a&gt;&lt;/p&gt;
-
-&lt;h3 id=&#34;总结&#34;&gt;总结&lt;/h3&gt;
-
-&lt;p&gt;容器网络是容器云平台中很重要的一环，对于不通规模不通的安全要求会有不同的选型。
-Rancher的默认网络改造成了CNI标准，同时也会支持其他第三方CNI插件，
-结合Rancher独有的Environment Template功能，用户可以在一个大集群中的每个隔离环境内，
-创建不同的网络模式，以满足各种业务场景需求，这种管理的灵活性是其他平台没有的。&lt;/p&gt;</description>
+      <guid>http://niusmallnan.com/2016/12/01/rancher12-networking/</guid>
+      <description>&lt;p&gt;Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。&lt;/p&gt;</description>
     </item>
     
     <item>
       <title>Rancher v1.2基础设施引擎整体架构</title>
-      <link>http://niusmallnan.com/2016/11/28/rancher12-infra-architect</link>
+      <link>http://niusmallnan.com/2016/11/28/rancher12-infra-architect/</link>
       <pubDate>Mon, 28 Nov 2016 20:53:44 +0800</pubDate>
       
-      <guid>http://niusmallnan.com/2016/11/28/rancher12-infra-architect</guid>
-      <description>&lt;p&gt;Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。
-&lt;/p&gt;
-
-&lt;h3 id=&#34;引言&#34;&gt;引言&lt;/h3&gt;
-
-&lt;p&gt;Rancher v1.2可以说是一个里程碑版本，发布时间虽屡次跳票让大家心有不爽，
-但是只要体会其新版功能，会发现这个等待绝对是值得的。从架构角度看，
-用两个字来概括就是“解耦”，基础设施引擎的分离，agent节点的服务粒度更细；
-从产品角度看，给了用户更多定制的空间，Rancher依然秉持着全部OpenSource的理念；
-在开发语言上，之前遗留的通过shell脚本方式的粗糙实现也都基于Golang重写，
-解耦的新服务也几乎使用Golang开发，agent节点全线基于Golang这也为后续便利地支持ARM埋下伏笔。
-在市场选择上，Rancher依然在kubernetes下面投入了大量精力，引入了万众期待的CNI plugin管理机制，
-坚持要做最好用的Kubernetes发行版。本文就带着大家从架构角度总览Rancher v1.2版本的特性。&lt;/p&gt;
-
-&lt;h3 id=&#34;总览&#34;&gt;总览&lt;/h3&gt;
-
-&lt;p&gt;在v1.2版本的整体架构图（如下图所示）上，Cattle引擎向下深入演化成了基础设施引擎，
-这一点上在v1.1时代也早有体现。Cattle更多得作为基础设施的管理工具，
-可以用它来部署其他服务和编排引擎，当然它本身编排能力还是可以使用的，
-习惯了stack-service的朋友仍然可以继续使用它，同时rancher scheduler的引入也大大增强了其调度能力。
-Rancher仍然支持Kubernetes、Mesos、Swarm三大编排引擎，Kubernetes可以支持到较新的v1.4.6版本，
-由于所有的部署过程的代码都是开放的，用户依然可以自己定制部署版本。值得一提的是，
-Rancher支持了新版的Swarm Mode也就是Swarmkit引擎，这也意味着Rancher可以在Docker1.12上部署，
-不小心装错Docker版本的朋友这回可以放心了。&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/006tKfTcjw1fav8rinilzj30hj09p0ur.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-在存储方面，Rancher引入了Kubernetes社区的flexvol来做存储插件的管理，
-同时也支持Docker原生的volume plugin机制，并实现了对AWS的EFS&amp;amp;EBS以及标准NFS的支持，
-先前的Convoy应该会被抛弃，Rancher最终还是选择参与社区标准。在网络方面，
-除了CNI插件机制的引入，用户还可以使用rancher-net组件提供的vxlan网络替代先前的ipsec网络。
-在可定制性方面，还体现在Rancher提供了用户可以自定义rancher-lb的机制，
-如果特殊场景下默认的Haproxy不是很给力时，用户可以自定义使用nginx、openresty或者traefik等等。
-下面便做一下详细分解。&lt;/p&gt;
-
-&lt;h3 id=&#34;基础设施引擎&#34;&gt;基础设施引擎&lt;/h3&gt;
-
-&lt;p&gt;初次安装v1.2版本，会发现多了Infrastructure（如下图所示）的明显标识，
-默认的Cattle引擎需要安装healthcheck、ipsec、network-services、scheduler等服务。
-这个是有rancher-catalog来定义的，&lt;a href=&#34;https://github.com/rancher/rancher-catalog&#34;&gt;https://github.com/rancher/rancher-catalog&lt;/a&gt;，
-新分离出来了infra-templates和project-templates：infra-templates就是Rancher定义的各种基础设施服务，
-包括基础服务和编排引擎；project-templates对应的是Env初始化时默认安装的服务，
-它可以针对不同的编排引擎进行配置。&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/006tKfTcjw1fav8t4d321j30dl0b275b.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-以Cattle引擎为例，可以在project-templates的Cattle目录中找到相应的配置文件，
-当ENV创建初始化时会创建这里面定义的服务，这样一个机制就可以让我们可以做更深入的定制，
-让ENV初始化时创建我们需要的服务：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;name: Cattle
-description: Default Cattle template
-stacks:
-- name: network-services
-templateId: &#39;library:infra*network-services&#39;
-- name: ipsec
-templateId: &#39;library:infra*ipsec&#39;
-- name: scheduler
-templateId: &#39;library:infra*scheduler&#39;
-- name: healthcheck
-templateId: &#39;library:infra*healthcheck&#39;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;在Cattle引擎调度方面，Rancher实现了rancher-scheduler，&lt;a href=&#34;https://github.com/rancher/scheduler&#34;&gt;https://github.com/rancher/scheduler&lt;/a&gt;。
-它实现了允许用户按计算资源调度，目前支持memory、cpu的Reservation。其实现原理是，
-内部有一个resource watcher，通过监听rancher metadata的获取Host的使用资源数据变化，
-进而得到ENV内所有Host资源汇总信息。与此同时，
-监听rancher events的scheduler.prioritize、scheduler.reserve、scheduler.release等各种事件，
-通过排序过滤可用主机后发送回执信息，Rancher Server就有了可以选择的Host列表。如下图所示：&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tKfTcjw1fav8vafyqaj30h005xwfk.jpg&#34; alt=&#34;&#34; /&gt;&lt;br /&gt;
-需要注意的是，rancher-scheduler并没有和rancher-server部署在一起，
-而是在你添加Host时候部署在agent节点上，当然rancher-scheduler在一个ENV内只会部署一个。&lt;/p&gt;
-
-&lt;h3 id=&#34;agent节点服务解耦&#34;&gt;Agent节点服务解耦&lt;/h3&gt;
-
-&lt;p&gt;agent节点一个最大的变化就是，agent-instance容器没有了，它被拆分成多个容器服务，
-包括rancher-metadata、network-manager、rancher-net、rancher-dns、healthcheck等。&lt;br /&gt;
-&lt;img src=&#34;http://ww2.sinaimg.cn/large/006tKfTcjw1fav8w3brm9j30ea06labt.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;metadata服务是老朋友了，它在每个agent节点上保存了host、stack、service、container等的信息，
-可以非常方便的在本地调用取得，&lt;a href=&#34;https://github.com/rancher/rancher-metadata&#34;&gt;https://github.com/rancher/rancher-metadata&lt;/a&gt;，
-在新的体系中它扮演了重要角色，几乎所有agent节点上的服务均依赖它。
-在先前的体系中，metadata的answer file的更新是通过事件驱动shell脚本来执行下载，
-比较简单粗暴。v1.2开始使用监听rancher events方式来reload metadata的answer file，
-但是answer file还需要到rancher server端下载，总的来说效率还是有一定提升的。&lt;/p&gt;
-
-&lt;p&gt;dns在新的体系中仍然承担着服务发现的功能，&lt;a href=&#34;https://github.com/rancher/rancher-dns&#34;&gt;https://github.com/rancher/rancher-dns&lt;/a&gt;。
-除了拆分成单独容器之外，它也在效率上做了改进，它与rancher-metadata容器共享网络，
-以metadata的结果生成dns的answer file。与之前的架构相比，
-省去了dns answer file下载的过程。需要注意的是，rancher-dns的TTL默认是600秒，
-如果出于各种原因觉得dns作为服务发现不是很可靠，那么可以使用etc-host-updater和rancher-metadata的组合，
-&lt;a href=&#34;https://github.com/rancher/etc-host-updater&#34;&gt;etc-host-updater&lt;/a&gt;
-会根据metadata数据动态生成hosts文件并写入容器内，这样通过服务名访问时，
-其实已经在本地转换成了IP，无需经过dns，如下图所示：&lt;br /&gt;
-&lt;img src=&#34;http://ww4.sinaimg.cn/large/006tKfTcjw1fav8z58gm6j30bc04mmxg.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;rancher-net作出了比较重大的革新，&lt;a href=&#34;https://github.com/rancher/rancher-net&#34;&gt;https://github.com/rancher/rancher-net&lt;/a&gt;，
-除了继续支持原有的ipsec外，还支持了vxlan。这个支持是原生支持，
-只要内核有vxlan的支持模块就可以。vxlan并不是Cattle的默认网络，
-使用时可以在infra-catalog中重新选择它来部署，其实现以及部署方式后续会在专门的文章中进行探讨：&lt;br /&gt;
-&lt;img src=&#34;http://ww3.sinaimg.cn/large/006tKfTcjw1fav8zxs951j30ds0al753.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;network-manager的引入为Rancher v1.2带来了一个重要特性就是CNI插件管理，
-在之前的版本中很多用户都提到rancher-net本身的网络无法满足业务需求。
-容器网络之争，无非就是CNM与CNI，Rancher选择站队CNI，这也是为了更好与Kubernetes融合。
-而CNI的插件很多种，Calico、Weave等之流，每个插件的部署方式都不一样。
-Rancher为了简化管理提出了network-manager，&lt;a href=&#34;https://github.com/rancher/plugin-manager&#34;&gt;https://github.com/rancher/plugin-manager&lt;/a&gt;，
-它可以做到兼容主流的CNI插件，它实际上定义了一个部署框架，让CNI插件在框架内部署。
-network-manager是以容器方式部署，由于每种插件在初始化时可能需要暴露端口或加入一些NAT规则，
-所以network-manager能够动态设置不同插件的初始化规则，
-它的做法是以metadata作为 host port和host nat规则的数据源，
-然后获取数据后生成相应的Iptables规则加入的Host中。而对于真正的CNI插件，
-需要在network-manager容器内/opt/cni目录下部署对应cni插件的执行程序（calico/weave），
-/etc/cni目录下部署cni插件的配置，这两个目录映射了docker卷rancher-cni-driver，
-也就是Host上的/var/lib/docker/volumes/rancher-cni-driver目录下。&lt;/p&gt;
-
-&lt;p&gt;关于healthcheck，先前是通过agent-instance镜像实现，里面内置了Haproxy，
-事件驱动shell脚本来下载healchcheck配置并reload。新的架构中，
-Rancher实现了单独的healthcheck，&lt;a href=&#34;https://github.com/rancher/healthcheck&#34;&gt;https://github.com/rancher/healthcheck&lt;/a&gt;，
-采用Golang微服务的方式，数据源是metadata。
-当然healthcheck的最终检查仍然是通过与Haproxy sock通信来查看相应member的健康状态（原理如下图），
-healthcheck的实现主要是为了将其从agent-instance中解耦出来。&lt;br /&gt;
-&lt;img src=&#34;http://ww1.sinaimg.cn/large/006tKfTcjw1fav928q6bwj30hu06mad4.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&#34;总结&#34;&gt;总结&lt;/h3&gt;
-
-&lt;p&gt;Rancher v1.2的新特性还是非常多的，基础设施引擎的变化时一切特性的基础，
-这篇文章算是开篇之作。后续会持续为大家带来，Kubernetes、Swarmkit的支持，自定义rancher-lb，
-vxlan的支持，各种CNI插件的集成，以及各种存储接入的实践操作指南等等。&lt;/p&gt;</description>
+      <guid>http://niusmallnan.com/2016/11/28/rancher12-infra-architect/</guid>
+      <description>&lt;p&gt;Rancher v1.2系列文章，已独家授权Rancher Labs，转载请联系Rancher China相关人员。&lt;/p&gt;</description>
     </item>
     
   </channel>
